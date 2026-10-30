@@ -19,6 +19,7 @@ import { exportCustomers, importCustomersFile } from '../lib/customerExcel';
 import { exportMenu, importMenuFile } from '../lib/menuExcel';
 import { alertBeep } from '../lib/due';
 import { exportOrders, importOrdersFile } from '../lib/orderExcel';
+import { AccountCard, MoveLocalData, StaffManager } from '../components/StaffSettings';
 
 // Một khối "Tải file Excel / Nhập từ Excel". `onExport` và `onImport` trả về câu thông báo khi xong.
 function BackupSection({ icon: Icon, title, countText, description, exportLabel, canExport, onExport, onImport }) {
@@ -195,7 +196,7 @@ function ShopInfo({ settings, onUpdateSettings }) {
             className={inputClass}
           />
         </label>
-        <p className="text-xs text-slate-400">Tự lưu khi gõ. Tên quán hiện ở menu và trong tin nhắn gửi shipper.</p>
+        <p className="text-xs text-slate-400">Tự lưu khi gõ, mọi máy trong quán đều thấy. Tên quán hiện ở menu và trong tin nhắn gửi shipper.</p>
       </div>
     </section>
   );
@@ -243,10 +244,6 @@ function InstallApp() {
       ) : isIOS ? (
         <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-slate-700">
           <li>
-            <b className="text-red-600">Trước tiên:</b> bấm <b>Tải file sao lưu</b> ở mục &quot;Sao lưu tất cả&quot; bên
-            dưới (iPhone giữ dữ liệu của app cài riêng với Safari)
-          </li>
-          <li>
             Mở trang này bằng <b>Safari</b>
           </li>
           <li>
@@ -256,8 +253,7 @@ function InstallApp() {
             Kéo xuống, chọn <b>Thêm vào MH chính</b>, rồi bấm <b>Thêm</b>
           </li>
           <li>
-            Mở app bằng icon cái bát trên màn hình chính, vào <b>Cài đặt app → Sao lưu tất cả → Nhập từ Excel</b> và chọn
-            file vừa tải để chuyển đơn, khách, thực đơn sang
+            Mở app bằng icon cái bát trên màn hình chính và nhập mã PIN một lần nữa
           </li>
         </ol>
       ) : prompt ? (
@@ -273,9 +269,7 @@ function InstallApp() {
         </p>
       )}
       <p className="mt-2 text-xs text-slate-400">
-        {isIOS
-          ? 'Sau khi chuyển xong, chỉ dùng app trên màn hình chính để dữ liệu không bị tách làm hai.'
-          : 'Trên Android, app đã cài dùng chung dữ liệu với trang web trong Chrome.'}{' '}
+        Đơn, khách, thực đơn nằm trên máy chủ nên app đã cài và trang web thấy giống nhau.
         Tên dưới icon là tên quán bạn đặt ở trên.
       </p>
     </section>
@@ -362,7 +356,12 @@ function backupStatus(lastBackupAt) {
   return `Sao lưu gần nhất: ${days} ngày trước${days >= BACKUP_REMINDER_DAYS ? ' – nên sao lưu lại' : ''}`;
 }
 
+// Nhân viên chỉ thấy phần cài đặt riêng của máy mình; thông tin quán, mã PIN, sao lưu là của chủ quán
 export default function SettingsPage({
+  account,
+  isOwner,
+  dataReady,
+  onLogout,
   orders,
   customers,
   menu,
@@ -372,19 +371,35 @@ export default function SettingsPage({
   onImportOrders,
   onImportCustomers,
   onImportMenu,
+  onAddMenuItem,
 }) {
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      <ShopInfo settings={settings} onUpdateSettings={onUpdateSettings} />
+      <AccountCard account={account} onLogout={onLogout} />
+      {isOwner && dataReady && (
+        <MoveLocalData
+          menu={menu}
+          settings={settings}
+          onImportOrders={onImportOrders}
+          onImportCustomers={onImportCustomers}
+          onImportMenu={onImportMenu}
+          onAddMenuItem={onAddMenuItem}
+          onUpdateSettings={onUpdateSettings}
+        />
+      )}
+      {isOwner && <ShopInfo settings={settings} onUpdateSettings={onUpdateSettings} />}
+      {isOwner && <StaffManager account={account} />}
       <InstallApp />
       <MapsSettings settings={settings} onUpdateSettings={onUpdateSettings} />
       <AlertSettings settings={settings} onUpdateSettings={onUpdateSettings} />
 
+      {isOwner && (
+        <>
       <BackupSection
         icon={Archive}
         title="Sao lưu tất cả (1 file Excel)"
         countText={backupStatus(settings.lastBackupAt)}
-        description={`Dữ liệu chỉ lưu trên máy này. Mỗi tuần tải 1 file gồm đơn hàng, khách hàng và thực đơn (3 sheet), rồi cất vào Google Drive, Zalo hoặc email. Khi đổi máy hay app lỗi, chọn "Nhập từ Excel" với file đó để khôi phục tất cả. App sẽ nhắc nếu quá ${BACKUP_REMINDER_DAYS} ngày chưa sao lưu.`}
+        description={`Dữ liệu đã lưu trên máy chủ dùng chung; file Excel là bản dự phòng. Mỗi tuần tải 1 file gồm đơn hàng, khách hàng và thực đơn (3 sheet), rồi cất vào Google Drive, Zalo hoặc email. Khi có sự cố, chọn "Nhập từ Excel" với file đó để khôi phục tất cả. App sẽ nhắc nếu quá ${BACKUP_REMINDER_DAYS} ngày chưa sao lưu.`}
         exportLabel="Tải file sao lưu"
         canExport={orders.length + customers.length + menu.length > 0}
         onExport={async () => {
@@ -470,6 +485,8 @@ export default function SettingsPage({
           />
         </div>
       </details>
+        </>
+      )}
     </div>
   );
 }

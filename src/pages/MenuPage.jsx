@@ -78,7 +78,10 @@ function MenuItemSheet({ item, menu, onSave, onDelete, onClose }) {
               <Trash2 size={18} /> Xoá
             </button>
           )}
-          <button onClick={save} className="flex-1 rounded-2xl bg-blue-500 py-3.5 font-semibold text-white active:bg-blue-600">
+          <button
+            onClick={save}
+            className="flex-1 rounded-2xl bg-blue-500 py-3.5 font-semibold text-white active:bg-blue-600"
+          >
             Lưu
           </button>
         </div>
@@ -87,7 +90,8 @@ function MenuItemSheet({ item, menu, onSave, onDelete, onClose }) {
   );
 }
 
-export default function MenuPage({ menu, onAddMenuItem, onUpdateMenuItem, onDeleteMenuItem, onMoveMenuItem }) {
+// Nhân viên chỉ báo Còn / Hết; thêm, sửa giá, xoá, đổi thứ tự là việc của chủ quán
+export default function MenuPage({ menu, isOwner, onAddMenuItem, onUpdateMenuItem, onDeleteMenuItem, onMoveMenuItem }) {
   // undefined: đóng · null: thêm món mới · object: sửa món đó
   const [editing, setEditing] = useState(undefined);
   const availableCount = menu.filter((m) => m.available !== false).length;
@@ -100,6 +104,7 @@ export default function MenuPage({ menu, onAddMenuItem, onUpdateMenuItem, onDele
           <span className="font-semibold text-red-600"> · {menu.length - availableCount} hết</span>
         )}
         <span className="block">Món "Hết" sẽ bị ẩn khi tạo đơn mới.</span>
+        {!isOwner && <span className="block">Chỉ chủ quán mới thêm món, sửa giá được.</span>}
       </p>
 
       {menu.length === 0 ? (
@@ -110,27 +115,31 @@ export default function MenuPage({ menu, onAddMenuItem, onUpdateMenuItem, onDele
             const available = m.available !== false;
             return (
               <li key={m.id} className={`flex items-center gap-2 px-3 py-3 ${available ? '' : 'bg-slate-50'}`}>
-                <div className="flex flex-col">
-                  <button
-                    onClick={() => onMoveMenuItem(m.id, -1)}
-                    disabled={i === 0}
-                    className="rounded p-0.5 text-slate-400 active:bg-slate-100 disabled:opacity-20"
-                    aria-label={`Đưa ${m.name} lên`}
-                  >
-                    <ChevronUp size={18} />
-                  </button>
-                  <button
-                    onClick={() => onMoveMenuItem(m.id, 1)}
-                    disabled={i === menu.length - 1}
-                    className="rounded p-0.5 text-slate-400 active:bg-slate-100 disabled:opacity-20"
-                    aria-label={`Đưa ${m.name} xuống`}
-                  >
-                    <ChevronDown size={18} />
-                  </button>
-                </div>
+                {isOwner && (
+                  <div className="flex flex-col">
+                    <button
+                      onClick={() => onMoveMenuItem(m.id, -1)}
+                      disabled={i === 0}
+                      className="rounded p-0.5 text-slate-400 active:bg-slate-100 disabled:opacity-20"
+                      aria-label={`Đưa ${m.name} lên`}
+                    >
+                      <ChevronUp size={18} />
+                    </button>
+                    <button
+                      onClick={() => onMoveMenuItem(m.id, 1)}
+                      disabled={i === menu.length - 1}
+                      className="rounded p-0.5 text-slate-400 active:bg-slate-100 disabled:opacity-20"
+                      aria-label={`Đưa ${m.name} xuống`}
+                    >
+                      <ChevronDown size={18} />
+                    </button>
+                  </div>
+                )}
 
                 <div className="min-w-0 flex-1">
-                  <p className={`font-semibold ${available ? 'text-slate-900' : 'text-slate-400 line-through'}`}>{m.name}</p>
+                  <p className={`font-semibold ${available ? 'text-slate-900' : 'text-slate-400 line-through'}`}>
+                    {m.name}
+                  </p>
                   <p className="text-sm text-slate-500">{formatMoney(m.price)}</p>
                 </div>
 
@@ -143,24 +152,28 @@ export default function MenuPage({ menu, onAddMenuItem, onUpdateMenuItem, onDele
                 >
                   {available ? 'Còn' : 'Hết'}
                 </button>
-                <button
-                  onClick={() => setEditing(m)}
-                  className="flex shrink-0 items-center gap-1 rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-600 active:bg-slate-200"
-                >
-                  <Pencil size={14} /> Sửa
-                </button>
+                {isOwner && (
+                  <button
+                    onClick={() => setEditing(m)}
+                    className="flex shrink-0 items-center gap-1 rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-600 active:bg-slate-200"
+                  >
+                    <Pencil size={14} /> Sửa
+                  </button>
+                )}
               </li>
             );
           })}
         </ul>
       )}
 
-      <button
-        onClick={() => setEditing(null)}
-        className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-5 z-20 flex items-center gap-2 rounded-full bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-blue-500/30 active:bg-blue-600"
-      >
-        <Plus size={20} /> Thêm món
-      </button>
+      {isOwner && (
+        <button
+          onClick={() => setEditing(null)}
+          className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-5 z-20 flex items-center gap-2 rounded-full bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-blue-500/30 active:bg-blue-600"
+        >
+          <Plus size={20} /> Thêm món
+        </button>
+      )}
 
       {editing !== undefined && (
         <MenuItemSheet

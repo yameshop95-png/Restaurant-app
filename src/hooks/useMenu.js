@@ -1,41 +1,59 @@
-import { useEffect, useState } from 'react';
+import useCloudList, { dataOf } from './useCloudList';
 import { normalizeText } from './useCustomers';
+import { supabase } from '../lib/supabase';
 
-// Thực đơn lưu trong localStorage, quản lý ở tab "Quản lý món ăn".
-const STORAGE_KEY = 'restaurant-app.menu';
-
-// Thực đơn mẫu cho lần chạy đầu tiên
-const DEFAULT_MENU = [
-  { id: 'pho', name: 'Phở bò', price: 15 },
-  { id: 'bun-cha', name: 'Bún chả', price: 14 },
-  { id: 'com-tam', name: 'Cơm tấm', price: 13 },
-  { id: 'banh-mi', name: 'Bánh mì', price: 9 },
-  { id: 'goi-cuon', name: 'Gỏi cuốn', price: 8 },
-  { id: 'tra-da', name: 'Trà đá', price: 3 },
-].map((m) => ({ ...m, available: true }));
-
+// Thực đơn lưu trên máy chủ dùng chung, quản lý ở tab "Quản lý món ăn".
 const newId = () => crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 
-function load() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return Array.isArray(saved) ? saved : DEFAULT_MENU;
-  } catch {
-    return DEFAULT_MENU;
+const fromRow = (row) => ({ ...row.data, id: row.id, _position: row.position ?? 0 });
+const sort = (list) => [...list].sort((a, b) => a._position - b._position);
+
+function write({ prev, next, added, changed, removed }) {
+  const ops = [];
+  const prevIndex = new Map(prev.map((m, i) => [m.id, i]));
+  const changedIds = new Set(changed.map(([, m]) => m.id));
+  const rows = [];
+  next.forEach((m, i) => {
+    const old = prev[prevIndex.get(m.id)];
+    const moved = prevIndex.get(m.id) !== i;
+    if (!old || moved) return rows.push(m);
+    if (!changedIds.has(m.id)) return;
+    // Chỉ đổi Còn/Hết: nhân viên cũng làm được (qua hàm riêng trên máy chủ)
+    const onlyAvailability =
+      JSON.stringify({ ...old, available: m.available, _position: 0 }) === JSON.stringify({ ...m, _position: 0 });
+    if (onlyAvailability) {
+      ops.push({
+        rowId: m.id,
+        run: () => supabase.rpc('set_menu_available', { item_id: m.id, is_available: m.available }),
+        onDone: () => {},
+      });
+    } else rows.push(m);
+  });
+  if (rows.length) {
+    const payload = rows.map((m) => ({ id: m.id, position: next.indexOf(m), data: dataOf(m) }));
+    ops.push({
+      rowId: payload.length === 1 ? payload[0].id : undefined,
+      run: () => supabase.from('menu_items').upsert(payload),
+      onDone: () => {},
+    });
   }
+  for (const m of removed) {
+    ops.push({ rowId: m.id, run: () => supabase.from('menu_items').delete().eq('id', m.id), onDone: () => {} });
+  }
+  return ops;
 }
 
-// MenuItem: { id, name, price, available }
+// MenuItem: { id, name, price, available }. Thứ tự trong danh sách là thứ tự hiện khi tạo đơn.
+// Chỉ chủ quán sửa được tên / giá / thứ tự; nhân viên chỉ bật tắt Còn / Hết.
 export default function useMenu() {
-  const [menu, setMenu] = useState(load);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(menu));
-    } catch {
-      // Không lưu được (chế độ ẩn danh...): vẫn dùng được trong phiên hiện tại.
-    }
-  }, [menu]);
+  const { list: menu, setList, ready } = useCloudList('menu_items', { fromRow, sort, write });
+  // Thứ tự mảng là thứ tự món; _position đi theo để món nhận từ máy khác chen đúng chỗ
+  const setMenu = (updater) =>
+    setList((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      if (next === prev) return prev;
+      return next.map((m, i) => (m._position === i ? m : { ...m, _position: i }));
+    });
 
   const addItem = ({ name, price }) =>
     setMenu((prev) => [...prev, { id: newId(), name: name.trim(), price, available: true }]);
@@ -70,5 +88,5 @@ export default function useMenu() {
     return next.filter((m) => !existing.has(key(m))).length;
   };
 
-  return { menu, addItem, updateItem, deleteItem, moveItem, importMenu };
+  return { menu, ready, addItem, updateItem, deleteItem, moveItem, importMenu };
 }

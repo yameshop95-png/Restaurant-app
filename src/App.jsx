@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import PinLogin from './components/PinLogin';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import UndoToast from './components/UndoToast';
+import useAuth from './hooks/useAuth';
 import useCustomers from './hooks/useCustomers';
 import useMenu from './hooks/useMenu';
 import useNow from './hooks/useNow';
@@ -23,10 +25,25 @@ const PAGES = {
   settings: SettingsPage,
 };
 
+// Chưa đăng nhập thì hiện màn hình nhập mã PIN; dữ liệu chỉ tải sau khi đăng nhập.
 export default function App() {
+  const auth = useAuth();
+  if (auth.status === 'loading') {
+    return <div className="flex min-h-screen items-center justify-center bg-slate-900 text-slate-400">Đang mở…</div>;
+  }
+  if (auth.status !== 'signedIn') {
+    return <PinLogin onLogin={auth.login} offlineError={auth.status === 'offline' ? auth.error : null} onRetry={auth.retry} />;
+  }
+  // key: đổi người đăng nhập thì tải lại từ đầu
+  return <Shop key={auth.account.id} account={auth.account} onLogout={auth.logout} />;
+}
+
+function Shop({ account, onLogout }) {
+  const isOwner = account.role === 'owner';
   const [activeTab, setActiveTab] = useState('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { orders, addOrder, updateOrder, setStatus, setPaid, importOrders } = useOrders();
+  const { orders, ready: ordersReady, loadError, addOrder, updateOrder, setStatus, setPaid, importOrders } =
+    useOrders(account);
   const { customers, saveCustomer, importCustomers, updateCustomer, deleteCustomer } = useCustomers();
   const { menu, addItem, updateItem, deleteItem, moveItem, importMenu } = useMenu();
 
@@ -56,6 +73,7 @@ export default function App() {
   // Lần đầu mở app chỉ ghi nhận các đơn đang gấp, không kêu.
   const notified = useRef(null);
   useEffect(() => {
+    if (!ordersReady) return;
     const keys = orders.flatMap((o) => {
       const due = dueInfo(o, now);
       return due ? [`${o.id}:${due.level}`] : [];
@@ -67,7 +85,7 @@ export default function App() {
     const fresh = keys.filter((k) => !notified.current.has(k));
     fresh.forEach((k) => notified.current.add(k));
     if (fresh.length && settings.dueSound) alertBeep();
-  }, [orders, now, settings.dueSound]);
+  }, [orders, ordersReady, now, settings.dueSound]);
 
   // Sao lưu tất cả vào một file Excel và ghi lại thời điểm để nhắc sao lưu định kỳ
   const backupNow = async () => {
@@ -98,7 +116,8 @@ export default function App() {
     setSidebarOpen(false);
   };
 
-  const ActivePage = PAGES[activeTab];
+  // Báo cáo chỉ dành cho chủ quán
+  const ActivePage = PAGES[!isOwner && activeTab === 'report' ? 'home' : activeTab];
   const pendingTotal = counts.pendingAll;
 
   return (
@@ -110,6 +129,8 @@ export default function App() {
         upcoming={upcoming}
         now={now}
         settings={settings}
+        account={account}
+        onLogout={onLogout}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
@@ -123,7 +144,16 @@ export default function App() {
         />
 
         <main className="mx-auto max-w-7xl p-4 sm:p-6">
+          {!ordersReady && (
+            <p className="mx-auto mb-4 max-w-2xl rounded-2xl bg-white/80 px-4 py-3 text-center text-sm text-slate-500">
+              {loadError ? `Chưa tải được dữ liệu: ${loadError}. Đang thử lại…` : 'Đang tải dữ liệu…'}
+            </p>
+          )}
           <ActivePage
+            account={account}
+            isOwner={isOwner}
+            dataReady={ordersReady}
+            onLogout={onLogout}
             orders={orders}
             counts={counts}
             now={now}

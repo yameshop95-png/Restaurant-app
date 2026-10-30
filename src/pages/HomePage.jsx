@@ -48,7 +48,7 @@ function BackupReminder({ lastBackupAt, onBackupNow }) {
         {days == null ? 'Chưa sao lưu dữ liệu lần nào' : `Đã ${days} ngày chưa sao lưu dữ liệu`}
       </p>
       <p className="mt-1 text-sm">
-        Đơn hàng, khách và thực đơn chỉ lưu trên máy này. Tải 1 file Excel về rồi cất vào Drive / Zalo để không bị mất.
+        Dữ liệu đã lưu trên máy chủ, nhưng vẫn nên giữ 1 file Excel dự phòng trong Drive / Zalo phòng khi có sự cố.
       </p>
       <button
         onClick={backup}
@@ -130,13 +130,14 @@ function ShiftClose({ orders, now, shopName }) {
   );
 }
 
-export default function HomePage({ orders, now, settings, onBackupNow }) {
+// Nhân viên không thấy doanh thu: chỉ số đơn và số phần từng món
+export default function HomePage({ orders, now, settings, isOwner, onBackupNow }) {
   const stats = useMemo(() => summarize(orders, now), [orders, now]);
   const maxQty = stats.weekItems[0]?.qty ?? 0;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      {needsBackup(orders, settings.lastBackupAt, now) && (
+      {isOwner && needsBackup(orders, settings.lastBackupAt, now) && (
         <BackupReminder lastBackupAt={settings.lastBackupAt} onBackupNow={onBackupNow} />
       )}
 
@@ -151,50 +152,65 @@ export default function HomePage({ orders, now, settings, onBackupNow }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Card title="Đã thanh toán">
-          <div className="px-5 pb-4 pt-1">
-            <p className="text-2xl font-bold tracking-tight text-emerald-600">{formatMoney(stats.weekPaid.total)}</p>
-            <p className="text-sm text-slate-500">{stats.weekPaid.count} đơn</p>
+      {isOwner ? (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <Card title="Đã thanh toán">
+              <div className="px-5 pb-4 pt-1">
+                <p className="text-2xl font-bold tracking-tight text-emerald-600">{formatMoney(stats.weekPaid.total)}</p>
+                <p className="text-sm text-slate-500">{stats.weekPaid.count} đơn</p>
+              </div>
+            </Card>
+            <section
+              className={`rounded-3xl px-5 pb-4 pt-4 shadow-sm ${
+                stats.weekUnpaid.count ? 'bg-red-500 text-white shadow-red-500/30' : 'bg-white/70 text-slate-500'
+              }`}
+            >
+              <h2 className={`text-[15px] ${stats.weekUnpaid.count ? 'font-semibold text-red-50' : ''}`}>Chưa thanh toán</h2>
+              <p className={`mt-1 text-2xl font-bold tracking-tight ${stats.weekUnpaid.count ? '' : 'text-slate-900'}`}>
+                {formatMoney(stats.weekUnpaid.total)}
+              </p>
+              <p className={`text-sm ${stats.weekUnpaid.count ? 'text-red-50' : ''}`}>{stats.weekUnpaid.count} đơn</p>
+            </section>
+          </div>
+          {stats.olderUnpaid.count > 0 && (
+            <p className="-mt-1 rounded-2xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-600">
+              + {formatMoney(stats.olderUnpaid.total)} chưa thu từ các tuần trước ({stats.olderUnpaid.count} đơn)
+            </p>
+          )}
+
+          <Card title="Tiền tuần này">
+            <div className="flex items-end justify-between px-5 pb-5 pt-1">
+              <p className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+                {formatMoney(stats.weekRevenue)}
+              </p>
+              <span className="rounded-full bg-blue-100 px-4 py-1.5 font-semibold text-blue-600">
+                {stats.weekOrderCount} đơn
+              </span>
+            </div>
+          </Card>
+
+          <ShiftClose orders={orders} now={now} shopName={settings.shopName} />
+
+          <Card title="Tổng cộng dồn">
+            <div className="flex items-end justify-between px-5 pb-5 pt-1">
+              <p className="text-3xl font-bold tracking-tight text-slate-900">{formatMoney(stats.allTimeRevenue)}</p>
+              <span className="text-sm text-slate-500">{stats.allTimeOrderCount} đơn từ trước tới nay</span>
+            </div>
+          </Card>
+        </>
+      ) : (
+        <Card title="Đơn tuần này">
+          <div className="flex items-end justify-between px-5 pb-5 pt-1">
+            <p className="text-4xl font-bold tracking-tight text-slate-900">{stats.weekOrderCount} đơn</p>
+            {stats.weekUnpaid.count > 0 && (
+              <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-600">
+                {stats.weekUnpaid.count} đơn chưa thanh toán
+              </span>
+            )}
           </div>
         </Card>
-        <section
-          className={`rounded-3xl px-5 pb-4 pt-4 shadow-sm ${
-            stats.weekUnpaid.count ? 'bg-red-500 text-white shadow-red-500/30' : 'bg-white/70 text-slate-500'
-          }`}
-        >
-          <h2 className={`text-[15px] ${stats.weekUnpaid.count ? 'font-semibold text-red-50' : ''}`}>Chưa thanh toán</h2>
-          <p className={`mt-1 text-2xl font-bold tracking-tight ${stats.weekUnpaid.count ? '' : 'text-slate-900'}`}>
-            {formatMoney(stats.weekUnpaid.total)}
-          </p>
-          <p className={`text-sm ${stats.weekUnpaid.count ? 'text-red-50' : ''}`}>{stats.weekUnpaid.count} đơn</p>
-        </section>
-      </div>
-      {stats.olderUnpaid.count > 0 && (
-        <p className="-mt-1 rounded-2xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-600">
-          + {formatMoney(stats.olderUnpaid.total)} chưa thu từ các tuần trước ({stats.olderUnpaid.count} đơn)
-        </p>
       )}
-
-      <Card title="Tiền tuần này">
-        <div className="flex items-end justify-between px-5 pb-5 pt-1">
-          <p className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-            {formatMoney(stats.weekRevenue)}
-          </p>
-          <span className="rounded-full bg-blue-100 px-4 py-1.5 font-semibold text-blue-600">
-            {stats.weekOrderCount} đơn
-          </span>
-        </div>
-      </Card>
-
-      <ShiftClose orders={orders} now={now} shopName={settings.shopName} />
-
-      <Card title="Tổng cộng dồn">
-        <div className="flex items-end justify-between px-5 pb-5 pt-1">
-          <p className="text-3xl font-bold tracking-tight text-slate-900">{formatMoney(stats.allTimeRevenue)}</p>
-          <span className="text-sm text-slate-500">{stats.allTimeOrderCount} đơn từ trước tới nay</span>
-        </div>
-      </Card>
 
       <Card title="Món bán trong tuần">
         {stats.weekItems.length === 0 ? (
@@ -205,7 +221,7 @@ export default function HomePage({ orders, now, settings, onBackupNow }) {
               <li key={item.name} className="px-5 py-3">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="font-semibold text-slate-900">{item.name}</span>
-                  <span className="shrink-0 font-semibold text-slate-900">{formatMoney(item.revenue)}</span>
+                  {isOwner && <span className="shrink-0 font-semibold text-slate-900">{formatMoney(item.revenue)}</span>}
                 </div>
                 <div className="mt-1.5 flex items-center gap-3">
                   <div className="h-1.5 flex-1 rounded-full bg-slate-200">

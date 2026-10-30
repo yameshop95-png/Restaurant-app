@@ -1,4 +1,4 @@
-import { AlarmClock, BellRing, ChefHat, Phone, X } from 'lucide-react';
+import { AlarmClock, BellRing, ChefHat, LogOut, Phone, UserRound, X } from 'lucide-react';
 import { NAV_ITEMS } from './navigation';
 
 function Badge({ count, active }) {
@@ -14,7 +14,7 @@ function Badge({ count, active }) {
   );
 }
 
-export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now, settings, isOpen, onClose }) {
+export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now, settings, account, onLogout, isOpen, onClose }) {
   const totalPending = counts.pendingAll;
   const overdue = upcoming.filter((o) => new Date(o.deliverAt) < now).length;
   // Bấm vào ô "cần giao" thì mở tab của đơn gấp nhất
@@ -103,7 +103,7 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
 
         {/* Menu điều hướng */}
         <nav className="mt-4 flex-1 space-y-1 overflow-y-auto px-3">
-          {NAV_ITEMS.map(({ id, label, icon: Icon, badgeKey }) => {
+          {NAV_ITEMS.filter((item) => !item.ownerOnly || account.role === 'owner').map(({ id, label, icon: Icon, badgeKey }) => {
             const active = activeTab === id;
             return (
               <button
@@ -127,11 +127,26 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
         {settings.shopPhone && (
           <a
             href={`tel:${settings.shopPhone}`}
-            className="flex items-center gap-2 border-t border-slate-800 px-5 py-4 text-sm text-slate-400"
+            className="flex items-center gap-2 border-t border-slate-800 px-5 py-3 text-sm text-slate-400"
           >
             <Phone size={14} /> {settings.shopPhone}
           </a>
         )}
+
+        {/* Người đang dùng máy này */}
+        <div className="flex items-center gap-3 border-t border-slate-800 px-5 py-3">
+          <UserRound size={18} className="shrink-0 text-slate-400" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-white">{account.name}</p>
+            <p className="text-xs text-slate-400">{account.role === 'owner' ? 'Chủ quán' : 'Nhân viên'}</p>
+          </div>
+          <button
+            onClick={onLogout}
+            className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white"
+          >
+            <LogOut size={15} /> Đổi người
+          </button>
+        </div>
       </aside>
     </>
   );

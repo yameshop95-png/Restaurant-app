@@ -103,6 +103,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
           </p>
           <p className="flex items-center gap-1 text-xs text-slate-400">
             <Clock size={12} /> Tạo lúc {formatTime(order.createdAt)}
+            {order.createdBy && ` · ${order.createdBy}`}
           </p>
           {!cancelled && (
             <div className="mt-1.5 flex flex-wrap gap-1.5">

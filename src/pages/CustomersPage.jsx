@@ -8,7 +8,7 @@ const inputClass = (error) =>
     error ? 'border-red-400 focus:ring-red-100' : 'border-slate-300 focus:border-blue-500 focus:ring-blue-100'
   }`;
 
-function CustomerSheet({ customer, onSave, onDelete, onClose }) {
+function CustomerSheet({ customer, canDelete, onSave, onDelete, onClose }) {
   const [form, setForm] = useState({
     name: customer?.name ?? '',
     phone: customer?.phone ?? '',
@@ -62,7 +62,7 @@ function CustomerSheet({ customer, onSave, onDelete, onClose }) {
         </div>
 
         <div className="flex gap-2 border-t border-slate-200 px-5 py-4">
-          {customer && (
+          {customer && canDelete && (
             <button
               onClick={() => {
                 if (window.confirm(`Xoá khách "${customer.name}" khỏi danh bạ? Các đơn cũ vẫn được giữ.`)) {
@@ -87,7 +87,7 @@ function CustomerSheet({ customer, onSave, onDelete, onClose }) {
   );
 }
 
-export default function CustomersPage({ customers, orders, onAddCustomer, onUpdateCustomer, onDeleteCustomer }) {
+export default function CustomersPage({ customers, orders, isOwner, onAddCustomer, onUpdateCustomer, onDeleteCustomer }) {
   const [query, setQuery] = useState('');
   // undefined: đóng · null: thêm khách mới · object: sửa khách đó
   const [editing, setEditing] = useState(undefined);
@@ -206,6 +206,7 @@ export default function CustomersPage({ customers, orders, onAddCustomer, onUpda
       {editing !== undefined && (
         <CustomerSheet
           customer={editing}
+          canDelete={isOwner}
           onSave={(data) => (editing ? onUpdateCustomer(editing.id, data) : onAddCustomer(data))}
           onDelete={() => onDeleteCustomer(editing.id)}
           onClose={() => setEditing(undefined)}

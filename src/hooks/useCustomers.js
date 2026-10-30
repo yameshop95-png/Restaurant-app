@@ -1,9 +1,7 @@
-import { useEffect, useState } from 'react';
+import useCloudList, { dataOf } from './useCloudList';
+import { supabase } from '../lib/supabase';
 
-// Danh bạ khách hàng, lưu riêng với đơn hàng trong localStorage.
-// Sao lưu/khôi phục bằng file Excel ở tab "Cài đặt app".
-const STORAGE_KEY = 'restaurant-app.customers';
-const ORDERS_KEY = 'restaurant-app.orders';
+// Danh bạ khách hàng, lưu trên máy chủ dùng chung. Sao lưu/khôi phục bằng file Excel ở tab "Cài đặt app".
 
 // Bỏ dấu + chữ thường để tìm "lan" ra "Lan", "Lân", "LAN"...
 export const normalizeText = (s) =>
@@ -14,7 +12,7 @@ const phoneKey = (phone) => phone.replace(/\D/g, '');
 const customerKey = (c) => phoneKey(c.phone ?? '') || `name:${normalizeText(c.name)}`;
 const newId = () => crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 
-function mergeInto(list, incoming) {
+export function mergeInto(list, incoming) {
   const map = new Map(list.map((c) => [customerKey(c), c]));
   for (const c of incoming) {
     if (!c.name?.trim()) continue;
@@ -31,40 +29,31 @@ function mergeInto(list, incoming) {
   return [...map.values()];
 }
 
-function load() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    // Khách lưu từ bản cũ chưa có id
-    if (Array.isArray(saved)) return saved.map((c) => (c.id ? c : { ...c, id: newId() }));
-    // Lần đầu chạy: lấy khách từ các đơn đã có.
-    const orders = JSON.parse(localStorage.getItem(ORDERS_KEY)) ?? [];
-    return mergeInto(
-      [],
-      orders
-        .filter((o) => o.customer)
-        .reverse()
-        .map((o) => ({ ...o.customer, lastOrderAt: o.createdAt }))
-    );
-  } catch {
-    return [];
+const fromRow = (row) => ({ ...row.data, id: row.id });
+
+function write({ added, changed, removed }) {
+  const ops = [];
+  const rows = [...added, ...changed.map(([, c]) => c)].map((c) => ({ id: c.id, data: dataOf(c) }));
+  if (rows.length) {
+    ops.push({
+      rowId: rows.length === 1 ? rows[0].id : undefined,
+      run: () => supabase.from('customers').upsert(rows),
+      onDone: () => {},
+    });
   }
+  for (const c of removed) {
+    ops.push({ rowId: c.id, run: () => supabase.from('customers').delete().eq('id', c.id), onDone: () => {} });
+  }
+  return ops;
 }
 
 export default function useCustomers() {
-  const [customers, setCustomers] = useState(load);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
-    } catch {
-      // Không lưu được (chế độ ẩn danh...): vẫn dùng được trong phiên hiện tại.
-    }
-  }, [customers]);
+  const { list: customers, setList: setCustomers, ready } = useCloudList('customers', { fromRow, write });
 
   const saveCustomer = (customer) =>
     setCustomers((prev) => mergeInto(prev, [{ ...customer, lastOrderAt: new Date().toISOString() }]));
 
-  // Trả về số khách sau khi gộp, để báo cho người dùng.
+  // Trả về số khách được thêm mới sau khi gộp, để báo cho người dùng.
   const importCustomers = (list) => {
     const next = mergeInto(customers, list);
     setCustomers(next);
@@ -82,7 +71,7 @@ export default function useCustomers() {
 
   const deleteCustomer = (id) => setCustomers((prev) => prev.filter((c) => c.id !== id));
 
-  return { customers, saveCustomer, importCustomers, updateCustomer, deleteCustomer };
+  return { customers, ready, saveCustomer, importCustomers, updateCustomer, deleteCustomer };
 }
 
 export const sameCustomer = (a, b) => customerKey(a) === customerKey(b);
