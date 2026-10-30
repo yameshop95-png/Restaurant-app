@@ -170,6 +170,7 @@ export default function OrdersPage({
   type = 'dine-in',
   orders,
   customers,
+  menu,
   onAddOrder,
   onUpdateOrder,
   onSetStatus,
@@ -232,11 +233,12 @@ export default function OrdersPage({
         <Plus size={20} /> Tạo đơn
       </button>
 
-      {creating && <NewOrderSheet type={type} customers={customers} onSubmit={onAddOrder} onClose={() => setCreating(false)} />}
+      {creating && <NewOrderSheet type={type} menu={menu} customers={customers} onSubmit={onAddOrder} onClose={() => setCreating(false)} />}
       {editing && (
         <NewOrderSheet
           type={type}
           order={editing}
+          menu={menu}
           customers={customers}
           onSubmit={(data) => onUpdateOrder(editing.id, data)}
           onClose={() => setEditing(null)}

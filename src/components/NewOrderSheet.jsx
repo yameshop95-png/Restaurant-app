@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import { MapPin, Minus, Phone, Plus, UserRound, X } from 'lucide-react';
 import { searchCustomers } from '../hooks/useCustomers';
-import { MENU } from '../data/menu';
 import { formatMoney } from '../lib/stats';
 
 const TITLE = { 'dine-in': 'Tạo đơn tại quán', delivery: 'Tạo đơn ship' };
@@ -26,10 +25,10 @@ function initialForm(order) {
   };
 }
 
-const initialQty = (order) =>
+const initialQty = (order, menu) =>
   Object.fromEntries(
     (order?.items ?? []).flatMap((i) => {
-      const m = MENU.find((m) => m.name === i.name);
+      const m = menu.find((m) => m.name === i.name);
       return m ? [[m.id, i.qty]] : [];
     })
   );
@@ -63,11 +62,16 @@ const inputClass = (error) =>
   }`;
 
 // Truyền `order` để sửa đơn đã tạo; không truyền là tạo đơn mới.
-export default function NewOrderSheet({ type, order, customers = [], onSubmit, onClose }) {
+export default function NewOrderSheet({ type, order, menu, customers = [], onSubmit, onClose }) {
   const [form, setForm] = useState(() => initialForm(order));
-  const [qty, setQty] = useState(() => initialQty(order));
+  const [qty, setQty] = useState(() => initialQty(order, menu));
   // Món không còn trong thực đơn hiện tại: giữ nguyên khi sửa đơn
-  const [extraItems] = useState(() => (order?.items ?? []).filter((i) => !MENU.some((m) => m.name === i.name)));
+  const [extraItems] = useState(() => (order?.items ?? []).filter((i) => !menu.some((m) => m.name === i.name)));
+  // Khi sửa đơn, món đã có trong đơn giữ giá lúc đặt dù thực đơn đã đổi giá
+  const [orderedPrice] = useState(() => Object.fromEntries((order?.items ?? []).map((i) => [i.name, i.price])));
+  const priceOf = (m) => orderedPrice[m.name] ?? m.price;
+  // Món hết chỉ hiện nếu đơn đang sửa đã có món đó
+  const choices = menu.filter((m) => m.available !== false || qty[m.id] > 0);
   const [submitted, setSubmitted] = useState(false);
   const [showSuggest, setShowSuggest] = useState(false);
   const scrollRef = useRef(null);
@@ -82,7 +86,7 @@ export default function NewOrderSheet({ type, order, customers = [], onSubmit, o
   const change = (id, delta) => setQty((q) => ({ ...q, [id]: Math.max(0, (q[id] ?? 0) + delta) }));
 
   const items = [
-    ...MENU.filter((m) => qty[m.id] > 0).map((m) => ({ name: m.name, price: m.price, qty: qty[m.id] })),
+    ...menu.filter((m) => qty[m.id] > 0).map((m) => ({ name: m.name, price: priceOf(m), qty: qty[m.id] })),
     ...extraItems,
   ];
   const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
@@ -193,13 +197,18 @@ export default function NewOrderSheet({ type, order, customers = [], onSubmit, o
             </p>
             {errors.items && <p className="text-sm text-red-600">{errors.items}</p>}
             <ul className="divide-y divide-slate-100">
-              {MENU.map((m) => {
+              {choices.length === 0 && (
+                <li className="py-4 text-center text-sm text-slate-400">
+                  Chưa có món nào. Thêm món ở tab "Quản lý món ăn".
+                </li>
+              )}
+              {choices.map((m) => {
                 const n = qty[m.id] ?? 0;
                 return (
                   <li key={m.id} className="flex items-center gap-3 py-3">
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-slate-900">{m.name}</p>
-                      <p className="text-sm text-slate-500">{formatMoney(m.price)}</p>
+                      <p className="text-sm text-slate-500">{formatMoney(priceOf(m))}</p>
                     </div>
                     {n > 0 && (
                       <>

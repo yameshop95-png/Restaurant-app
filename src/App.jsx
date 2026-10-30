@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import useCustomers from './hooks/useCustomers';
+import useMenu from './hooks/useMenu';
 import useOrders from './hooks/useOrders';
 import { HomePage, OrdersPage, DeliveryPage, CustomersPage, MenuPage, SettingsPage } from './pages';
 
@@ -21,6 +22,7 @@ export default function App() {
   const [activeStaff] = useState(4);
   const { orders, addOrder, updateOrder, setStatus, setPaid } = useOrders();
   const { customers, saveCustomer, importCustomers, updateCustomer, deleteCustomer } = useCustomers();
+  const { menu, addItem, updateItem, deleteItem, moveItem } = useMenu();
 
   // Tạo hoặc sửa đơn đều cập nhật luôn danh bạ khách hàng
   const createOrder = (order) => {
@@ -71,11 +73,16 @@ export default function App() {
             counts={counts}
             activeStaff={activeStaff}
             customers={customers}
+            menu={menu}
             onAddOrder={createOrder}
             onUpdateOrder={editOrder}
             onAddCustomer={saveCustomer}
             onUpdateCustomer={updateCustomer}
             onDeleteCustomer={deleteCustomer}
+            onAddMenuItem={addItem}
+            onUpdateMenuItem={updateItem}
+            onDeleteMenuItem={deleteItem}
+            onMoveMenuItem={moveItem}
             onImportCustomers={importCustomers}
             onSetStatus={setStatus}
             onSetPaid={setPaid}
