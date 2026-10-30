@@ -9,6 +9,7 @@ import {
   Pencil,
   Phone,
   Plus,
+  Printer,
   RotateCcw,
   Search,
   ShoppingBag,
@@ -24,6 +25,8 @@ import { normalizeText } from '../hooks/useCustomers';
 import { dueInfo, formatDue } from '../lib/due';
 import { exportOrderList } from '../lib/orderListExcel';
 import { ORDER_TYPES, PAYMENT_METHODS, paymentLabel, PREVIOUS_STATUS, statusLabel } from '../lib/orderStatus';
+import { printBill } from '../lib/printBill';
+import { DEFAULT_ZONES } from '../lib/shippingZones';
 import { mapsUrl, shareOrder } from '../lib/shareOrder';
 import { formatMoney, itemsTotal, orderTotal } from '../lib/stats';
 
@@ -113,6 +116,12 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
                 className="flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600 active:bg-slate-200"
               >
                 <Pencil size={14} /> Sửa đơn
+              </button>
+              <button
+                onClick={() => printBill(order)}
+                className="flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600 active:bg-slate-200"
+              >
+                <Printer size={14} /> In bill
               </button>
               {order.customer?.address && (
                 <button
@@ -365,6 +374,7 @@ export default function OrdersPage({
   settings,
 }) {
   const [chosenType, setChosenType] = useState('pickup');
+  const zones = settings.shippingZones ?? DEFAULT_ZONES;
   const type = fixedType ?? chosenType;
   const [filter, setFilter] = useState('pending');
   const [exportMsg, setExportMsg] = useState(null);
@@ -559,7 +569,17 @@ export default function OrdersPage({
         <Plus size={20} /> Tạo đơn
       </button>
 
-      {creating && <NewOrderSheet type={type} menu={menu} customers={customers} orders={orders} onSubmit={onAddOrder} onClose={() => setCreating(false)} />}
+      {creating && (
+        <NewOrderSheet
+          type={type}
+          menu={menu}
+          customers={customers}
+          orders={orders}
+          zones={zones}
+          onSubmit={onAddOrder}
+          onClose={() => setCreating(false)}
+        />
+      )}
       {editing && (
         <NewOrderSheet
           type={type}
@@ -567,6 +587,7 @@ export default function OrdersPage({
           menu={menu}
           customers={customers}
           orders={orders}
+          zones={zones}
           onSubmit={(data) => onUpdateOrder(editing.id, data)}
           onClose={() => setEditing(null)}
         />

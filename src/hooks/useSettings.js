@@ -6,13 +6,14 @@ import { supabase } from '../lib/supabase';
 // Tuỳ chọn riêng từng máy (âm báo, ứng dụng bản đồ, lần sao lưu gần nhất) lưu trong localStorage của máy đó.
 const STORAGE_KEY = 'restaurant-app.settings';
 
-export const SHOP_KEYS = ['shopName', 'shopPhone', 'shopAddress', 'logo'];
+export const SHOP_KEYS = ['shopName', 'shopPhone', 'shopAddress', 'logo', 'shippingZones'];
 
 const SHOP_DEFAULTS = {
   shopName: '',
   shopPhone: '',
   shopAddress: '', // điểm xuất phát lộ trình giao khi không lấy được GPS
   logo: null, // ảnh dạng data URL, đã thu nhỏ
+  shippingZones: null, // null: dùng DEFAULT_ZONES trong lib/shippingZones
 };
 
 const DEVICE_DEFAULTS = {

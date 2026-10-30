@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { History, MapPin, Minus, Phone, Plus, UserRound, X } from 'lucide-react';
 import { sameCustomer, searchCustomers } from '../hooks/useCustomers';
 import { ORDER_TYPES } from '../lib/orderStatus';
+import { DEFAULT_ZONES, matchZone } from '../lib/shippingZones';
 import { formatMoney } from '../lib/stats';
 
 const TITLE = { pickup: 'Tạo đơn đến lấy', delivery: 'Tạo đơn giao hàng' };
@@ -91,7 +92,7 @@ const inputClass = (error) =>
   }`;
 
 // Truyền `order` để sửa đơn đã tạo; không truyền là tạo đơn mới.
-export default function NewOrderSheet({ type, order, menu, customers = [], orders = [], onSubmit, onClose }) {
+export default function NewOrderSheet({ type, order, menu, customers = [], orders = [], zones = DEFAULT_ZONES, onSubmit, onClose }) {
   const isDelivery = type === 'delivery';
   const typeInfo = ORDER_TYPES[isDelivery ? 'delivery' : 'pickup'];
   const [form, setForm] = useState(() => initialForm(order));
@@ -118,6 +119,18 @@ export default function NewOrderSheet({ type, order, menu, customers = [], order
   const [submitted, setSubmitted] = useState(false);
   const [showSuggest, setShowSuggest] = useState(false);
   const scrollRef = useRef(null);
+
+  // Phí ship tự tính theo vùng của địa chỉ, cho tới khi người dùng tự gõ phí khác.
+  // Sửa đơn cũ: giữ phí đã lưu, chỉ tính lại khi đổi địa chỉ.
+  const zone = isDelivery ? matchZone(form.address, zones) : null;
+  const [feeAuto, setFeeAuto] = useState(() => !order || !order.shippingFee);
+  const firstZone = useRef(zone?.id);
+  useEffect(() => {
+    if (!isDelivery || !feeAuto) return;
+    if (order && zone?.id === firstZone.current) return;
+    setForm((f) => ({ ...f, shippingFee: zone ? String(zone.fee) : '' }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zone?.id, zone?.fee, feeAuto]);
 
   const suggestions = showSuggest ? searchCustomers(customers, form.name) : [];
   const pickCustomer = (c) => {
@@ -148,7 +161,8 @@ export default function NewOrderSheet({ type, order, menu, customers = [], order
     }
     setQty(nextQty);
     setItemNotes(nextNotes);
-    if (isDelivery && lastOrder.shippingFee) setForm((f) => ({ ...f, shippingFee: String(lastOrder.shippingFee) }));
+    // Phí ship lấy theo vùng nếu nhận ra địa chỉ, không thì lấy phí lần trước
+    if (isDelivery && lastOrder.shippingFee && !zone) setForm((f) => ({ ...f, shippingFee: String(lastOrder.shippingFee) }));
     setReorderMsg(skipped.length ? `Không thêm được (đã hết hoặc bỏ khỏi thực đơn): ${skipped.join(', ')}` : 'Đã chọn lại các món của lần trước');
   };
 
@@ -359,10 +373,35 @@ export default function NewOrderSheet({ type, order, menu, customers = [], order
                 <input
                   inputMode="decimal"
                   value={form.shippingFee}
-                  onChange={set('shippingFee')}
+                  onChange={(e) => {
+                    setFeeAuto(false);
+                    set('shippingFee')(e);
+                  }}
                   placeholder="0"
                   className={inputClass(errors.shippingFee)}
                 />
+                <span className="mt-1 block text-xs text-slate-500">
+                  {zone
+                    ? parseMoney(form.shippingFee) === zone.fee
+                      ? `Vùng ${zone.name}${feeAuto ? ': tự tính' : ''}`
+                      : `Vùng ${zone.name} là ${formatMoney(zone.fee)}`
+                    : form.address.trim()
+                      ? 'Không nhận ra vùng, nhập phí tay'
+                      : 'Tự tính khi nhập địa chỉ'}
+                </span>
+                {zone && parseMoney(form.shippingFee) !== zone.fee && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setFeeAuto(true);
+                      setForm((f) => ({ ...f, shippingFee: String(zone.fee) }));
+                    }}
+                    className="text-xs font-semibold text-blue-600"
+                  >
+                    Dùng phí vùng
+                  </button>
+                )}
               </Field>
             )}
             <Field label="Giảm giá (A$)" error={errors.discount} required={false}>

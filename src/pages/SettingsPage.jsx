@@ -20,6 +20,7 @@ import { exportMenu, importMenuFile } from '../lib/menuExcel';
 import { alertBeep } from '../lib/due';
 import { exportOrders, importOrdersFile } from '../lib/orderExcel';
 import { AccountCard, MoveLocalData, StaffManager } from '../components/StaffSettings';
+import ShippingZonesSettings from '../components/ShippingZonesSettings';
 
 // Một khối "Tải file Excel / Nhập từ Excel". `onExport` và `onImport` trả về câu thông báo khi xong.
 function BackupSection({ icon: Icon, title, countText, description, exportLabel, canExport, onExport, onImport }) {
@@ -388,6 +389,7 @@ export default function SettingsPage({
         />
       )}
       {isOwner && <ShopInfo settings={settings} onUpdateSettings={onUpdateSettings} />}
+      {isOwner && <ShippingZonesSettings settings={settings} onUpdateSettings={onUpdateSettings} />}
       {isOwner && <StaffManager account={account} />}
       <InstallApp />
       <MapsSettings settings={settings} onUpdateSettings={onUpdateSettings} />
