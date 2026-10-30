@@ -43,7 +43,7 @@ export default function TopBar({ activeTab, pendingTotal, onMenuClick, onBellCli
   const current = NAV_ITEMS.find((item) => item.id === activeTab);
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur sm:px-6">
+    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-card px-4 backdrop-blur sm:px-6">
       <button
         onClick={onMenuClick}
         className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
@@ -65,7 +65,7 @@ export default function TopBar({ activeTab, pendingTotal, onMenuClick, onBellCli
       >
         <Bell size={22} />
         {pendingTotal > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white ring-2 ring-white">
+          <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white ring-2 ring-card">
             {pendingTotal > 99 ? '99+' : pendingTotal}
           </span>
         )}

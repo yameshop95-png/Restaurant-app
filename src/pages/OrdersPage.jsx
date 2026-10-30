@@ -87,7 +87,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
   };
 
   return (
-    <li className={`rounded-3xl border border-white/80 bg-white/80 p-4 shadow-sm ${due ? DUE_STYLE[due.level].card : ''}`}>
+    <li className={`rounded-3xl border border-slate-200 bg-card p-4 shadow-sm ${due ? DUE_STYLE[due.level].card : ''}`}>
       {due && (
         <p className={`-mx-1 -mt-1 mb-3 flex items-center gap-2 rounded-2xl px-3 py-2 font-bold ${DUE_STYLE[due.level].banner}`}>
           <AlarmClock size={18} className="shrink-0" /> {formatDue(due)}
@@ -414,13 +414,13 @@ export default function OrdersPage({
                   setView('list');
                 }}
                 className={`flex items-center justify-center gap-2 rounded-2xl py-3 font-bold shadow-sm ${
-                  active ? 'bg-orange-500 text-white' : 'bg-white text-slate-700'
+                  active ? 'bg-orange-500 text-white' : 'bg-card text-slate-700'
                 }`}
               >
                 {id === 'delivery' ? <Truck size={18} /> : <ShoppingBag size={18} />} {info.label}
                 {waiting > 0 && (
                   <span
-                    className={`rounded-full px-2 text-xs ${active ? 'bg-white text-orange-600' : 'bg-red-500 text-white'}`}
+                    className={`rounded-full px-2 text-xs ${active ? 'bg-card text-orange-600' : 'bg-red-500 text-white'}`}
                   >
                     {waiting}
                   </span>
@@ -432,7 +432,7 @@ export default function OrdersPage({
       )}
 
       {type === 'delivery' && (
-        <div className="mb-3 flex rounded-2xl bg-white p-1 shadow-sm">
+        <div className="mb-3 flex rounded-2xl bg-card p-1 shadow-sm">
           {[
             ['list', 'Danh sách'],
             ['route', 'Lộ trình giao'],
@@ -440,7 +440,7 @@ export default function OrdersPage({
             <button
               key={id}
               onClick={() => setView(id)}
-              className={`flex-1 rounded-xl py-2 text-sm font-semibold ${view === id ? 'bg-slate-900 text-white' : 'text-slate-600'}`}
+              className={`flex-1 rounded-xl py-2 text-sm font-semibold ${view === id ? 'bg-slate-900 text-slate-50' : 'text-slate-600'}`}
             >
               {label}
             </button>
@@ -460,7 +460,7 @@ export default function OrdersPage({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Tìm tên, SĐT, số đơn, món…"
-                className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-2xl border border-slate-200 bg-card py-2.5 pl-10 pr-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </div>
             <input
@@ -468,7 +468,7 @@ export default function OrdersPage({
               value={date}
               onChange={(e) => setDate(e.target.value)}
               aria-label="Lọc theo ngày"
-              className={`w-36 shrink-0 rounded-2xl border bg-white px-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 ${
+              className={`w-36 shrink-0 rounded-2xl border bg-card px-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 ${
                 date ? 'border-blue-500 text-slate-900' : 'border-slate-200 text-slate-400'
               }`}
             />
@@ -499,7 +499,7 @@ export default function OrdersPage({
                   key={f.id}
                   onClick={() => setFilter(f.id)}
                   className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    active ? 'bg-slate-900 text-white' : 'bg-white text-slate-600'
+                    active ? 'bg-slate-900 text-slate-50' : 'bg-card text-slate-600'
                   }`}
                 >
                   {filterLabel(f)} <span className={active ? 'text-slate-300' : 'text-slate-400'}>{n}</span>
@@ -528,7 +528,7 @@ export default function OrdersPage({
           )}
 
           {visible.length === 0 ? (
-            <p className="rounded-3xl bg-white/60 px-5 py-12 text-center text-slate-400">
+            <p className="rounded-3xl bg-card px-5 py-12 text-center text-slate-400">
               {searching ? 'Không tìm thấy đơn nào' : filter === 'pending' ? 'Không có đơn nào đang chờ' : 'Chưa có đơn'}
             </p>
           ) : (

@@ -30,7 +30,7 @@ const PAGES = {
 export default function App() {
   const auth = useAuth();
   if (auth.status === 'loading') {
-    return <div className="flex min-h-screen items-center justify-center bg-slate-900 text-slate-400">Đang mở…</div>;
+    return <div className="flex min-h-screen items-center justify-center bg-page text-slate-500">Đang mở…</div>;
   }
   if (auth.status !== 'signedIn') {
     return <PinLogin onLogin={auth.login} offlineError={auth.status === 'offline' ? auth.error : null} onRetry={auth.retry} />;
@@ -146,7 +146,7 @@ function Shop({ account, onLogout }) {
 
         <main className="mx-auto max-w-7xl p-4 pb-28 sm:p-6 sm:pb-28 lg:pb-6">
           {!ordersReady && (
-            <p className="mx-auto mb-4 max-w-2xl rounded-2xl bg-white/80 px-4 py-3 text-center text-sm text-slate-500">
+            <p className="mx-auto mb-4 max-w-2xl rounded-2xl bg-card px-4 py-3 text-center text-sm text-slate-500">
               {loadError ? `Chưa tải được dữ liệu: ${loadError}. Đang thử lại…` : 'Đang tải dữ liệu…'}
             </p>
           )}

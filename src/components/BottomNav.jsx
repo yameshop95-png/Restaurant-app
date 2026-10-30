@@ -16,7 +16,7 @@ export default function BottomNav({ activeTab, counts, onTabChange, onMore }) {
     }`;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-card pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
       <div className="mx-auto flex max-w-lg">
         {TABS.map(({ id, label, icon: Icon, badgeKey }) => {
           const active = activeTab === id;
@@ -28,7 +28,7 @@ export default function BottomNav({ activeTab, counts, onTabChange, onMore }) {
               </span>
               {label}
               {count > 0 && (
-                <span className="absolute left-1/2 top-1 ml-2 min-w-5 rounded-full bg-red-500 px-1 text-center text-[10px] font-bold leading-5 text-white ring-2 ring-white">
+                <span className="absolute left-1/2 top-1 ml-2 min-w-5 rounded-full bg-red-500 px-1 text-center text-[10px] font-bold leading-5 text-white ring-2 ring-card">
                   {count > 99 ? '99+' : count}
                 </span>
               )}

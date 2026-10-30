@@ -87,14 +87,14 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
   };
 
   if (!active.length) {
-    return <p className="rounded-3xl bg-white/60 px-5 py-12 text-center text-slate-400">Không có đơn ship nào cần giao</p>;
+    return <p className="rounded-3xl bg-card px-5 py-12 text-center text-slate-400">Không có đơn ship nào cần giao</p>;
   }
 
   const working = state.status === 'working';
 
   return (
     <div className="space-y-4">
-      <section className="space-y-3 rounded-3xl border border-white/80 bg-white/80 p-4 shadow-sm">
+      <section className="space-y-3 rounded-3xl border border-slate-200 bg-card p-4 shadow-sm">
         <p className="text-sm text-slate-600">
           Thứ tự giao: <b>giờ sớm trước</b> (theo khung giờ) → <b>giao hết từng vùng</b> → <b>điểm gần trước, xa sau</b>.
         </p>
@@ -104,7 +104,7 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
             <button
               key={m}
               onClick={() => setSlotMinutes(m)}
-              className={`rounded-full px-3 py-1 font-semibold ${slotMinutes === m ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}
+              className={`rounded-full px-3 py-1 font-semibold ${slotMinutes === m ? 'bg-slate-900 text-slate-50' : 'bg-slate-100 text-slate-600'}`}
             >
               {m} phút
             </button>
@@ -160,7 +160,7 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
       </section>
 
       {plan.slots.map((slot) => (
-        <section key={slot.label} className="overflow-hidden rounded-3xl border border-white/80 bg-white/80 shadow-sm">
+        <section key={slot.label} className="overflow-hidden rounded-3xl border border-slate-200 bg-card shadow-sm">
           <h2
             className={`flex items-center gap-2 px-5 py-3 font-bold ${slot.overdue ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-800'}`}
           >

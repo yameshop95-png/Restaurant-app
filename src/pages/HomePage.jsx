@@ -7,7 +7,7 @@ import { dailyCollection, formatDate, formatDay, formatMoney, summarize } from '
 function Card({ title, children, className = '' }) {
   return (
     <section
-      className={`overflow-hidden rounded-3xl border border-white/80 bg-white/70 shadow-sm backdrop-blur ${className}`}
+      className={`overflow-hidden rounded-3xl border border-slate-200 bg-card shadow-sm backdrop-blur ${className}`}
     >
       {title && <h2 className="px-5 pt-4 text-[15px] text-slate-500">{title}</h2>}
       {children}
@@ -163,14 +163,14 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow }
             </Card>
             <section
               className={`rounded-3xl px-5 pb-4 pt-4 shadow-sm ${
-                stats.weekUnpaid.count ? 'bg-red-500 text-white shadow-red-500/30' : 'bg-white/70 text-slate-500'
+                stats.weekUnpaid.count ? 'bg-red-500 text-white shadow-red-500/30' : 'bg-card text-slate-500'
               }`}
             >
-              <h2 className={`text-[15px] ${stats.weekUnpaid.count ? 'font-semibold text-red-50' : ''}`}>Chưa thanh toán</h2>
+              <h2 className={`text-[15px] ${stats.weekUnpaid.count ? 'font-semibold text-white/85' : ''}`}>Chưa thanh toán</h2>
               <p className={`mt-1 text-2xl font-bold tracking-tight ${stats.weekUnpaid.count ? '' : 'text-slate-900'}`}>
                 {formatMoney(stats.weekUnpaid.total)}
               </p>
-              <p className={`text-sm ${stats.weekUnpaid.count ? 'text-red-50' : ''}`}>{stats.weekUnpaid.count} đơn</p>
+              <p className={`text-sm ${stats.weekUnpaid.count ? 'text-white/85' : ''}`}>{stats.weekUnpaid.count} đơn</p>
             </section>
           </div>
           {stats.olderUnpaid.count > 0 && (
@@ -179,10 +179,10 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow }
             </p>
           )}
 
-          <section className="rounded-3xl bg-slate-900 px-5 pb-5 pt-4 text-white shadow-lg shadow-slate-900/20">
-            <h2 className="text-[15px] text-slate-300">Tiền tuần này</h2>
+          <section className="rounded-3xl border border-gold/40 bg-card px-5 pb-5 pt-4 text-white">
+            <h2 className="text-[15px] text-slate-500">Tiền tuần này</h2>
             <div className="mt-1 flex items-end justify-between gap-3">
-              <p className="text-4xl font-bold tracking-tight sm:text-5xl">{formatMoney(stats.weekRevenue)}</p>
+              <p className="text-4xl font-bold tracking-tight text-gold sm:text-5xl">{formatMoney(stats.weekRevenue)}</p>
               <span className="shrink-0 rounded-full bg-orange-500 px-4 py-1.5 font-semibold text-white">
                 {stats.weekOrderCount} đơn
               </span>

@@ -36,8 +36,8 @@ function CustomerSheet({ customer, canDelete, onSave, onDelete, onClose }) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 sm:items-center sm:p-4">
-      <div className="w-full rounded-t-3xl bg-white pb-[env(safe-area-inset-bottom)] sm:max-w-lg sm:rounded-3xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4">
+      <div className="w-full rounded-t-3xl bg-card pb-[env(safe-area-inset-bottom)] sm:max-w-lg sm:rounded-3xl">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h2 className="text-lg font-bold text-slate-900">{customer ? 'Sửa khách hàng' : 'Thêm khách hàng'}</h2>
           <button onClick={onClose} className="rounded-full p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Đóng">
@@ -127,7 +127,7 @@ export default function CustomersPage({ customers, orders, isOwner, onAddCustome
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={`Tìm trong ${customers.length} khách (tên, SĐT, địa chỉ)`}
-          className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          className="w-full rounded-2xl border border-slate-200 bg-card py-3 pl-11 pr-4 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
         />
       </div>
 
@@ -149,11 +149,11 @@ export default function CustomersPage({ customers, orders, isOwner, onAddCustome
       )}
 
       {visible.length === 0 ? (
-        <p className="rounded-3xl bg-white/60 px-5 py-12 text-center text-slate-400">
+        <p className="rounded-3xl bg-card px-5 py-12 text-center text-slate-400">
           {customers.length ? 'Không tìm thấy khách nào' : 'Chưa có khách hàng. Khách sẽ tự được lưu khi tạo đơn.'}
         </p>
       ) : (
-        <ul className="divide-y divide-slate-100 overflow-hidden rounded-3xl border border-white/80 bg-white/80 shadow-sm">
+        <ul className="divide-y divide-slate-100 overflow-hidden rounded-3xl border border-slate-200 bg-card shadow-sm">
           {visible.map((c) => {
             const s = statsById.get(c.id);
             return (

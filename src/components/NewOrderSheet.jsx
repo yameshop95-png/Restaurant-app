@@ -199,8 +199,8 @@ export default function NewOrderSheet({ type, order, menu, customers = [], order
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 sm:items-center sm:p-4">
-      <div className="flex max-h-[95vh] w-full flex-col rounded-t-3xl bg-white sm:max-w-lg sm:rounded-3xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4">
+      <div className="flex max-h-[95vh] w-full flex-col rounded-t-3xl bg-card sm:max-w-lg sm:rounded-3xl">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h2 className="text-lg font-bold text-slate-900">{order ? `Sửa đơn #${order.number}` : TITLE[type]}</h2>
           <button onClick={onClose} className="rounded-full p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Đóng">
@@ -225,7 +225,7 @@ export default function NewOrderSheet({ type, order, menu, customers = [], order
                 className={inputClass(errors.name)}
               />
               {suggestions.length > 0 && (
-                <ul className="absolute inset-x-0 top-full z-10 mt-1 max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                <ul className="absolute inset-x-0 top-full z-10 mt-1 max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-card shadow-lg">
                   {suggestions.map((c) => (
                     <li key={`${c.phone}|${c.name}`}>
                       <button

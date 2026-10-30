@@ -12,11 +12,11 @@ import { buildReport, PERIODS, reportForAI, shiftPeriod } from '../lib/report';
 import { formatMoney } from '../lib/stats';
 
 const ACCESS_CODE_KEY = 'restaurant-app.ai-code';
-const SERIES = '#2a78d6'; // màu chuỗi dữ liệu duy nhất của biểu đồ
+const SERIES = '#ff5722'; // màu chuỗi dữ liệu duy nhất của biểu đồ (cam chính của quán)
 
 function Card({ title, right, children }) {
   return (
-    <section className="overflow-hidden rounded-3xl border border-white/80 bg-white/80 shadow-sm">
+    <section className="overflow-hidden rounded-3xl border border-slate-200 bg-card shadow-sm">
       {title && (
         <div className="flex items-center justify-between gap-2 px-5 pt-4">
           <h2 className="font-bold text-slate-900">{title}</h2>
@@ -258,7 +258,7 @@ export default function ReportPage({ orders, menu }) {
   return (
     <div className="mx-auto max-w-2xl space-y-4 pb-8">
       {/* Chọn kỳ */}
-      <div className="flex rounded-2xl bg-white p-1 shadow-sm">
+      <div className="flex rounded-2xl bg-card p-1 shadow-sm">
         {Object.entries(PERIODS).map(([k, label]) => (
           <button
             key={k}
@@ -266,7 +266,7 @@ export default function ReportPage({ orders, menu }) {
               setKind(k);
               setAnchor(new Date());
             }}
-            className={`flex-1 rounded-xl py-2 text-sm font-semibold ${kind === k ? 'bg-slate-900 text-white' : 'text-slate-600'}`}
+            className={`flex-1 rounded-xl py-2 text-sm font-semibold ${kind === k ? 'bg-slate-900 text-slate-50' : 'text-slate-600'}`}
           >
             {label}
           </button>
@@ -275,7 +275,7 @@ export default function ReportPage({ orders, menu }) {
       <div className="flex items-center justify-between">
         <button
           onClick={() => setAnchor((a) => shiftPeriod(kind, a, -1))}
-          className="rounded-full bg-white p-2 text-slate-600 shadow-sm active:bg-slate-100"
+          className="rounded-full bg-card p-2 text-slate-600 shadow-sm active:bg-slate-100"
           aria-label="Kỳ trước"
         >
           <ChevronLeft size={20} />
@@ -287,7 +287,7 @@ export default function ReportPage({ orders, menu }) {
         <button
           onClick={() => setAnchor((a) => shiftPeriod(kind, a, 1))}
           disabled={atCurrent}
-          className="rounded-full bg-white p-2 text-slate-600 shadow-sm active:bg-slate-100 disabled:opacity-30"
+          className="rounded-full bg-card p-2 text-slate-600 shadow-sm active:bg-slate-100 disabled:opacity-30"
           aria-label="Kỳ sau"
         >
           <ChevronRight size={20} />

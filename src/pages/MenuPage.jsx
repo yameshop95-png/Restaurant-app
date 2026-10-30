@@ -29,8 +29,8 @@ function MenuItemSheet({ item, menu, onSave, onDelete, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 sm:items-center sm:p-4">
-      <div className="w-full rounded-t-3xl bg-white pb-[env(safe-area-inset-bottom)] sm:max-w-lg sm:rounded-3xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4">
+      <div className="w-full rounded-t-3xl bg-card pb-[env(safe-area-inset-bottom)] sm:max-w-lg sm:rounded-3xl">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h2 className="text-lg font-bold text-slate-900">{item ? 'Sửa món' : 'Thêm món'}</h2>
           <button onClick={onClose} className="rounded-full p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Đóng">
@@ -108,9 +108,9 @@ export default function MenuPage({ menu, isOwner, onAddMenuItem, onUpdateMenuIte
       </p>
 
       {menu.length === 0 ? (
-        <p className="rounded-3xl bg-white/60 px-5 py-12 text-center text-slate-400">Chưa có món nào</p>
+        <p className="rounded-3xl bg-card px-5 py-12 text-center text-slate-400">Chưa có món nào</p>
       ) : (
-        <ul className="divide-y divide-slate-100 overflow-hidden rounded-3xl border border-white/80 bg-white/80 shadow-sm">
+        <ul className="divide-y divide-slate-100 overflow-hidden rounded-3xl border border-slate-200 bg-card shadow-sm">
           {menu.map((m, i) => {
             const available = m.available !== false;
             return (

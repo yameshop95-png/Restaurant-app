@@ -45,7 +45,7 @@ export default function PinLogin({ onLogin, offlineError, onRetry }) {
   });
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-900 px-6 py-10 text-white">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-page px-6 py-10 text-white">
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500">
         <ChefHat size={34} />
       </div>
@@ -56,7 +56,7 @@ export default function PinLogin({ onLogin, offlineError, onRetry }) {
         {[0, 1, 2, 3].map((i) => (
           <span
             key={i}
-            className={`h-4 w-4 rounded-full ${i < pin.length ? 'bg-orange-400' : 'bg-slate-700'} ${error ? 'bg-red-500' : ''}`}
+            className={`h-4 w-4 rounded-full ${i < pin.length ? 'bg-orange-500' : 'bg-slate-300'} ${error ? 'bg-red-500' : ''}`}
           />
         ))}
       </div>
@@ -88,7 +88,7 @@ export default function PinLogin({ onLogin, offlineError, onRetry }) {
               onClick={() => press(key)}
               disabled={busy}
               aria-label={key === 'del' ? 'Xoá số' : key}
-              className="flex h-16 items-center justify-center rounded-2xl bg-slate-800 text-2xl font-semibold active:bg-slate-700 disabled:opacity-50"
+              className="flex h-16 items-center justify-center rounded-2xl border border-slate-200 bg-card text-2xl font-semibold active:bg-slate-100 disabled:opacity-50"
             >
               {key === 'del' ? <Delete size={24} /> : key}
             </button>

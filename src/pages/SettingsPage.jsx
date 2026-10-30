@@ -46,7 +46,7 @@ function BackupSection({ icon: Icon, title, countText, description, exportLabel,
   };
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-white/80 bg-white/80 shadow-sm">
+    <section className="overflow-hidden rounded-3xl border border-slate-200 bg-card shadow-sm">
       <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
           <FileSpreadsheet size={22} />
@@ -133,7 +133,7 @@ function ShopInfo({ settings, onUpdateSettings }) {
   };
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-white/80 bg-white/80 shadow-sm">
+    <section className="overflow-hidden rounded-3xl border border-slate-200 bg-card shadow-sm">
       <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
           <Store size={22} />
@@ -229,7 +229,7 @@ function InstallApp() {
   };
 
   return (
-    <section className="rounded-3xl border border-white/80 bg-white/80 px-5 py-4 shadow-sm">
+    <section className="rounded-3xl border border-slate-200 bg-card px-5 py-4 shadow-sm">
       <div className="flex items-center gap-3">
         <img src="/pwa-192x192.png" alt="" className="h-10 w-10 shrink-0 rounded-xl" />
         <div>
@@ -282,7 +282,7 @@ function MapsSettings({ settings, onUpdateSettings }) {
     ['google', 'Google Maps', 'Cần cài app Google Maps'],
   ];
   return (
-    <section className="rounded-3xl border border-white/80 bg-white/80 px-5 py-4 shadow-sm">
+    <section className="rounded-3xl border border-slate-200 bg-card px-5 py-4 shadow-sm">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
           <MapIcon size={22} />
@@ -323,7 +323,7 @@ function MapsSettings({ settings, onUpdateSettings }) {
 
 function AlertSettings({ settings, onUpdateSettings }) {
   return (
-    <section className="flex items-center gap-3 rounded-3xl border border-white/80 bg-white/80 px-5 py-4 shadow-sm">
+    <section className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-card px-5 py-4 shadow-sm">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
         <Volume2 size={22} />
       </div>
@@ -342,7 +342,7 @@ function AlertSettings({ settings, onUpdateSettings }) {
         className={`relative h-8 w-14 shrink-0 rounded-full transition ${settings.dueSound ? 'bg-emerald-500' : 'bg-slate-300'}`}
       >
         <span
-          className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition-all ${settings.dueSound ? 'left-7' : 'left-1'}`}
+          className={`absolute top-1 h-6 w-6 rounded-full bg-card shadow transition-all ${settings.dueSound ? 'left-7' : 'left-1'}`}
         />
       </button>
     </section>
@@ -422,7 +422,7 @@ export default function SettingsPage({
         }}
       />
 
-      <details className="rounded-3xl bg-white/50 px-1 py-1">
+      <details className="rounded-3xl bg-card px-1 py-1">
         <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-600">
           Sao lưu / khôi phục từng phần
         </summary>
