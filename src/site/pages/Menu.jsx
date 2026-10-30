@@ -40,7 +40,7 @@ export default function Menu() {
       </header>
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         {groups.map((g) => (
-          <section key={g.id} id={g.id} className="scroll-mt-24 pt-16">
+          <section key={g.id} id={g.id} className="scroll-mt-32 pt-16">
             <h2 className="mb-8 font-serif text-3xl font-bold text-ink">{g.title}</h2>
             <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
               {g.items.map((d) => (

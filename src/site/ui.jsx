@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { Facebook, Mail, MapPin, Minus, Phone, Plus, ShoppingBag } from 'lucide-react';
 import { formatMoney } from '../lib/stats';
 import { TEXT as ORDER_TEXT } from '../order/i18n';
@@ -140,40 +140,54 @@ export function SectionTitle({ title, text, align = 'center', as: H = 'h2' }) {
   );
 }
 
-export function Logo({ size = 'h-11 w-11' }) {
+export function Logo({ size = 'h-11 w-11', text = 'text-lg sm:text-xl' }) {
   const { shop, t } = useSite();
   return (
-    <Link to={path()} className="flex min-w-0 items-center gap-2.5">
-      <img src={shop.logo || '/logo-round.svg'} alt="" className={`${size} shrink-0 rounded-full`} />
-      <span className="truncate text-lg font-bold tracking-tight text-ink sm:text-xl">
+    <Link to={path()} className="flex min-w-0 items-center gap-3">
+      <img
+        src={shop.logo || '/logo-round.svg'}
+        alt=""
+        className={`${size} shrink-0 rounded-full transition-all duration-300`}
+      />
+      <span className={`${text} font-bold leading-tight tracking-tight text-ink transition-all duration-300`}>
         {shop.shopName || t.defaultName}
       </span>
     </Link>
   );
 }
 
+// Thanh trên cùng: hàng 1 logo to + tên quán đầy đủ, hàng 2 các mục. Lướt xuống thì logo thu về cỡ thường.
 export function Nav() {
   const { t, lang, setLang, route } = useSite();
-  const item = (to, label, active, extra = '') => (
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setCompact(window.scrollY > 40);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  const item = (to, label, active) => (
     <Link
       to={to}
-      className={`py-2 text-base ${active ? 'font-semibold text-blue-500' : 'text-ink hover:text-blue-500'} ${extra}`}
+      className={`shrink-0 border-b-2 py-2.5 text-[15px] sm:text-base ${
+        active ? 'border-blue-500 font-semibold text-blue-500' : 'border-transparent text-ink hover:text-blue-500'
+      }`}
     >
       {label}
     </Link>
   );
   return (
-    <header className="sticky top-0 z-30 bg-page/95 pt-[env(safe-area-inset-top)] backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6 lg:py-5">
-        <Logo />
-        <nav className="ml-auto flex shrink-0 items-center gap-4 lg:gap-10">
-          {item(path('/menu'), t.nav.menu, route.name === 'menu' || route.name === 'dish')}
-          {item(path('/#delivery'), t.nav.delivery, false, 'hidden md:block')}
-          {BLOG_ENABLED &&
-            item(path('/blog'), t.nav.blog, route.name === 'blog' || route.name === 'post', 'hidden md:block')}
-          {item('#contact', t.nav.contact, false, 'hidden md:block')}
-        </nav>
-        <div className="flex shrink-0 items-center gap-2 lg:ml-6">
+    <header className="sticky top-0 z-30 bg-page/95 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(16,26,36,0.06)] backdrop-blur">
+      <div
+        className={`mx-auto flex max-w-6xl items-center gap-3 px-4 transition-all duration-300 sm:px-6 ${
+          compact ? 'py-2' : 'py-3 sm:py-4'
+        }`}
+      >
+        <Logo
+          size={compact ? 'h-11 w-11' : 'h-16 w-16 sm:h-24 sm:w-24'}
+          text={compact ? 'text-lg sm:text-xl' : 'text-[22px] sm:text-3xl'}
+        />
+        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           <button
             onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
             className="rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-500 hover:text-ink"
@@ -181,11 +195,30 @@ export function Nav() {
           >
             {lang === 'vi' ? 'EN' : 'VI'}
           </button>
-          <Link to={path('/checkout')} className="btn btn-accent px-5 py-3 text-base sm:px-7 sm:py-4 sm:text-lg">
+          <Link to={path('/checkout')} className="btn btn-accent hidden px-7 py-4 text-lg sm:inline-flex">
             {t.nav.order}
           </Link>
         </div>
       </div>
+      <nav className="mx-auto flex max-w-6xl items-center gap-5 overflow-x-auto px-4 sm:gap-10 sm:px-6">
+        {item(path('/menu'), t.nav.menu, route.name === 'menu' || route.name === 'dish')}
+        {item(
+          path('/#delivery'),
+          <>
+            <span className="sm:hidden">{t.nav.deliveryShort}</span>
+            <span className="hidden sm:inline">{t.nav.delivery}</span>
+          </>,
+          false,
+        )}
+        {BLOG_ENABLED && item(path('/blog'), t.nav.blog, route.name === 'blog' || route.name === 'post')}
+        {item('#contact', t.nav.contact, false)}
+        <Link
+          to={path('/checkout')}
+          className="btn btn-accent my-1.5 ml-auto shrink-0 px-4 py-2 text-[15px] shadow-none sm:hidden"
+        >
+          {t.nav.order}
+        </Link>
+      </nav>
     </header>
   );
 }
@@ -201,7 +234,7 @@ export function Footer() {
   const head = 'text-xs font-bold uppercase leading-10 tracking-wide text-ink';
   const link = 'block leading-10 text-slate-500 hover:text-ink';
   return (
-    <footer id="contact" className="scroll-mt-24 bg-page">
+    <footer id="contact" className="scroll-mt-32 bg-page">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 pt-14 sm:px-6 grid-cols-2 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
         <div className="col-span-2 md:col-span-1">
           <Logo size="h-12 w-12" />

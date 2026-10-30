@@ -71,7 +71,7 @@ export default function Home() {
       </section>
 
       {/* Đến lấy & giao hàng */}
-      <section id="delivery" className="relative scroll-mt-24 overflow-hidden">
+      <section id="delivery" className="relative scroll-mt-32 overflow-hidden">
         <Deco name="garlic" className="-left-16 -top-6 w-32 opacity-25 sm:left-0 sm:top-8 sm:w-56 sm:opacity-40" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-4 py-20 sm:px-6 md:grid-cols-2 md:py-28">
           <div>

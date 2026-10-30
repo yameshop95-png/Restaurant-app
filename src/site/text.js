@@ -1,7 +1,7 @@
 // Chữ trên các trang website (phần đặt món dùng ../order/i18n.js)
 export const SITE_TEXT = {
   en: {
-    nav: { menu: 'Menu', blog: 'Blog', order: 'Order now', delivery: 'Pickup & delivery', contact: 'Contact' },
+    nav: { menu: 'Menu', blog: 'Blog', order: 'Order now', delivery: 'Pickup & delivery', deliveryShort: 'Delivery', contact: 'Contact' },
     lang: 'Tiếng Việt',
     defaultName: 'Bánh Cuốn & Giò Chả',
     heroTitle: 'Bánh cuốn & giò chả in Albury–Wodonga',
@@ -80,7 +80,7 @@ export const SITE_TEXT = {
     photoSoon: 'Photo coming soon',
   },
   vi: {
-    nav: { menu: 'Thực đơn', blog: 'Blog', order: 'Đặt món', delivery: 'Lấy & giao hàng', contact: 'Liên hệ' },
+    nav: { menu: 'Thực đơn', blog: 'Blog', order: 'Đặt món', delivery: 'Lấy & giao hàng', deliveryShort: 'Giao hàng', contact: 'Liên hệ' },
     lang: 'English',
     defaultName: 'Bánh Cuốn & Giò Chả',
     heroTitle: 'Bánh cuốn & giò chả tại Albury–Wodonga',
