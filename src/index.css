@@ -1,11 +1,10 @@
 @import "tailwindcss";
 
-/* Phong cách "quán sushi cao cấp": nền kem như giấy washi, mực đen ấm cho chữ và nút chính,
+/* Nền kem như giấy washi, mực đen ấm cho chữ và nút chính,
    cá hồi cho điểm nhấn, xanh matcha cho "đã thanh toán", đỏ son cho cảnh báo.
    Đổi bảng màu gốc của Tailwind ở đây nên các trang không phải sửa tên class. */
 @theme {
   --font-sans: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Playfair Display', ui-serif, Georgia, serif;
 
   /* slate: các tông kem / nâu xám ấm */
   --color-slate-50: #faf7f2;
@@ -63,11 +62,5 @@
 @layer base {
   body {
     @apply bg-slate-100 text-slate-900 antialiased;
-  }
-  /* Tiêu đề dùng chữ có chân cho cảm giác sang */
-  h1,
-  h2 {
-    font-family: var(--font-display);
-    letter-spacing: -0.01em;
   }
 }

@@ -182,7 +182,7 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow }
           <section className="rounded-3xl bg-slate-900 px-5 pb-5 pt-4 text-white shadow-lg shadow-slate-900/20">
             <h2 className="text-[15px] text-slate-300">Tiền tuần này</h2>
             <div className="mt-1 flex items-end justify-between gap-3">
-              <p className="font-display text-4xl font-bold tracking-tight sm:text-5xl">{formatMoney(stats.weekRevenue)}</p>
+              <p className="text-4xl font-bold tracking-tight sm:text-5xl">{formatMoney(stats.weekRevenue)}</p>
               <span className="shrink-0 rounded-full bg-orange-500 px-4 py-1.5 font-semibold text-white">
                 {stats.weekOrderCount} đơn
               </span>
