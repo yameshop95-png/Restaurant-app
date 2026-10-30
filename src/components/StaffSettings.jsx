@@ -259,8 +259,14 @@ export function MoveLocalData({
           >
             <CloudUpload size={18} /> Chuyển lên máy chủ
           </button>
-          <button onClick={() => setVisible(false)} className="mt-2 w-full text-sm font-semibold text-blue-700">
-            Để sau
+          <button
+            onClick={() => {
+              markLocalDataMoved();
+              setVisible(false);
+            }}
+            className="mt-2 w-full text-sm font-semibold text-blue-700"
+          >
+            Không cần, ẩn đi
           </button>
         </>
       )}
