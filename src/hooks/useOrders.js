@@ -24,14 +24,17 @@ export default function useOrders() {
     }
   }, [orders]);
 
-  // Order: { id, number, type: 'dine-in' | 'delivery', note, items: [{ name, price, qty }],
-  //          status: 'pending' | 'done' | 'cancelled', createdAt }
-  const addOrder = ({ type, note, items }) =>
+  // Order: { id, number, type: 'dine-in' | 'delivery',
+  //          customer: { name, phone, address }, deliverAt (ISO), note,
+  //          items: [{ name, price, qty }], status: 'pending' | 'done' | 'cancelled', createdAt }
+  const addOrder = ({ type, customer, deliverAt, note, items }) =>
     setOrders((prev) => [
       {
         id: crypto.randomUUID?.() ?? String(Date.now()),
         number: prev.reduce((max, o) => Math.max(max, o.number), 0) + 1,
         type,
+        customer,
+        deliverAt,
         note: note.trim(),
         items,
         status: 'pending',

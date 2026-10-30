@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Clock, Plus, X } from 'lucide-react';
+import { Check, Clock, MapPin, Phone, Plus, StickyNote, Truck, X } from 'lucide-react';
 import NewOrderSheet from '../components/NewOrderSheet';
 import { formatMoney, orderTotal } from '../lib/stats';
 
@@ -15,11 +15,14 @@ const STATUS_BADGE = {
   cancelled: 'bg-slate-200 text-slate-500',
 };
 
-function formatTime(iso) {
+function formatTime(iso, withDay = false) {
   const d = new Date(iso);
   const time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-  const isToday = d.toDateString() === new Date().toDateString();
-  return isToday ? time : `${time} · ${d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}`;
+  const dayDiff = Math.round((new Date(d).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000);
+  const date = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+  if (dayDiff === 0) return withDay ? `${time} hôm nay` : time;
+  if (withDay && dayDiff === 1) return `${time} ngày mai (${date})`;
+  return `${time} · ${date}`;
 }
 
 function OrderCard({ order, onSetStatus }) {
@@ -30,16 +33,40 @@ function OrderCard({ order, onSetStatus }) {
         <div className="min-w-0">
           <p className="text-lg font-bold text-slate-900">
             #{order.number}
-            {order.note && <span className="font-semibold text-slate-600"> · {order.note}</span>}
+            {order.customer && <span> · {order.customer.name}</span>}
+            {/* Đơn tạo trước khi có form khách hàng chỉ có ghi chú ngắn */}
+            {!order.customer && order.note && <span className="font-semibold text-slate-600"> · {order.note}</span>}
           </p>
-          <p className="flex items-center gap-1 text-sm text-slate-500">
-            <Clock size={14} /> {formatTime(order.createdAt)}
+          <p className="flex items-center gap-1 text-xs text-slate-400">
+            <Clock size={12} /> Tạo lúc {formatTime(order.createdAt)}
           </p>
         </div>
         <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${STATUS_BADGE[order.status]}`}>
           {label}
         </span>
       </div>
+
+      {order.customer && (
+        <div className="mt-3 space-y-1.5 text-[15px] text-slate-700">
+          {order.deliverAt && (
+            <p className="flex items-center gap-2 font-semibold text-blue-700">
+              <Truck size={16} className="shrink-0" /> Giao {formatTime(order.deliverAt, true)}
+            </p>
+          )}
+          <a href={`tel:${order.customer.phone}`} className="flex items-center gap-2 text-slate-700 underline-offset-2 active:underline">
+            <Phone size={16} className="shrink-0 text-slate-400" /> {order.customer.phone}
+          </a>
+          <p className="flex items-start gap-2">
+            <MapPin size={16} className="mt-0.5 shrink-0 text-slate-400" /> {order.customer.address}
+          </p>
+        </div>
+      )}
+
+      {order.customer && order.note && (
+        <p className="mt-3 flex items-start gap-2 rounded-xl bg-red-50 px-3 py-2 font-semibold text-red-600">
+          <StickyNote size={16} className="mt-0.5 shrink-0" /> {order.note}
+        </p>
+      )}
 
       <ul className="mt-3 space-y-1 border-t border-slate-100 pt-3 text-[15px]">
         {order.items.map((item) => (
@@ -84,8 +111,11 @@ export default function OrdersPage({ type = 'dine-in', orders, onAddOrder, onSet
 
   const ofType = orders.filter((o) => o.type === type);
   const visible = ofType.filter((o) => o.status === filter);
-  // Đơn chờ: cũ nhất lên trước để làm theo thứ tự. Các mục khác: mới nhất lên trước.
-  if (filter === 'pending') visible.reverse();
+  // Đơn chờ: giờ giao sớm nhất lên trước. Các mục khác: mới tạo lên trước.
+  if (filter === 'pending') {
+    const due = (o) => new Date(o.deliverAt ?? o.createdAt).getTime();
+    visible.sort((a, b) => due(a) - due(b));
+  }
 
   return (
     <div className="mx-auto max-w-2xl pb-24">
