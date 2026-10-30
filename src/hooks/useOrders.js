@@ -27,8 +27,8 @@ export default function useOrders() {
   // Order: { id, number, type: 'dine-in' | 'delivery',
   //          customer: { name, phone, address }, deliverAt (ISO, chỉ đơn ship), table (chỉ đơn tại quán), note,
   //          shippingFee, discount (A$),
-  //          items: [{ name, price, qty }], status: 'pending' | 'done' | 'shipped' | 'cancelled',
-  //          paid: boolean, createdAt }
+  //          items: [{ name, price, qty, note? }], status: 'pending' | 'done' | 'shipped' | 'cancelled',
+  //          paid: boolean, paymentMethod: 'cash' | 'transfer' | 'payid' | null, paidAt (ISO), createdAt }
   const addOrder = ({ type, customer, deliverAt, table, note, items, shippingFee, discount }) =>
     setOrders((prev) => [
       {
@@ -44,6 +44,8 @@ export default function useOrders() {
         discount,
         status: 'pending',
         paid: false,
+        paymentMethod: null,
+        paidAt: null,
         createdAt: new Date().toISOString(),
       },
       ...prev,
@@ -52,8 +54,11 @@ export default function useOrders() {
   const setStatus = (id, status) =>
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
 
-  const setPaid = (id, paid) =>
-    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, paid } : o)));
+  // paidAt mặc định là lúc bấm; truyền vào khi cần khôi phục giá trị cũ (hoàn tác)
+  const setPaid = (id, paid, paymentMethod = null, paidAt = paid ? new Date().toISOString() : null) =>
+    setOrders((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, paid, paymentMethod: paid ? paymentMethod : null, paidAt } : o))
+    );
 
   // Sửa đơn đã tạo: thông tin khách, giờ giao, ghi chú, món. Giữ nguyên số đơn, trạng thái, thanh toán.
   const updateOrder = (id, { customer, deliverAt, table, note, items, shippingFee, discount }) =>

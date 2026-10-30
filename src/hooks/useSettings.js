@@ -35,6 +35,8 @@ export default function useSettings() {
 
   useEffect(() => {
     document.title = settings.shopName ? `${settings.shopName} – Nhận order` : 'Nhận order';
+    // Tên dưới icon khi iPhone "Thêm vào MH chính"
+    document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute('content', settings.shopName || 'Nhận order');
   }, [settings.shopName]);
 
   const updateSettings = (patch) => setSettings((s) => ({ ...s, ...patch }));

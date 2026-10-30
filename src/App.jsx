@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
+import UndoToast from './components/UndoToast';
 import useCustomers from './hooks/useCustomers';
 import useMenu from './hooks/useMenu';
 import useNow from './hooks/useNow';
@@ -8,6 +9,7 @@ import useOrders from './hooks/useOrders';
 import useSettings from './hooks/useSettings';
 import { exportAll } from './lib/backup';
 import { alertBeep, dueInfo, upcomingOrders } from './lib/due';
+import { paymentLabel, STATUS_LABEL } from './lib/orderStatus';
 import { HomePage, OrdersPage, DeliveryPage, ReportPage, CustomersPage, MenuPage, SettingsPage } from './pages';
 
 // Map id tab -> component hiển thị trong Main Content Area.
@@ -27,6 +29,25 @@ export default function App() {
   const { orders, addOrder, updateOrder, setStatus, setPaid, importOrders } = useOrders();
   const { customers, saveCustomer, importCustomers, updateCustomer, deleteCustomer } = useCustomers();
   const { menu, addItem, updateItem, deleteItem, moveItem, importMenu } = useMenu();
+
+  // Mọi thay đổi trạng thái / thanh toán đều có "Hoàn tác" trong vài giây, phòng bấm nhầm
+  const [toast, setToast] = useState(null);
+  const dismissToast = useCallback(() => setToast(null), []);
+  const changeStatus = (id, status) => {
+    const order = orders.find((o) => o.id === id);
+    if (!order) return;
+    const before = order.status;
+    setStatus(id, status);
+    setToast({ label: `Đơn #${order.number}: ${STATUS_LABEL[status]}`, undo: () => setStatus(id, before) });
+  };
+  const changePaid = (id, paid, method) => {
+    const order = orders.find((o) => o.id === id);
+    if (!order) return;
+    const { paid: wasPaid, paymentMethod, paidAt } = order;
+    setPaid(id, paid, method);
+    const what = paid ? `Đã thanh toán${method ? ` · ${paymentLabel(method)}` : ''}` : 'Chưa thanh toán';
+    setToast({ label: `Đơn #${order.number}: ${what}`, undo: () => setPaid(id, wasPaid, paymentMethod, paidAt) });
+  };
   const { settings, updateSettings } = useSettings();
   const now = useNow();
   const upcoming = upcomingOrders(orders, now, 60);
@@ -122,10 +143,18 @@ export default function App() {
             onImportMenu={importMenu}
             onImportOrders={importOrders}
             onImportCustomers={importCustomers}
-            onSetStatus={setStatus}
-            onSetPaid={setPaid}
+            onSetStatus={changeStatus}
+            onSetPaid={changePaid}
           />
         </main>
+        <UndoToast
+          toast={toast}
+          onUndo={() => {
+            toast.undo();
+            setToast(null);
+          }}
+          onDismiss={dismissToast}
+        />
       </div>
     </div>
   );

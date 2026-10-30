@@ -47,6 +47,27 @@ export function summarize(allOrders, now = new Date()) {
   };
 }
 
+// Chốt ca: tiền đã thu hôm nay theo từng cách thanh toán (theo lúc bấm "Đã thanh toán"),
+// và tiền còn phải thu của các đơn giao / tạo hôm nay.
+export function dailyCollection(allOrders, now = new Date()) {
+  const sameDay = (iso) => iso && new Date(iso).toDateString() === now.toDateString();
+  const orders = allOrders.filter((o) => o.status !== 'cancelled');
+  const paid = orders.filter((o) => o.paid && sameDay(o.paidAt));
+  const byMethod = (method) => {
+    const list = paid.filter((o) => (o.paymentMethod ?? null) === method);
+    return { total: list.reduce((sum, o) => sum + orderTotal(o), 0), count: list.length };
+  };
+  const unpaid = orders.filter((o) => !o.paid && sameDay(o.deliverAt ?? o.createdAt));
+  return {
+    cash: byMethod('cash'),
+    transfer: byMethod('transfer'),
+    payid: byMethod('payid'),
+    unknown: byMethod(null),
+    total: paid.reduce((sum, o) => sum + orderTotal(o), 0),
+    unpaid: { total: unpaid.reduce((sum, o) => sum + orderTotal(o), 0), count: unpaid.length },
+  };
+}
+
 export const formatMoney = (n) => `A$${n.toFixed(2)}`;
 
 export const formatDay = (d) => d.toLocaleDateString('vi-VN', { weekday: 'long' });

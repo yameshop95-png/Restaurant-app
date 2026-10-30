@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Archive, Loader2 } from 'lucide-react';
+import { Archive, Loader2, Send } from 'lucide-react';
 import { BACKUP_REMINDER_DAYS, daysSinceBackup } from '../lib/backup';
-import { formatDate, formatDay, formatMoney, summarize } from '../lib/stats';
+import { shareText } from '../lib/shareOrder';
+import { dailyCollection, formatDate, formatDay, formatMoney, summarize } from '../lib/stats';
 
 function Card({ title, children, className = '' }) {
   return (
@@ -61,6 +62,74 @@ function BackupReminder({ lastBackupAt, onBackupNow }) {
   );
 }
 
+const SHIFT_ROWS = [
+  ['cash', 'Tiền mặt', 'shipper / thu ngân đang giữ'],
+  ['transfer', 'Chuyển khoản', 'đối chiếu tài khoản ngân hàng'],
+  ['payid', 'PayID', 'đối chiếu tài khoản ngân hàng'],
+  ['unknown', 'Chưa ghi cách trả', null],
+];
+
+function ShiftClose({ orders, now, shopName }) {
+  const day = dailyCollection(orders, now);
+  const [msg, setMsg] = useState(null);
+  const rows = SHIFT_ROWS.filter(([key]) => key !== 'unknown' || day.unknown.count);
+
+  const share = async () => {
+    const lines = [
+      `${shopName ? `[${shopName}] ` : ''}Chốt ca ${formatDate(now)}`,
+      ...rows.map(([key, label]) => `${label}: ${formatMoney(day[key].total)} (${day[key].count} đơn)`),
+      `Tổng đã thu: ${formatMoney(day.total)}`,
+      day.unpaid.count > 0 && `Còn phải thu: ${formatMoney(day.unpaid.total)} (${day.unpaid.count} đơn)`,
+    ];
+    try {
+      if ((await shareText(lines.filter(Boolean).join('\n'))) === 'copied') setMsg('Đã copy báo cáo chốt ca');
+    } catch {
+      setMsg('Không copy được, hãy thử lại');
+    }
+    setTimeout(() => setMsg(null), 4000);
+  };
+
+  return (
+    <Card title="Chốt ca hôm nay">
+      <ul className="mt-2 divide-y divide-slate-100 border-t border-slate-200">
+        {rows.map(([key, label, hint]) => (
+          <li key={key} className="flex items-center justify-between gap-3 px-5 py-2.5">
+            <span>
+              <span className="font-semibold text-slate-900">{label}</span>
+              {hint && <span className="block text-xs text-slate-400">{hint}</span>}
+            </span>
+            <span className="text-right">
+              <span className="block font-bold text-slate-900">{formatMoney(day[key].total)}</span>
+              <span className="text-xs text-slate-500">{day[key].count} đơn</span>
+            </span>
+          </li>
+        ))}
+        <li className="flex items-center justify-between px-5 py-2.5 font-bold">
+          <span className="text-slate-700">Tổng đã thu</span>
+          <span className="text-emerald-600">{formatMoney(day.total)}</span>
+        </li>
+        {day.unpaid.count > 0 && (
+          <li className="flex items-center justify-between px-5 py-2.5 font-bold text-red-600">
+            <span>Còn phải thu hôm nay</span>
+            <span>
+              {formatMoney(day.unpaid.total)} <span className="text-xs font-semibold">({day.unpaid.count} đơn)</span>
+            </span>
+          </li>
+        )}
+      </ul>
+      <div className="px-5 pb-4">
+        <button
+          onClick={share}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-100 py-2.5 text-sm font-semibold text-slate-700 active:bg-slate-200"
+        >
+          <Send size={16} /> Gửi báo cáo chốt ca
+        </button>
+        {msg && <p className="mt-2 text-center text-sm font-semibold text-blue-700">{msg}</p>}
+      </div>
+    </Card>
+  );
+}
+
 export default function HomePage({ orders, now, settings, onBackupNow }) {
   const stats = useMemo(() => summarize(orders, now), [orders, now]);
   const maxQty = stats.weekItems[0]?.qty ?? 0;
@@ -117,6 +186,8 @@ export default function HomePage({ orders, now, settings, onBackupNow }) {
           </span>
         </div>
       </Card>
+
+      <ShiftClose orders={orders} now={now} shopName={settings.shopName} />
 
       <Card title="Tổng cộng dồn">
         <div className="flex items-end justify-between px-5 pb-5 pt-1">

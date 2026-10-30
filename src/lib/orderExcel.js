@@ -1,6 +1,7 @@
 // Đơn hàng <-> sheet Excel "Đơn hàng".
 // Mỗi dòng là một món trong đơn; các dòng cùng "Mã đơn" thuộc cùng một đơn.
 import { boldHeader, pickSheet, readSheets, today, writeSheets } from './excelFile';
+import { PAYMENT_METHODS, paymentLabel, STATUS_LABEL } from './orderStatus';
 
 export const ORDER_SHEET = 'Đơn hàng';
 
@@ -11,6 +12,8 @@ const COLUMNS = [
   ['Loại', 10],
   ['Trạng thái', 12],
   ['Thanh toán', 15],
+  ['Cách thanh toán', 14],
+  ['Lúc thanh toán', 17],
   ['Tên khách', 22],
   ['SĐT', 15],
   ['Địa chỉ', 35],
@@ -20,13 +23,15 @@ const COLUMNS = [
   ['Phí ship', 9],
   ['Giảm giá', 9],
   ['Món', 22],
+  ['Ghi chú món', 22],
   ['Số lượng', 9],
   ['Đơn giá', 9],
   ['Thành tiền', 11],
 ];
 
 const TYPE_TEXT = { 'dine-in': 'Tại quán', delivery: 'Ship' };
-const STATUS_TEXT = { pending: 'Chờ xử lý', done: 'Hoàn thành', shipped: 'Đã ship', cancelled: 'Đã huỷ' };
+const STATUS_TEXT = STATUS_LABEL;
+const PAYMENT_KEY = Object.fromEntries(PAYMENT_METHODS.map((m) => [m.label.toLowerCase(), m.id]));
 const reverse = (map) => Object.fromEntries(Object.entries(map).map(([k, v]) => [v.toLowerCase(), k]));
 const TYPE_KEY = reverse(TYPE_TEXT);
 const STATUS_KEY = reverse(STATUS_TEXT);
@@ -57,6 +62,8 @@ export function ordersSheet(orders) {
         TYPE_TEXT[o.type] ?? o.type,
         STATUS_TEXT[o.status] ?? o.status,
         o.paid ? 'Đã thanh toán' : 'Chưa thanh toán',
+        paymentLabel(o.paymentMethod),
+        formatDateTime(o.paidAt),
         o.customer?.name ?? null,
         { value: o.customer?.phone || null, type: String },
         o.customer?.address ?? null,
@@ -67,6 +74,7 @@ export function ordersSheet(orders) {
         i === 0 && o.shippingFee ? { value: o.shippingFee, type: Number, format: '0.00' } : null,
         i === 0 && o.discount ? { value: o.discount, type: Number, format: '0.00' } : null,
         item.name,
+        item.note || null,
         item.qty,
         { value: item.price, type: Number, format: '0.00' },
         { value: item.qty * item.price, type: Number, format: '0.00' },
@@ -106,6 +114,8 @@ export function parseOrders(data) {
         type: TYPE_KEY[text(row, 'Loại').toLowerCase()] ?? 'dine-in',
         status: STATUS_KEY[text(row, 'Trạng thái').toLowerCase()] ?? 'pending',
         paid: text(row, 'Thanh toán').toLowerCase() === 'đã thanh toán',
+        paymentMethod: PAYMENT_KEY[text(row, 'Cách thanh toán').toLowerCase()] ?? null,
+        paidAt: parseDateTime(get(row, 'Lúc thanh toán')),
         customer: name ? { name, phone: text(row, 'SĐT'), address: text(row, 'Địa chỉ') } : null,
         deliverAt: parseDateTime(get(row, 'Giờ giao')),
         note: text(row, 'Ghi chú'),
@@ -119,6 +129,7 @@ export function parseOrders(data) {
       name: itemName,
       qty: Number(get(row, 'Số lượng')) || 1,
       price: Number(get(row, 'Đơn giá')) || 0,
+      ...(text(row, 'Ghi chú món') && { note: text(row, 'Ghi chú món') }),
     });
   }
   return [...byId.values()];

@@ -9,6 +9,7 @@ import {
   Pencil,
   Phone,
   Plus,
+  RotateCcw,
   Search,
   Send,
   StickyNote,
@@ -19,6 +20,7 @@ import NewOrderSheet from '../components/NewOrderSheet';
 import RoutePlanner from '../components/RoutePlanner';
 import { normalizeText } from '../hooks/useCustomers';
 import { dueInfo, formatDue } from '../lib/due';
+import { PAYMENT_METHODS, paymentLabel, PREVIOUS_STATUS } from '../lib/orderStatus';
 import { mapsUrl, shareOrder } from '../lib/shareOrder';
 import { formatMoney, itemsTotal, orderTotal } from '../lib/stats';
 
@@ -54,11 +56,20 @@ const DUE_STYLE = {
   soon: { card: 'ring-2 ring-orange-400', banner: 'bg-orange-100 text-orange-800' },
 };
 
+const BACK_LABEL = {
+  done: 'Chuyển về Chờ xử lý',
+  shipped: 'Chưa ship – chuyển về Hoàn thành',
+  cancelled: 'Khôi phục đơn (về Chờ xử lý)',
+};
+
 function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPaid }) {
   const status = STATUS[order.status];
   const cancelled = order.status === 'cancelled';
   const due = dueInfo(order, now);
   const [shareMsg, setShareMsg] = useState(null);
+  // Bấm "Đã thanh toán" thì hỏi khách trả bằng gì
+  const [choosingPay, setChoosingPay] = useState(false);
+  const askPayment = () => setChoosingPay(true);
 
   const share = async () => {
     try {
@@ -115,7 +126,9 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
                 order.paid ? 'bg-emerald-100 text-emerald-700' : 'bg-red-500 text-white'
               }`}
             >
-              {order.paid ? 'Đã thanh toán' : 'Chưa thanh toán'}
+              {order.paid
+                ? `Đã thanh toán${order.paymentMethod ? ` · ${paymentLabel(order.paymentMethod)}` : ''}`
+                : 'Chưa thanh toán'}
             </span>
           )}
         </div>
@@ -167,6 +180,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
           <li key={item.name} className="flex justify-between gap-3">
             <span className="text-slate-800">
               <span className="font-semibold">{item.qty} ×</span> {item.name}
+              {item.note && <span className="block text-sm font-semibold text-red-600">↳ {item.note}</span>}
             </span>
             <span className="text-slate-500">{formatMoney(item.qty * item.price)}</span>
           </li>
@@ -204,14 +218,37 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
           >
             <Truck size={18} /> Đã ship
           </button>
-          {!order.paid && (
+          {!order.paid && !choosingPay && (
             <button
-              onClick={() => onSetPaid(order.id, true)}
+              onClick={askPayment}
               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-500 py-3 font-semibold text-white active:bg-emerald-600"
             >
               <Banknote size={18} /> Đã thanh toán
             </button>
           )}
+        </div>
+      )}
+
+      {choosingPay && !order.paid && (
+        <div className="mt-3 rounded-2xl bg-emerald-50 p-3">
+          <p className="mb-2 text-sm font-semibold text-emerald-800">Khách trả bằng:</p>
+          <div className="grid grid-cols-3 gap-2">
+            {PAYMENT_METHODS.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => {
+                  setChoosingPay(false);
+                  onSetPaid(order.id, true, m.id);
+                }}
+                className="rounded-xl bg-emerald-500 py-2.5 text-sm font-semibold text-white active:bg-emerald-600"
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setChoosingPay(false)} className="mt-2 w-full text-sm text-slate-500">
+            Huỷ
+          </button>
         </div>
       )}
 
@@ -225,9 +262,10 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
             Bỏ đánh dấu đã thanh toán
           </button>
         ) : (
-          order.status !== 'done' && (
+          order.status !== 'done' &&
+          !choosingPay && (
             <button
-              onClick={() => onSetPaid(order.id, true)}
+              onClick={askPayment}
               className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-emerald-500 py-2.5 font-semibold text-emerald-600 active:bg-emerald-50"
             >
               <Banknote size={18} /> Đã thanh toán
@@ -251,6 +289,16 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
           </button>
         </div>
       )}
+
+      {/* Quay lại bước trước khi bấm nhầm (ngoài nút "Hoàn tác" hiện ngay sau khi bấm) */}
+      {PREVIOUS_STATUS[order.status] && (
+        <button
+          onClick={() => onSetStatus(order.id, PREVIOUS_STATUS[order.status])}
+          className="mt-2 flex w-full items-center justify-center gap-1 py-1 text-sm text-slate-400 active:text-slate-600"
+        >
+          <RotateCcw size={13} /> {BACK_LABEL[order.status]}
+        </button>
+      )}
     </li>
   );
 }
@@ -262,7 +310,7 @@ function matchesQuery(order, query) {
   if (/^\d+$/.test(q) && String(order.number) === q) return true;
   const digits = query.replace(/\D/g, '');
   if (digits.length >= 3 && (order.customer?.phone ?? '').replace(/\D/g, '').includes(digits)) return true;
-  const text = [order.customer?.name, order.customer?.address, order.table && `ban ${order.table}`, order.note, ...order.items.map((i) => i.name)]
+  const text = [order.customer?.name, order.customer?.address, order.table && `ban ${order.table}`, order.note, ...order.items.flatMap((i) => [i.name, i.note])]
     .filter(Boolean)
     .join(' | ');
   return normalizeText(text).includes(q);
@@ -420,13 +468,14 @@ export default function OrdersPage({
         <Plus size={20} /> Tạo đơn
       </button>
 
-      {creating && <NewOrderSheet type={type} menu={menu} customers={customers} onSubmit={onAddOrder} onClose={() => setCreating(false)} />}
+      {creating && <NewOrderSheet type={type} menu={menu} customers={customers} orders={orders} onSubmit={onAddOrder} onClose={() => setCreating(false)} />}
       {editing && (
         <NewOrderSheet
           type={type}
           order={editing}
           menu={menu}
           customers={customers}
+          orders={orders}
           onSubmit={(data) => onUpdateOrder(editing.id, data)}
           onClose={() => setEditing(null)}
         />

@@ -1,10 +1,11 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Archive,
   ClipboardList,
   Download,
   FileSpreadsheet,
   ImagePlus,
+  Smartphone,
   Map as MapIcon,
   Store,
   Trash2,
@@ -200,6 +201,87 @@ function ShopInfo({ settings, onUpdateSettings }) {
   );
 }
 
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent));
+const isInstalled = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+function InstallApp() {
+  const [prompt, setPrompt] = useState(() => window.__installPrompt ?? null);
+  const [installed, setInstalled] = useState(isInstalled);
+
+  useEffect(() => {
+    const ready = () => setPrompt(window.__installPrompt);
+    const done = () => setInstalled(true);
+    window.addEventListener('installpromptready', ready);
+    window.addEventListener('appinstalled', done);
+    return () => {
+      window.removeEventListener('installpromptready', ready);
+      window.removeEventListener('appinstalled', done);
+    };
+  }, []);
+
+  const install = async () => {
+    prompt.prompt();
+    const { outcome } = await prompt.userChoice;
+    if (outcome === 'accepted') setInstalled(true);
+    window.__installPrompt = null;
+    setPrompt(null);
+  };
+
+  return (
+    <section className="rounded-3xl border border-white/80 bg-white/80 px-5 py-4 shadow-sm">
+      <div className="flex items-center gap-3">
+        <img src="/pwa-192x192.png" alt="" className="h-10 w-10 shrink-0 rounded-xl" />
+        <div>
+          <h2 className="font-bold text-slate-900">Cài app ra màn hình chính</h2>
+          <p className="text-sm text-slate-500">Có icon riêng, mở toàn màn hình, vẫn mở được khi mạng yếu</p>
+        </div>
+      </div>
+      {installed ? (
+        <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
+          ✓ Đang dùng app đã cài trên màn hình chính
+        </p>
+      ) : isIOS ? (
+        <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-slate-700">
+          <li>
+            <b className="text-red-600">Trước tiên:</b> bấm <b>Tải file sao lưu</b> ở mục &quot;Sao lưu tất cả&quot; bên
+            dưới (iPhone giữ dữ liệu của app cài riêng với Safari)
+          </li>
+          <li>
+            Mở trang này bằng <b>Safari</b>
+          </li>
+          <li>
+            Bấm nút <b>Chia sẻ</b> (ô vuông có mũi tên lên) ở thanh dưới
+          </li>
+          <li>
+            Kéo xuống, chọn <b>Thêm vào MH chính</b>, rồi bấm <b>Thêm</b>
+          </li>
+          <li>
+            Mở app bằng icon cái bát trên màn hình chính, vào <b>Cài đặt app → Sao lưu tất cả → Nhập từ Excel</b> và chọn
+            file vừa tải để chuyển đơn, khách, thực đơn sang
+          </li>
+        </ol>
+      ) : prompt ? (
+        <button
+          onClick={install}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-orange-500 py-3 font-semibold text-white active:bg-orange-600"
+        >
+          <Smartphone size={18} /> Cài app
+        </button>
+      ) : (
+        <p className="mt-3 text-sm text-slate-700">
+          Trên Chrome: bấm menu <b>⋮</b> rồi chọn <b>Cài đặt ứng dụng</b> (hoặc <b>Thêm vào màn hình chính</b>).
+        </p>
+      )}
+      <p className="mt-2 text-xs text-slate-400">
+        {isIOS
+          ? 'Sau khi chuyển xong, chỉ dùng app trên màn hình chính để dữ liệu không bị tách làm hai.'
+          : 'Trên Android, app đã cài dùng chung dữ liệu với trang web trong Chrome.'}{' '}
+        Tên dưới icon là tên quán bạn đặt ở trên.
+      </p>
+    </section>
+  );
+}
+
 function MapsSettings({ settings, onUpdateSettings }) {
   const options = [
     ['apple', 'Apple Maps', 'Bản đồ có sẵn trên iPhone'],
@@ -294,6 +376,7 @@ export default function SettingsPage({
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <ShopInfo settings={settings} onUpdateSettings={onUpdateSettings} />
+      <InstallApp />
       <MapsSettings settings={settings} onUpdateSettings={onUpdateSettings} />
       <AlertSettings settings={settings} onUpdateSettings={onUpdateSettings} />
 

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
-import { MapPin, Minus, Phone, Plus, UserRound, X } from 'lucide-react';
-import { searchCustomers } from '../hooks/useCustomers';
+import { History, MapPin, Minus, Phone, Plus, UserRound, X } from 'lucide-react';
+import { sameCustomer, searchCustomers } from '../hooks/useCustomers';
 import { formatMoney } from '../lib/stats';
 
 const TITLE = { 'dine-in': 'Tạo đơn tại quán', delivery: 'Tạo đơn ship' };
@@ -91,10 +91,22 @@ const inputClass = (error) =>
   }`;
 
 // Truyền `order` để sửa đơn đã tạo; không truyền là tạo đơn mới.
-export default function NewOrderSheet({ type, order, menu, customers = [], onSubmit, onClose }) {
+export default function NewOrderSheet({ type, order, menu, customers = [], orders = [], onSubmit, onClose }) {
   const isDelivery = type === 'delivery';
   const [form, setForm] = useState(() => initialForm(order));
   const [qty, setQty] = useState(() => initialQty(order, menu));
+  // Ghi chú riêng từng món, theo id món trong thực đơn
+  const [itemNotes, setItemNotes] = useState(() =>
+    Object.fromEntries(
+      (order?.items ?? []).flatMap((i) => {
+        const m = menu.find((m) => m.name === i.name);
+        return m && i.note ? [[m.id, i.note]] : [];
+      })
+    )
+  );
+  // Đơn gần nhất của khách vừa chọn, để "Đặt lại như lần trước"
+  const [lastOrder, setLastOrder] = useState(null);
+  const [reorderMsg, setReorderMsg] = useState(null);
   // Món không còn trong thực đơn hiện tại: giữ nguyên khi sửa đơn
   const [extraItems] = useState(() => (order?.items ?? []).filter((i) => !menu.some((m) => m.name === i.name)));
   // Khi sửa đơn, món đã có trong đơn giữ giá lúc đặt dù thực đơn đã đổi giá
@@ -110,13 +122,45 @@ export default function NewOrderSheet({ type, order, menu, customers = [], onSub
   const pickCustomer = (c) => {
     setForm((f) => ({ ...f, name: c.name, phone: c.phone, address: c.address }));
     setShowSuggest(false);
+    if (!order) {
+      const previous = orders
+        .filter((o) => o.customer && o.status !== 'cancelled' && sameCustomer(o.customer, c))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+      setLastOrder(previous ?? null);
+      setReorderMsg(null);
+    }
+  };
+
+  // Chép món (và ghi chú món, phí ship) của đơn gần nhất. Món đã hết hoặc không còn trong thực đơn thì bỏ qua và báo lại.
+  const reorder = () => {
+    const nextQty = {};
+    const nextNotes = {};
+    const skipped = [];
+    for (const i of lastOrder.items) {
+      const m = menu.find((m) => m.name === i.name);
+      if (!m || m.available === false) {
+        skipped.push(i.name);
+        continue;
+      }
+      nextQty[m.id] = i.qty;
+      if (i.note) nextNotes[m.id] = i.note;
+    }
+    setQty(nextQty);
+    setItemNotes(nextNotes);
+    if (isDelivery && lastOrder.shippingFee) setForm((f) => ({ ...f, shippingFee: String(lastOrder.shippingFee) }));
+    setReorderMsg(skipped.length ? `Không thêm được (đã hết hoặc bỏ khỏi thực đơn): ${skipped.join(', ')}` : 'Đã chọn lại các món của lần trước');
   };
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
   const change = (id, delta) => setQty((q) => ({ ...q, [id]: Math.max(0, (q[id] ?? 0) + delta) }));
 
   const items = [
-    ...menu.filter((m) => qty[m.id] > 0).map((m) => ({ name: m.name, price: priceOf(m), qty: qty[m.id] })),
+    ...menu
+      .filter((m) => qty[m.id] > 0)
+      .map((m) => {
+        const note = itemNotes[m.id]?.trim();
+        return { name: m.name, price: priceOf(m), qty: qty[m.id], ...(note && { note }) };
+      }),
     ...extraItems,
   ];
   const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
@@ -245,6 +289,24 @@ export default function NewOrderSheet({ type, order, menu, customers = [], onSub
               Chọn món <span className="text-red-500">*</span>
             </p>
             {errors.items && <p className="text-sm text-red-600">{errors.items}</p>}
+            {lastOrder && (
+              <div className="my-2 rounded-2xl bg-blue-50 p-3">
+                <p className="flex items-center gap-1.5 text-sm font-semibold text-blue-800">
+                  <History size={15} /> Lần trước ({new Date(lastOrder.createdAt).toLocaleDateString('vi-VN')}):
+                </p>
+                <p className="text-sm text-blue-900">
+                  {lastOrder.items.map((i) => `${i.qty}× ${i.name}${i.note ? ` (${i.note})` : ''}`).join(', ')}
+                </p>
+                <button
+                  type="button"
+                  onClick={reorder}
+                  className="mt-2 w-full rounded-xl bg-blue-500 py-2 text-sm font-semibold text-white active:bg-blue-600"
+                >
+                  Đặt lại các món này
+                </button>
+                {reorderMsg && <p className="mt-1.5 text-xs font-semibold text-blue-800">{reorderMsg}</p>}
+              </div>
+            )}
             <ul className="divide-y divide-slate-100">
               {choices.length === 0 && (
                 <li className="py-4 text-center text-sm text-slate-400">
@@ -254,30 +316,41 @@ export default function NewOrderSheet({ type, order, menu, customers = [], onSub
               {choices.map((m) => {
                 const n = qty[m.id] ?? 0;
                 return (
-                  <li key={m.id} className="flex items-center gap-3 py-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-slate-900">{m.name}</p>
-                      <p className="text-sm text-slate-500">{formatMoney(priceOf(m))}</p>
+                  <li key={m.id} className="py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-slate-900">{m.name}</p>
+                        <p className="text-sm text-slate-500">{formatMoney(priceOf(m))}</p>
+                      </div>
+                      {n > 0 && (
+                        <>
+                          <button
+                            onClick={() => change(m.id, -1)}
+                            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700 active:bg-slate-200"
+                            aria-label={`Bớt ${m.name}`}
+                          >
+                            <Minus size={18} />
+                          </button>
+                          <span className="w-6 text-center text-lg font-bold">{n}</span>
+                        </>
+                      )}
+                      <button
+                        onClick={() => change(m.id, 1)}
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-white active:bg-blue-600"
+                        aria-label={`Thêm ${m.name}`}
+                      >
+                        <Plus size={18} />
+                      </button>
                     </div>
                     {n > 0 && (
-                      <>
-                        <button
-                          onClick={() => change(m.id, -1)}
-                          className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700 active:bg-slate-200"
-                          aria-label={`Bớt ${m.name}`}
-                        >
-                          <Minus size={18} />
-                        </button>
-                        <span className="w-6 text-center text-lg font-bold">{n}</span>
-                      </>
+                      <input
+                        value={itemNotes[m.id] ?? ''}
+                        onChange={(e) => setItemNotes((notes) => ({ ...notes, [m.id]: e.target.value }))}
+                        placeholder={`Ghi chú cho ${m.name} (VD: 1 tô không hành)`}
+                        aria-label={`Ghi chú ${m.name}`}
+                        className="mt-2 w-full rounded-lg border border-red-200 bg-red-50/50 px-3 py-2 text-sm font-medium text-red-600 outline-none placeholder:text-red-300 focus:ring-2 focus:ring-red-100"
+                      />
                     )}
-                    <button
-                      onClick={() => change(m.id, 1)}
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-white active:bg-blue-600"
-                      aria-label={`Thêm ${m.name}`}
-                    >
-                      <Plus size={18} />
-                    </button>
                   </li>
                 );
               })}

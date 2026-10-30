@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { AlarmClock, Loader2, LocateFixed, MapPin, Navigation, Phone, Route, Store, Truck } from 'lucide-react';
+import { AlarmClock, Loader2, LocateFixed, MapPin, Navigation, Phone, Route, Send, Store, Truck } from 'lucide-react';
 import { dueInfo, formatDue } from '../lib/due';
 import { cachedGeocode, currentPosition, directionsUrl, geocode, MAX_ROUTE_STOPS } from '../lib/geo';
-import { mapsUrl } from '../lib/shareOrder';
+import { mapsUrl, routeText, shareText } from '../lib/shareOrder';
 import { planRoute, SLOT_OPTIONS } from '../lib/route';
 import { formatMoney, orderTotal } from '../lib/stats';
 
@@ -19,6 +19,7 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
   const [state, setState] = useState({ status: 'idle' });
   // Tăng sau mỗi lần tra địa chỉ để đọc lại kết quả đã lưu
   const [geoVersion, setGeoVersion] = useState(0);
+  const [shareMsg, setShareMsg] = useState(null);
 
   const active = useMemo(
     () => orders.filter((o) => o.deliverAt && o.customer?.address && (o.status === 'pending' || o.status === 'done')),
@@ -73,6 +74,16 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
     }
     setGeoVersion((v) => v + 1);
     setState({ status: 'ready', warnings });
+  };
+
+  const shareRoute = async () => {
+    try {
+      const result = await shareText(routeText(plan, start, settings.shopName, settings.mapsApp));
+      if (result === 'copied') setShareMsg('Đã copy lộ trình, dán vào Zalo / Messenger cho shipper');
+    } catch {
+      setShareMsg('Không copy được, hãy thử lại');
+    }
+    setTimeout(() => setShareMsg(null), 4000);
   };
 
   if (!active.length) {
@@ -134,6 +145,13 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
             {located.length > MAX_ROUTE_STOPS ? ` (${MAX_ROUTE_STOPS} điểm đầu)` : ''}
           </a>
         )}
+        <button
+          onClick={shareRoute}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-50 py-3 font-semibold text-blue-700 active:bg-blue-100"
+        >
+          <Send size={18} /> Gửi lộ trình cho shipper ({stops.length} điểm)
+        </button>
+        {shareMsg && <p className="rounded-xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700">{shareMsg}</p>}
         {plan.totalKm > 0 && (
           <p className="text-center text-xs text-slate-400">
             Tổng ~{plan.totalKm.toFixed(1)} km đường chim bay · đường thật thường dài hơn
@@ -192,7 +210,7 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
                         </p>
                       )}
                       <p className="text-xs text-slate-500">
-                        {order.items.map((it) => `${it.qty}× ${it.name}`).join(', ')} · {formatMoney(orderTotal(order))}
+                        {order.items.map((it) => `${it.qty}× ${it.name}${it.note ? ` (${it.note})` : ''}`).join(', ')} · {formatMoney(orderTotal(order))}
                         {!order.paid && <b className="text-red-600"> · thu tiền</b>}
                         {order.status === 'pending' && <span className="text-amber-700"> · chưa nấu xong</span>}
                       </p>
