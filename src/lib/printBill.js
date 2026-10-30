@@ -18,7 +18,6 @@ export function billHtml(order) {
     <table class="bill-items">${rows}</table>
     <table class="bill-sum">
       ${isDelivery || order.shippingFee > 0 ? `<tr><td>Phí ship</td><td class="money">${formatMoney(order.shippingFee || 0)}</td></tr>` : ''}
-      ${order.discount > 0 ? `<tr><td>Giảm giá</td><td class="money">−${formatMoney(order.discount)}</td></tr>` : ''}
       <tr class="total"><td>TỔNG</td><td class="money">${formatMoney(orderTotal(order))}</td></tr>
     </table>`;
 }
