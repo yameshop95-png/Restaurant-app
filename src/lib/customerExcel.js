@@ -1,7 +1,7 @@
 // Xuất / nhập danh bạ khách hàng bằng file Excel (.xlsx).
 // Thư viện được tải khi cần để không làm chậm lúc mở app.
 
-const HEADERS = ['Tên khách hàng', 'Số điện thoại', 'Địa chỉ', 'Đơn gần nhất'];
+const HEADERS = ['Tên khách hàng', 'Số điện thoại', 'Địa chỉ'];
 
 export async function exportCustomers(customers) {
   const { default: writeExcelFile } = await import('write-excel-file/browser');
@@ -13,12 +13,11 @@ export async function exportCustomers(customers) {
       // Lưu SĐT dạng chữ để Excel không bỏ số 0 ở đầu
       { value: c.phone || null, type: String },
       c.address || null,
-      c.lastOrderAt ? new Date(c.lastOrderAt).toLocaleDateString('vi-VN') : null,
     ]);
   const date = new Date().toISOString().slice(0, 10);
   await writeExcelFile([header, ...rows], {
     sheet: 'Khách hàng',
-    columns: [{ width: 28 }, { width: 18 }, { width: 45 }, { width: 14 }],
+    columns: [{ width: 28 }, { width: 18 }, { width: 50 }],
   }).toFile(`khach-hang-${date}.xlsx`);
 }
 
