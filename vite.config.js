@@ -18,8 +18,8 @@ export default defineConfig({
         lang: 'vi',
         start_url: '/',
         display: 'standalone',
-        background_color: '#f1f5f9',
-        theme_color: '#ffffff',
+        background_color: '#f3eee6',
+        theme_color: '#f3eee6',
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
@@ -30,6 +30,14 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,png,svg}'],
         // Máy chủ AI luôn phải gọi qua mạng, không trả trang app thay thế
         navigateFallbackDenylist: [/^\/api\//],
+        // Font chữ (Google Fonts): lưu lại để lần sau mở không cần mạng vẫn đúng font
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/,
+            handler: 'CacheFirst',
+            options: { cacheName: 'fonts', expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 } },
+          },
+        ],
       },
     }),
   ],

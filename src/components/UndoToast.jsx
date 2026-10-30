@@ -13,7 +13,7 @@ export default function UndoToast({ toast, onUndo, onDismiss }) {
 
   if (!toast) return null;
   return (
-    <div className="fixed inset-x-0 bottom-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))] z-40 flex justify-center px-4 lg:pl-72">
+    <div className="fixed inset-x-0 bottom-[calc(9.5rem+env(safe-area-inset-bottom))] lg:bottom-24 z-40 flex justify-center px-4 lg:pl-72">
       <div
         role="status"
         className="flex w-full max-w-md items-center gap-3 rounded-2xl bg-slate-900 py-2 pl-4 pr-2 text-white shadow-xl"

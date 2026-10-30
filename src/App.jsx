@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import BottomNav from './components/BottomNav';
 import PinLogin from './components/PinLogin';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
@@ -121,7 +122,7 @@ function Shop({ account, onLogout }) {
   const pendingTotal = counts.pendingAll;
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen">
       <Sidebar
         activeTab={activeTab}
         onTabChange={handleTabChange}
@@ -143,7 +144,7 @@ function Shop({ account, onLogout }) {
           onBellClick={() => handleTabChange('orders')}
         />
 
-        <main className="mx-auto max-w-7xl p-4 sm:p-6">
+        <main className="mx-auto max-w-7xl p-4 pb-28 sm:p-6 sm:pb-28 lg:pb-6">
           {!ordersReady && (
             <p className="mx-auto mb-4 max-w-2xl rounded-2xl bg-white/80 px-4 py-3 text-center text-sm text-slate-500">
               {loadError ? `Chưa tải được dữ liệu: ${loadError}. Đang thử lại…` : 'Đang tải dữ liệu…'}
@@ -178,6 +179,12 @@ function Shop({ account, onLogout }) {
             onSetPaid={changePaid}
           />
         </main>
+        <BottomNav
+          activeTab={activeTab}
+          counts={counts}
+          onTabChange={handleTabChange}
+          onMore={() => setSidebarOpen(true)}
+        />
         <UndoToast
           toast={toast}
           onUndo={() => {

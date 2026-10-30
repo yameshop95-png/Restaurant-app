@@ -1,1 +1,73 @@
 @import "tailwindcss";
+
+/* Phong cách "quán sushi cao cấp": nền kem như giấy washi, mực đen ấm cho chữ và nút chính,
+   cá hồi cho điểm nhấn, xanh matcha cho "đã thanh toán", đỏ son cho cảnh báo.
+   Đổi bảng màu gốc của Tailwind ở đây nên các trang không phải sửa tên class. */
+@theme {
+  --font-sans: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Playfair Display', ui-serif, Georgia, serif;
+
+  /* slate: các tông kem / nâu xám ấm */
+  --color-slate-50: #faf7f2;
+  --color-slate-100: #f3eee6;
+  --color-slate-200: #e8e1d6;
+  --color-slate-300: #d6ccbd;
+  --color-slate-400: #a69a8a;
+  --color-slate-500: #7e7365;
+  --color-slate-600: #5f564b;
+  --color-slate-700: #463f37;
+  --color-slate-800: #2d2824;
+  --color-slate-900: #1c1916;
+  --color-slate-950: #110f0d;
+
+  /* blue: nút chính & lựa chọn đang bật = mực đen ấm */
+  --color-blue-50: #f4efe8;
+  --color-blue-100: #ebe3d8;
+  --color-blue-200: #d9cebf;
+  --color-blue-400: #5a5148;
+  --color-blue-500: #26211d;
+  --color-blue-600: #14110f;
+  --color-blue-700: #2b2621;
+  --color-blue-800: #221e1a;
+  --color-blue-900: #1a1714;
+
+  /* orange: điểm nhấn cá hồi */
+  --color-orange-50: #fdf2ed;
+  --color-orange-100: #fbe2d7;
+  --color-orange-300: #f3a98d;
+  --color-orange-400: #ee8562;
+  --color-orange-500: #e5663f;
+  --color-orange-600: #c9502b;
+  --color-orange-800: #7c2f17;
+
+  /* emerald: matcha */
+  --color-emerald-50: #f2f5ec;
+  --color-emerald-100: #e2ebd5;
+  --color-emerald-200: #c9d9b3;
+  --color-emerald-500: #6a8c45;
+  --color-emerald-600: #567535;
+  --color-emerald-700: #455f2a;
+  --color-emerald-800: #354820;
+
+  /* red: đỏ son (cảnh báo, chưa thanh toán) */
+  --color-red-50: #fcf0ee;
+  --color-red-100: #f8dad5;
+  --color-red-200: #f0b8ae;
+  --color-red-300: #e48f82;
+  --color-red-400: #d4675a;
+  --color-red-500: #b8322a;
+  --color-red-600: #a02a23;
+  --color-red-700: #82221c;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-100 text-slate-900 antialiased;
+  }
+  /* Tiêu đề dùng chữ có chân cho cảm giác sang */
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+}

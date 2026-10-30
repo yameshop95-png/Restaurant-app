@@ -553,7 +553,7 @@ export default function OrdersPage({
 
       <button
         onClick={() => setCreating(true)}
-        className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-5 z-20 flex items-center gap-2 rounded-full bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-blue-500/30 active:bg-blue-600"
+        className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-5 lg:bottom-6 z-20 flex items-center gap-2 rounded-full bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-blue-500/30 active:bg-blue-600"
       >
         <Plus size={20} /> Tạo đơn
       </button>
