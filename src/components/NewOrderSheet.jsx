@@ -12,8 +12,22 @@ const localDateTime = (date = new Date()) => {
   return d.toISOString().slice(0, 16);
 };
 
+const moneyText = (n) => (n ? String(n) : '');
+
 function initialForm(order) {
-  if (!order) return { name: '', phone: '', address: '', date: localDateTime().slice(0, 10), time: '', note: '' };
+  if (!order) {
+    return {
+      name: '',
+      phone: '',
+      address: '',
+      date: localDateTime().slice(0, 10),
+      time: '',
+      table: '',
+      note: '',
+      shippingFee: '',
+      discount: '',
+    };
+  }
   const due = order.deliverAt ? localDateTime(order.deliverAt) : '';
   return {
     name: order.customer?.name ?? '',
@@ -21,9 +35,15 @@ function initialForm(order) {
     address: order.customer?.address ?? '',
     date: due.slice(0, 10),
     time: due.slice(11, 16),
+    table: order.table ?? '',
     note: order.note ?? '',
+    shippingFee: moneyText(order.shippingFee),
+    discount: moneyText(order.discount),
   };
 }
+
+// "" -> 0, "4,50" -> 4.5, chữ linh tinh -> NaN
+const parseMoney = (text) => (text.trim() ? Number(text.replace(',', '.')) : 0);
 
 const initialQty = (order, menu) =>
   Object.fromEntries(
@@ -33,22 +53,31 @@ const initialQty = (order, menu) =>
     })
   );
 
-function validate(form, items) {
+// Đơn ship: bắt buộc tên, SĐT, địa chỉ, ngày giờ giao. Đơn tại quán: chỉ bắt buộc tên.
+function validate(form, items, isDelivery, subtotal) {
   const errors = {};
+  const phoneDigits = form.phone.replace(/\D/g, '').length;
   if (!form.name.trim()) errors.name = 'Nhập tên khách hàng';
-  if (form.phone.replace(/\D/g, '').length < 8) errors.phone = 'Số điện thoại chưa đúng';
-  if (!form.address.trim()) errors.address = 'Nhập địa chỉ';
-  if (!form.date) errors.date = 'Chọn ngày giao';
-  if (!form.time) errors.time = 'Chọn giờ giao';
+  if (isDelivery ? phoneDigits < 8 : phoneDigits > 0 && phoneDigits < 8) errors.phone = 'Số điện thoại chưa đúng';
+  if (isDelivery) {
+    if (!form.address.trim()) errors.address = 'Nhập địa chỉ';
+    if (!form.date) errors.date = 'Chọn ngày giao';
+    if (!form.time) errors.time = 'Chọn giờ giao';
+  }
   if (!items.length) errors.items = 'Chọn ít nhất 1 món';
+  const fee = parseMoney(form.shippingFee);
+  const discount = parseMoney(form.discount);
+  if (!Number.isFinite(fee) || fee < 0) errors.shippingFee = 'Phí ship chưa đúng';
+  if (!Number.isFinite(discount) || discount < 0) errors.discount = 'Giảm giá chưa đúng';
+  else if (discount > subtotal + (Number.isFinite(fee) ? fee : 0)) errors.discount = 'Giảm nhiều hơn tổng tiền';
   return errors;
 }
 
-function Field({ label, error, children }) {
+function Field({ label, error, required = true, children }) {
   return (
     <label className="block">
       <span className="mb-1 block text-sm font-semibold text-slate-700">
-        {label} <span className="text-red-500">*</span>
+        {label} {required && <span className="text-red-500">*</span>}
       </span>
       {children}
       {error && <span className="mt-1 block text-sm text-red-600">{error}</span>}
@@ -63,6 +92,7 @@ const inputClass = (error) =>
 
 // Truyền `order` để sửa đơn đã tạo; không truyền là tạo đơn mới.
 export default function NewOrderSheet({ type, order, menu, customers = [], onSubmit, onClose }) {
+  const isDelivery = type === 'delivery';
   const [form, setForm] = useState(() => initialForm(order));
   const [qty, setQty] = useState(() => initialQty(order, menu));
   // Món không còn trong thực đơn hiện tại: giữ nguyên khi sửa đơn
@@ -89,24 +119,35 @@ export default function NewOrderSheet({ type, order, menu, customers = [], onSub
     ...menu.filter((m) => qty[m.id] > 0).map((m) => ({ name: m.name, price: priceOf(m), qty: qty[m.id] })),
     ...extraItems,
   ];
-  const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
   const count = items.reduce((sum, i) => sum + i.qty, 0);
+  const fee = isDelivery ? parseMoney(form.shippingFee) || 0 : 0;
+  const discount = parseMoney(form.discount) || 0;
+  const total = Math.max(0, subtotal + fee - discount);
 
   // Chỉ hiện lỗi sau lần bấm "Tạo đơn" đầu tiên, rồi cập nhật theo từng lần gõ.
-  const errors = submitted ? validate(form, items) : {};
+  const errors = submitted ? validate(form, items, isDelivery, subtotal) : {};
 
   const submit = () => {
     setSubmitted(true);
-    if (Object.keys(validate(form, items)).length) {
+    if (Object.keys(validate(form, items, isDelivery, subtotal)).length) {
       scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
+    const round = (n) => Math.round(n * 100) / 100;
     onSubmit({
       type,
-      customer: { name: form.name.trim(), phone: form.phone.trim(), address: form.address.trim() },
-      deliverAt: new Date(`${form.date}T${form.time}`).toISOString(),
+      customer: {
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        address: isDelivery ? form.address.trim() : '',
+      },
+      deliverAt: isDelivery ? new Date(`${form.date}T${form.time}`).toISOString() : null,
+      table: isDelivery ? '' : form.table.trim(),
       note: form.note,
       items,
+      shippingFee: round(fee),
+      discount: round(discount),
     });
     onClose();
   };
@@ -168,7 +209,7 @@ export default function NewOrderSheet({ type, order, menu, customers = [], onSub
             </div>
           </Field>
 
-          <Field label="Số điện thoại" error={errors.phone}>
+          <Field label="Số điện thoại" error={errors.phone} required={isDelivery}>
             <input
               type="tel"
               inputMode="tel"
@@ -178,18 +219,26 @@ export default function NewOrderSheet({ type, order, menu, customers = [], onSub
             />
           </Field>
 
-          <Field label="Địa chỉ" error={errors.address}>
-            <textarea rows={2} value={form.address} onChange={set('address')} className={inputClass(errors.address)} />
-          </Field>
+          {isDelivery ? (
+            <>
+              <Field label="Địa chỉ" error={errors.address}>
+                <textarea rows={2} value={form.address} onChange={set('address')} className={inputClass(errors.address)} />
+              </Field>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Ngày giao" error={errors.date}>
-              <input type="date" value={form.date} onChange={set('date')} className={inputClass(errors.date)} />
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Ngày giao" error={errors.date}>
+                  <input type="date" value={form.date} onChange={set('date')} className={inputClass(errors.date)} />
+                </Field>
+                <Field label="Giờ giao" error={errors.time}>
+                  <input type="time" value={form.time} onChange={set('time')} className={inputClass(errors.time)} />
+                </Field>
+              </div>
+            </>
+          ) : (
+            <Field label="Số bàn" required={false}>
+              <input value={form.table} onChange={set('table')} placeholder="VD: 5" className={inputClass()} />
             </Field>
-            <Field label="Giờ giao" error={errors.time}>
-              <input type="time" value={form.time} onChange={set('time')} className={inputClass(errors.time)} />
-            </Field>
-          </div>
+          )}
 
           <div>
             <p className="mb-1 text-sm font-semibold text-slate-700">
@@ -235,6 +284,29 @@ export default function NewOrderSheet({ type, order, menu, customers = [], onSub
             </ul>
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            {isDelivery && (
+              <Field label="Phí ship (A$)" error={errors.shippingFee} required={false}>
+                <input
+                  inputMode="decimal"
+                  value={form.shippingFee}
+                  onChange={set('shippingFee')}
+                  placeholder="0"
+                  className={inputClass(errors.shippingFee)}
+                />
+              </Field>
+            )}
+            <Field label="Giảm giá (A$)" error={errors.discount} required={false}>
+              <input
+                inputMode="decimal"
+                value={form.discount}
+                onChange={set('discount')}
+                placeholder="0"
+                className={inputClass(errors.discount)}
+              />
+            </Field>
+          </div>
+
           <label className="block">
             <span className="mb-1 block text-sm font-semibold text-red-600">Ghi chú</span>
             <textarea
@@ -248,6 +320,13 @@ export default function NewOrderSheet({ type, order, menu, customers = [], onSub
         </div>
 
         <div className="border-t border-slate-200 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          {(fee > 0 || discount > 0) && (
+            <p className="mb-2 text-center text-sm text-slate-500">
+              Tiền món {formatMoney(subtotal)}
+              {fee > 0 && ` + ship ${formatMoney(fee)}`}
+              {discount > 0 && ` − giảm ${formatMoney(discount)}`}
+            </p>
+          )}
           <button
             onClick={submit}
             className="flex w-full items-center justify-between rounded-2xl bg-blue-500 px-5 py-4 text-base font-semibold text-white active:bg-blue-600"

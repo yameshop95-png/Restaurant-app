@@ -25,10 +25,11 @@ export default function useOrders() {
   }, [orders]);
 
   // Order: { id, number, type: 'dine-in' | 'delivery',
-  //          customer: { name, phone, address }, deliverAt (ISO), note,
+  //          customer: { name, phone, address }, deliverAt (ISO, chỉ đơn ship), table (chỉ đơn tại quán), note,
+  //          shippingFee, discount (A$),
   //          items: [{ name, price, qty }], status: 'pending' | 'done' | 'shipped' | 'cancelled',
   //          paid: boolean, createdAt }
-  const addOrder = ({ type, customer, deliverAt, note, items }) =>
+  const addOrder = ({ type, customer, deliverAt, table, note, items, shippingFee, discount }) =>
     setOrders((prev) => [
       {
         id: crypto.randomUUID?.() ?? String(Date.now()),
@@ -36,8 +37,11 @@ export default function useOrders() {
         type,
         customer,
         deliverAt,
+        table,
         note: note.trim(),
         items,
+        shippingFee,
+        discount,
         status: 'pending',
         paid: false,
         createdAt: new Date().toISOString(),
@@ -52,9 +56,11 @@ export default function useOrders() {
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, paid } : o)));
 
   // Sửa đơn đã tạo: thông tin khách, giờ giao, ghi chú, món. Giữ nguyên số đơn, trạng thái, thanh toán.
-  const updateOrder = (id, { customer, deliverAt, note, items }) =>
+  const updateOrder = (id, { customer, deliverAt, table, note, items, shippingFee, discount }) =>
     setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, customer, deliverAt, note: note.trim(), items } : o))
+      prev.map((o) =>
+        o.id === id ? { ...o, customer, deliverAt, table, note: note.trim(), items, shippingFee, discount } : o
+      )
     );
 
   // Khôi phục từ Excel: chỉ thêm đơn chưa có (theo id), đơn đã có trong app giữ nguyên.

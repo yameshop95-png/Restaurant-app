@@ -7,7 +7,9 @@ export function startOfWeek(now = new Date()) {
   return d;
 }
 
-export const orderTotal = (order) => order.items.reduce((sum, i) => sum + i.price * i.qty, 0);
+export const itemsTotal = (order) => order.items.reduce((sum, i) => sum + i.price * i.qty, 0);
+// Số tiền khách trả: tiền món + phí ship − giảm giá
+export const orderTotal = (order) => itemsTotal(order) + (order.shippingFee || 0) - (order.discount || 0);
 
 export function summarize(allOrders, now = new Date()) {
   // Đơn đã huỷ không tính vào doanh thu

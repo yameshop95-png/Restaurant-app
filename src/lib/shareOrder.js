@@ -1,4 +1,4 @@
-import { formatMoney, orderTotal } from './stats';
+import { formatMoney, itemsTotal, orderTotal } from './stats';
 
 export const mapsUrl = (address) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 
@@ -21,7 +21,12 @@ export function orderText(order, shopName) {
       c?.address && `Bản đồ: ${mapsUrl(c.address)}`,
     ],
     [...order.items.map((i) => `${i.qty} × ${i.name}`), order.note && `Ghi chú: ${order.note}`],
-    [`Tổng: ${formatMoney(orderTotal(order))} – ${order.paid ? 'ĐÃ THANH TOÁN' : 'CHƯA THANH TOÁN, thu tiền khách'}`],
+    [
+      (order.shippingFee > 0 || order.discount > 0) && `Tiền món: ${formatMoney(itemsTotal(order))}`,
+      order.shippingFee > 0 && `Phí ship: ${formatMoney(order.shippingFee)}`,
+      order.discount > 0 && `Giảm giá: −${formatMoney(order.discount)}`,
+      `Tổng: ${formatMoney(orderTotal(order))} – ${order.paid ? 'ĐÃ THANH TOÁN' : 'CHƯA THANH TOÁN, thu tiền khách'}`,
+    ],
   ];
   return blocks.map((lines) => lines.filter(Boolean).join('\n')).join('\n\n');
 }

@@ -54,14 +54,15 @@ export default function App() {
     updateSettings({ lastBackupAt: new Date().toISOString() });
   };
 
-  // Tạo hoặc sửa đơn đều cập nhật luôn danh bạ khách hàng
+  // Tạo hoặc sửa đơn đều cập nhật luôn danh bạ khách hàng (khách tại quán không để SĐT thì không lưu)
+  const rememberCustomer = (customer) => customer.phone && saveCustomer(customer);
   const createOrder = (order) => {
     addOrder(order);
-    saveCustomer(order.customer);
+    rememberCustomer(order.customer);
   };
   const editOrder = (id, order) => {
     updateOrder(id, order);
-    saveCustomer(order.customer);
+    rememberCustomer(order.customer);
   };
 
   const pending = orders.filter((o) => o.status === 'pending');

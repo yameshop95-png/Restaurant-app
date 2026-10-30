@@ -1,9 +1,25 @@
 import { useState } from 'react';
-import { AlarmClock, Banknote, Check, Clock, MapPin, Pencil, Phone, Plus, Send, StickyNote, Truck, X } from 'lucide-react';
+import {
+  AlarmClock,
+  Armchair,
+  Banknote,
+  Check,
+  Clock,
+  MapPin,
+  Pencil,
+  Phone,
+  Plus,
+  Search,
+  Send,
+  StickyNote,
+  Truck,
+  X,
+} from 'lucide-react';
 import NewOrderSheet from '../components/NewOrderSheet';
+import { normalizeText } from '../hooks/useCustomers';
 import { dueInfo, formatDue } from '../lib/due';
 import { mapsUrl, shareOrder } from '../lib/shareOrder';
-import { formatMoney, orderTotal } from '../lib/stats';
+import { formatMoney, itemsTotal, orderTotal } from '../lib/stats';
 
 // Trạng thái xử lý đơn: Chờ xử lý → Hoàn thành (nấu xong) → Đã ship. Thanh toán là cờ riêng (`paid`).
 const STATUS = {
@@ -79,12 +95,14 @@ function OrderCard({ order, now, shopName, onEdit, onSetStatus, onSetPaid }) {
               >
                 <Pencil size={14} /> Sửa đơn
               </button>
-              <button
-                onClick={share}
-                className="flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-sm font-semibold text-blue-700 active:bg-blue-100"
-              >
-                <Send size={14} /> Gửi cho shipper
-              </button>
+              {order.customer?.address && (
+                <button
+                  onClick={share}
+                  className="flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-sm font-semibold text-blue-700 active:bg-blue-100"
+                >
+                  <Send size={14} /> Gửi cho shipper
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -109,9 +127,19 @@ function OrderCard({ order, now, shopName, onEdit, onSetStatus, onSetPaid }) {
               <Truck size={16} className="shrink-0" /> Giao {formatTime(order.deliverAt, true)}
             </p>
           )}
-          <a href={`tel:${order.customer.phone}`} className="flex items-center gap-2 text-slate-700 underline-offset-2 active:underline">
-            <Phone size={16} className="shrink-0 text-slate-400" /> {order.customer.phone}
-          </a>
+          {order.table && (
+            <p className="flex items-center gap-2 font-semibold text-blue-700">
+              <Armchair size={16} className="shrink-0" /> Bàn {order.table}
+            </p>
+          )}
+          {order.customer.phone && (
+            <a
+              href={`tel:${order.customer.phone}`}
+              className="flex items-center gap-2 text-slate-700 underline-offset-2 active:underline"
+            >
+              <Phone size={16} className="shrink-0 text-slate-400" /> {order.customer.phone}
+            </a>
+          )}
           {order.customer.address && (
             <a
               href={mapsUrl(order.customer.address)}
@@ -143,6 +171,24 @@ function OrderCard({ order, now, shopName, onEdit, onSetStatus, onSetPaid }) {
           </li>
         ))}
       </ul>
+
+      {(order.shippingFee > 0 || order.discount > 0) && (
+        <div className="mt-3 space-y-1 border-t border-slate-100 pt-3 text-sm text-slate-500">
+          <p className="flex justify-between">
+            <span>Tiền món</span> <span>{formatMoney(itemsTotal(order))}</span>
+          </p>
+          {order.shippingFee > 0 && (
+            <p className="flex justify-between">
+              <span>Phí ship</span> <span>+ {formatMoney(order.shippingFee)}</span>
+            </p>
+          )}
+          {order.discount > 0 && (
+            <p className="flex justify-between text-emerald-600">
+              <span>Giảm giá</span> <span>− {formatMoney(order.discount)}</span>
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
         <span className="font-semibold text-slate-500">Tổng</span>
@@ -208,6 +254,29 @@ function OrderCard({ order, now, shopName, onEdit, onSetStatus, onSetPaid }) {
   );
 }
 
+// Tìm theo số đơn ("12" hoặc "#12"), tên / SĐT / địa chỉ khách, số bàn, ghi chú, tên món (không dấu cũng được)
+function matchesQuery(order, query) {
+  const q = normalizeText(query.replace(/^#/, ''));
+  if (!q) return true;
+  if (/^\d+$/.test(q) && String(order.number) === q) return true;
+  const digits = query.replace(/\D/g, '');
+  if (digits.length >= 3 && (order.customer?.phone ?? '').replace(/\D/g, '').includes(digits)) return true;
+  const text = [order.customer?.name, order.customer?.address, order.table && `ban ${order.table}`, order.note, ...order.items.map((i) => i.name)]
+    .filter(Boolean)
+    .join(' | ');
+  return normalizeText(text).includes(q);
+}
+
+// Lọc theo ngày (YYYY-MM-DD): đơn tạo hoặc giao trong ngày đó, theo giờ máy
+function matchesDate(order, date) {
+  if (!date) return true;
+  const local = (iso) => {
+    const d = new Date(iso);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  return local(order.createdAt) === date || (order.deliverAt && local(order.deliverAt) === date);
+}
+
 // Dùng chung cho tab "Đơn hàng" (type = dine-in) và "Đơn ship" (type = delivery).
 export default function OrdersPage({
   type = 'dine-in',
@@ -224,18 +293,62 @@ export default function OrdersPage({
   const [filter, setFilter] = useState('pending');
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [query, setQuery] = useState('');
+  const [date, setDate] = useState('');
 
   const ofType = orders.filter((o) => o.type === type);
-  const visible = ofType.filter(FILTERS.find((f) => f.id === filter).match);
+  // Đang tìm kiếm: tìm trong mọi trạng thái, mới tạo lên trước
+  const searching = query.trim() !== '' || date !== '';
+  const visible = searching
+    ? ofType.filter((o) => matchesQuery(o, query) && matchesDate(o, date))
+    : ofType.filter(FILTERS.find((f) => f.id === filter).match);
   // Đơn chờ: giờ giao sớm nhất lên trước. Các mục khác: mới tạo lên trước.
-  if (filter === 'pending') {
+  if (filter === 'pending' && !searching) {
     const due = (o) => new Date(o.deliverAt ?? o.createdAt).getTime();
     visible.sort((a, b) => due(a) - due(b));
   }
 
   return (
     <div className="mx-auto max-w-2xl pb-24">
-      <div className="mb-4 flex gap-2 overflow-x-auto">
+      <div className="mb-3 flex gap-2">
+        <div className="relative min-w-0 flex-1">
+          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Tìm tên, SĐT, số đơn, món…"
+            className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
+        </div>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          aria-label="Lọc theo ngày"
+          className={`w-36 shrink-0 rounded-2xl border bg-white px-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 ${
+            date ? 'border-blue-500 text-slate-900' : 'border-slate-200 text-slate-400'
+          }`}
+        />
+      </div>
+      {searching && (
+        <div className="mb-3 flex items-center justify-between px-1 text-sm">
+          <span className="text-slate-600">
+            Tìm thấy <b>{visible.length}</b> đơn{date && ` ngày ${date.split('-').reverse().join('/')}`}
+          </span>
+          <button
+            onClick={() => {
+              setQuery('');
+              setDate('');
+            }}
+            className="font-semibold text-blue-600"
+          >
+            Xoá tìm kiếm
+          </button>
+        </div>
+      )}
+
+      <div className={`mb-4 flex gap-2 overflow-x-auto ${searching ? 'hidden' : ''}`}>
         {FILTERS.map((f) => {
           const n = ofType.filter(f.match).length;
           const active = filter === f.id;
@@ -255,7 +368,7 @@ export default function OrdersPage({
 
       {visible.length === 0 ? (
         <p className="rounded-3xl bg-white/60 px-5 py-12 text-center text-slate-400">
-          {filter === 'pending' ? 'Không có đơn nào đang chờ' : 'Chưa có đơn'}
+          {searching ? 'Không tìm thấy đơn nào' : filter === 'pending' ? 'Không có đơn nào đang chờ' : 'Chưa có đơn'}
         </p>
       ) : (
         <ul className="space-y-3">

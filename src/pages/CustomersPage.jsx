@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, Pencil, Phone, Plus, Search, Trash2, UserRound, X } from 'lucide-react';
+import { CircleDollarSign, MapPin, Pencil, Phone, Plus, Search, Trash2, UserRound, X } from 'lucide-react';
 import { matchesCustomer, sameCustomer } from '../hooks/useCustomers';
 import { formatMoney, orderTotal } from '../lib/stats';
 
@@ -91,15 +91,33 @@ export default function CustomersPage({ customers, orders, onAddCustomer, onUpda
   const [query, setQuery] = useState('');
   // undefined: đóng · null: thêm khách mới · object: sửa khách đó
   const [editing, setEditing] = useState(undefined);
+  const [debtOnly, setDebtOnly] = useState(false);
 
-  const stats = (c) => {
-    const list = orders.filter((o) => o.customer && o.status !== 'cancelled' && sameCustomer(o.customer, c));
-    return { count: list.length, total: list.reduce((sum, o) => sum + orderTotal(o), 0) };
-  };
+  // Số đơn, tổng tiền và tiền còn nợ (đơn chưa thanh toán, không tính đơn huỷ) của từng khách
+  const statsById = new Map(
+    customers.map((c) => {
+      const list = orders.filter((o) => o.customer && o.status !== 'cancelled' && sameCustomer(o.customer, c));
+      const unpaid = list.filter((o) => !o.paid);
+      return [
+        c.id,
+        {
+          count: list.length,
+          total: list.reduce((sum, o) => sum + orderTotal(o), 0),
+          debt: unpaid.reduce((sum, o) => sum + orderTotal(o), 0),
+          debtCount: unpaid.length,
+        },
+      ];
+    })
+  );
+  const debtors = customers.filter((c) => statsById.get(c.id).debt > 0);
+  const totalDebt = debtors.reduce((sum, c) => sum + statsById.get(c.id).debt, 0);
 
   const visible = customers
     .filter((c) => !query.trim() || matchesCustomer(c, query))
-    .sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+    .filter((c) => !debtOnly || statsById.get(c.id).debt > 0)
+    .sort((a, b) =>
+      debtOnly ? statsById.get(b.id).debt - statsById.get(a.id).debt : a.name.localeCompare(b.name, 'vi')
+    );
 
   return (
     <div className="mx-auto max-w-2xl pb-24">
@@ -113,6 +131,23 @@ export default function CustomersPage({ customers, orders, onAddCustomer, onUpda
         />
       </div>
 
+      {debtors.length > 0 && (
+        <button
+          onClick={() => setDebtOnly((v) => !v)}
+          className={`mb-4 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left ${
+            debtOnly ? 'bg-red-500 text-white' : 'bg-red-50 text-red-700 ring-1 ring-red-200'
+          }`}
+        >
+          <CircleDollarSign size={22} className="shrink-0" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold">
+              {debtors.length} khách còn nợ · {formatMoney(totalDebt)}
+            </span>
+            <span className="text-sm">{debtOnly ? 'Đang xem khách còn nợ – bấm để xem tất cả' : 'Bấm để xem khách còn nợ'}</span>
+          </span>
+        </button>
+      )}
+
       {visible.length === 0 ? (
         <p className="rounded-3xl bg-white/60 px-5 py-12 text-center text-slate-400">
           {customers.length ? 'Không tìm thấy khách nào' : 'Chưa có khách hàng. Khách sẽ tự được lưu khi tạo đơn.'}
@@ -120,7 +155,7 @@ export default function CustomersPage({ customers, orders, onAddCustomer, onUpda
       ) : (
         <ul className="divide-y divide-slate-100 overflow-hidden rounded-3xl border border-white/80 bg-white/80 shadow-sm">
           {visible.map((c) => {
-            const s = stats(c);
+            const s = statsById.get(c.id);
             return (
               <li key={c.id} className="flex items-start gap-3 px-4 py-3">
                 <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
@@ -141,6 +176,11 @@ export default function CustomersPage({ customers, orders, onAddCustomer, onUpda
                   {s.count > 0 && (
                     <p className="mt-0.5 text-xs text-slate-400">
                       {s.count} đơn · {formatMoney(s.total)}
+                    </p>
+                  )}
+                  {s.debt > 0 && (
+                    <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-red-500 px-2.5 py-0.5 text-xs font-bold text-white">
+                      Còn nợ {formatMoney(s.debt)} ({s.debtCount} đơn)
                     </p>
                   )}
                 </div>

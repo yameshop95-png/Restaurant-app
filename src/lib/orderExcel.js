@@ -16,6 +16,9 @@ const COLUMNS = [
   ['Địa chỉ', 35],
   ['Giờ giao', 17],
   ['Ghi chú', 25],
+  ['Bàn', 6],
+  ['Phí ship', 9],
+  ['Giảm giá', 9],
   ['Món', 22],
   ['Số lượng', 9],
   ['Đơn giá', 9],
@@ -47,7 +50,7 @@ export function ordersSheet(orders) {
   const rows = [...orders]
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     .flatMap((o) =>
-      o.items.map((item) => [
+      o.items.map((item, i) => [
         o.id,
         o.number,
         formatDateTime(o.createdAt),
@@ -59,6 +62,10 @@ export function ordersSheet(orders) {
         o.customer?.address ?? null,
         formatDateTime(o.deliverAt),
         o.note || null,
+        o.table || null,
+        // Phí ship / giảm giá tính cho cả đơn: chỉ ghi ở dòng đầu của đơn
+        i === 0 && o.shippingFee ? { value: o.shippingFee, type: Number, format: '0.00' } : null,
+        i === 0 && o.discount ? { value: o.discount, type: Number, format: '0.00' } : null,
         item.name,
         item.qty,
         { value: item.price, type: Number, format: '0.00' },
@@ -102,6 +109,9 @@ export function parseOrders(data) {
         customer: name ? { name, phone: text(row, 'SĐT'), address: text(row, 'Địa chỉ') } : null,
         deliverAt: parseDateTime(get(row, 'Giờ giao')),
         note: text(row, 'Ghi chú'),
+        table: text(row, 'Bàn'),
+        shippingFee: Number(get(row, 'Phí ship')) || 0,
+        discount: Number(get(row, 'Giảm giá')) || 0,
         items: [],
       });
     }
