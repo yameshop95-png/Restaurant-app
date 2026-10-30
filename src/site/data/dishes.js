@@ -95,7 +95,7 @@ export const DISHES = [
     match: 'Chả Bò',
     slug: 'cha-bo',
     category: 'gio-cha',
-    photo: null,
+    photo: '/site/photos/cha-bo.webp',
     en: {
       name: 'Chả bò – beef roll',
       short: 'Firm beef roll seasoned with cracked black pepper.',
