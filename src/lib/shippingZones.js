@@ -1,6 +1,7 @@
 // Phí ship theo vùng, tự điền vào đơn giao hàng khi địa chỉ có tên khu (suburb) hoặc postcode của vùng.
 // Chủ quán sửa được giá và danh sách khu ở Cài đặt app → Phí ship theo vùng.
-import { normalizeText } from '../hooks/useCustomers';
+// Máy chủ tính lại phí cho đơn từ website bằng hàm match_zone / default_zones (cùng quy tắc, nhớ sửa cả hai).
+import { normalizeText } from './text';
 
 export const DEFAULT_ZONES = [
   { id: 'wodonga', name: 'Wodonga – West Wodonga', fee: 2, places: ['Wodonga', 'West Wodonga', '3690'] },

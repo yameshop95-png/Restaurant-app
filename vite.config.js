@@ -3,7 +3,26 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// Website đặt món của khách không phải app nhận order: bỏ nút "cài app" và service worker của app khỏi trang đó
+const orderPageWithoutPwa = {
+  name: 'order-page-without-pwa',
+  enforce: 'post',
+  transformIndexHtml: {
+    order: 'post',
+    handler: (html, ctx) =>
+      ctx.path.endsWith('order.html')
+        ? html.replace(/<link rel="manifest"[^>]*>/, '').replace(/<script id="vite-plugin-pwa:register-sw"[^>]*><\/script>/, '')
+        : html,
+  },
+};
+
 export default defineConfig({
+  // 2 trang: app nhận order cho quán (/) và website đặt món cho khách (/order)
+  build: {
+    rollupOptions: {
+      input: { main: 'index.html', order: 'order.html' },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -29,7 +48,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg}'],
         // Máy chủ AI luôn phải gọi qua mạng, không trả trang app thay thế
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [/^\/api\//, /^\/order/],
         // Font chữ (Google Fonts): lưu lại để lần sau mở không cần mạng vẫn đúng font
         runtimeCaching: [
           {
@@ -40,5 +59,6 @@ export default defineConfig({
         ],
       },
     }),
+    orderPageWithoutPwa,
   ],
 });

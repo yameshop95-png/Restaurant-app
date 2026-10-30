@@ -1,11 +1,10 @@
 import useCloudList, { dataOf } from './useCloudList';
 import { supabase } from '../lib/supabase';
+import { normalizeText } from '../lib/text';
 
 // Danh bạ khách hàng, lưu trên máy chủ dùng chung. Sao lưu/khôi phục bằng file Excel ở tab "Cài đặt app".
 
-// Bỏ dấu + chữ thường để tìm "lan" ra "Lan", "Lân", "LAN"...
-export const normalizeText = (s) =>
-  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase().trim();
+export { normalizeText };
 
 const phoneKey = (phone) => phone.replace(/\D/g, '');
 // Khách được nhận diện theo số điện thoại; không có SĐT thì theo tên.

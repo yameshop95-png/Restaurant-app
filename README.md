@@ -34,6 +34,19 @@ mọi máy đăng nhập thấy cùng dữ liệu và cập nhật ngay (realtim
   `VITE_SUPABASE_PUBLISHABLE_KEY`). Không bao giờ đưa khoá `service_role` vào app.
 - Ghi dữ liệu đi qua hàng đợi `src/lib/sync.js`: mất mạng thì giữ lại và tự gửi khi có mạng.
 
+## Website đặt món cho khách (/order)
+
+`order.html` + `src/order/`: khách xem thực đơn, đặt trước (đến lấy / giao hàng), trả tiền khi nhận.
+Không đăng nhập; chỉ gọi 2 hàm trên Supabase:
+
+- `public_shop()`: thông tin quán, vùng ship, cài đặt đặt online, thực đơn.
+- `place_web_order(payload)`: máy chủ lấy giá từ thực đơn, tính phí ship (`match_zone`, cùng quy tắc với
+  `src/lib/shippingZones.js`), kiểm tra giờ đặt trước, chặn spam (1 SĐT tối đa 3 đơn / giờ), tạo đơn
+  `source: 'web'` và lưu khách vào danh bạ. App nhận đơn qua realtime, kêu và hiện thông báo.
+
+Chủ quán bật / tắt và chọn thời gian đặt trước ở **Cài đặt app → Website đặt món**.
+Trang này không có service worker / manifest của app nhận order (plugin `order-page-without-pwa` trong vite.config.js).
+
 ## Phân tích bằng AI (tab Báo cáo)
 
 Nút "Phân tích bằng AI" gọi `api/analyze.js` (Vercel Serverless Function), dùng Claude để nhận xét số liệu.

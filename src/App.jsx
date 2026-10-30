@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import BottomNav from './components/BottomNav';
+import OnlineOrderAlert from './components/OnlineOrderAlert';
 import PinLogin from './components/PinLogin';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
@@ -87,6 +88,28 @@ function Shop({ account, onLogout }) {
     fresh.forEach((k) => notified.current.add(k));
     if (fresh.length && settings.dueSound) alertBeep();
   }, [orders, ordersReady, now, settings.dueSound]);
+
+  // Đơn khách đặt qua website: kêu + hiện thông báo nổi. Lần đầu tải chỉ ghi nhận đơn đã có.
+  const [onlineAlerts, setOnlineAlerts] = useState([]);
+  const seenOrders = useRef(null);
+  useEffect(() => {
+    if (!ordersReady) return;
+    if (!seenOrders.current) {
+      seenOrders.current = new Set(orders.map((o) => o.id));
+      return;
+    }
+    const fresh = orders.filter(
+      (o) =>
+        !seenOrders.current.has(o.id) &&
+        o.source === 'web' &&
+        Date.now() - new Date(o.createdAt).getTime() < 30 * 60000
+    );
+    orders.forEach((o) => seenOrders.current.add(o.id));
+    if (!fresh.length) return;
+    alertBeep();
+    setOnlineAlerts((list) => [...fresh, ...list]);
+  }, [orders, ordersReady]);
+  const dismissOnline = useCallback((id) => setOnlineAlerts((list) => list.filter((o) => o.id !== id)), []);
 
   // Sao lưu tất cả vào một file Excel và ghi lại thời điểm để nhắc sao lưu định kỳ
   const backupNow = async () => {
@@ -184,6 +207,14 @@ function Shop({ account, onLogout }) {
           counts={counts}
           onTabChange={handleTabChange}
           onMore={() => setSidebarOpen(true)}
+        />
+        <OnlineOrderAlert
+          alerts={onlineAlerts}
+          onDismiss={dismissOnline}
+          onOpen={(o) => {
+            dismissOnline(o.id);
+            handleTabChange(o.type === 'delivery' ? 'delivery' : 'orders');
+          }}
         />
         <UndoToast
           toast={toast}

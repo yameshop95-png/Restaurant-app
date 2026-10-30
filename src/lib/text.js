@@ -1,0 +1,3 @@
+// Bỏ dấu + chữ thường để tìm "lan" ra "Lan", "Lân", "LAN"...
+export const normalizeText = (s) =>
+  s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase().trim();

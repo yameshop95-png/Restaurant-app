@@ -14,6 +14,7 @@ import {
   Search,
   ShoppingBag,
   FileSpreadsheet,
+  Globe,
   Send,
   StickyNote,
   Truck,
@@ -135,6 +136,11 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
           )}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
+          {order.source === 'web' && (
+            <span className="flex items-center gap-1 rounded-full bg-blue-500 px-3 py-1 text-xs font-bold text-white">
+              <Globe size={12} /> Online
+            </span>
+          )}
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.badge}`}>
             {statusLabel(order.status, order.type)}
           </span>
