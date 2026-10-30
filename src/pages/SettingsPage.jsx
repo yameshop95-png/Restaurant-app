@@ -106,7 +106,7 @@ export default function SettingsPage({ customers, menu, onImportCustomers, onImp
         icon={UtensilsCrossed}
         title="Sao lưu thực đơn (Excel)"
         countText={`Đang có ${menu.length} món`}
-        description="Gồm tên món, giá và trạng thái Còn/Hết, theo đúng thứ tự trong app. Khi nhập lại, món trùng tên được cập nhật giá, món mới được thêm vào cuối."
+        description="Gồm tên món, giá và trạng thái Còn/Hết, theo đúng thứ tự trong app. Khi nhập lại, thực đơn được xếp theo thứ tự trong file và món trùng tên được cập nhật giá, không bị nhân đôi."
         exportLabel="Tải file Excel thực đơn"
         canExport={menu.length > 0}
         onExport={async () => {
