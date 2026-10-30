@@ -1,39 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { Banknote, Check, Loader2, MapPin, Minus, Phone, Plus, ShoppingBag, Truck } from 'lucide-react';
-import { DEFAULT_ZONES, matchZone } from '../lib/shippingZones';
-import { formatMoney } from '../lib/stats';
-import { TEXT } from './i18n';
+import { Banknote, Check, Loader2, Minus, Phone, Plus, ShoppingBag, Truck } from 'lucide-react';
+import { DEFAULT_ZONES, matchZone } from '../../lib/shippingZones';
+import { formatMoney } from '../../lib/stats';
+import { TEXT } from '../../order/i18n';
+import { siteClient, store } from '../client';
+import { useSite } from '../ui';
 
-// Website đặt món cho khách: chỉ đặt trước, trả tiền khi nhận. Không đăng nhập, không đọc được dữ liệu quán;
-// chỉ gọi 2 hàm trên máy chủ: public_shop (thực đơn, thông tin quán) và place_web_order (đặt đơn).
-// Máy chủ tự tính lại giá món và phí ship; đơn hiện ngay trong app nhận order với nhãn "Online".
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || 'https://hgkqcswzggsbpusrhpue.supabase.co',
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_qm7OXVxaPuwAhAB2zjOXow_7zBFNnON',
-  { auth: { persistSession: false, autoRefreshToken: false } },
-);
-
+// Trang đặt món: chỉ đặt trước, trả tiền khi nhận. Máy chủ (place_web_order) tự tính lại giá món và phí ship;
+// đơn hiện ngay trong app nhận order với nhãn "Online".
 const SAVED_KEY = 'order-site.customer';
-const LANG_KEY = 'order-site.lang';
 const DAYS_AHEAD = 7;
-
-const store = {
-  get(key, fallback) {
-    try {
-      return JSON.parse(localStorage.getItem(key)) ?? fallback;
-    } catch {
-      return fallback;
-    }
-  },
-  set(key, value) {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch {
-      // trình duyệt chặn lưu: lần sau khách gõ lại
-    }
-  },
-};
 
 const pad = (n) => String(n).padStart(2, '0');
 const dateKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -44,15 +20,6 @@ function earliestTime(leadMinutes) {
   d.setSeconds(0, 0);
   d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5);
   return d;
-}
-
-function useLang() {
-  const [lang, setLang] = useState(() => store.get(LANG_KEY, null) ?? (/^vi/i.test(navigator.language) ? 'vi' : 'en'));
-  useEffect(() => {
-    store.set(LANG_KEY, lang);
-    document.documentElement.lang = lang;
-  }, [lang]);
-  return [lang, setLang];
 }
 
 function Stepper({ qty, name, t, onChange, disabled }) {
@@ -105,55 +72,26 @@ const inputClass = (error) =>
     error ? 'border-red-400 focus:ring-red-100' : 'border-slate-300 focus:border-blue-500 focus:ring-blue-100'
   }`;
 
-function Header({ shop, t, lang, setLang }) {
-  return (
-    <header className="flex items-start gap-4">
-      <img
-        src={shop.logo || '/logo-round.svg'}
-        alt=""
-        className="h-20 w-20 shrink-0 rounded-full object-cover sm:h-24 sm:w-24"
-      />
-      <div className="min-w-0 flex-1">
-        <h1 className="text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">{shop.shopName || t.title}</h1>
-        {shop.shopAddress && (
-          <p className="mt-1 flex items-start gap-1.5 text-sm text-slate-500">
-            <MapPin size={15} className="mt-0.5 shrink-0" /> {shop.shopAddress}
-          </p>
-        )}
-        {shop.shopPhone && (
-          <a href={`tel:${shop.shopPhone}`} className="mt-0.5 flex items-center gap-1.5 text-sm text-slate-700">
-            <Phone size={15} className="shrink-0" /> <span className="select-all">{shop.shopPhone}</span>
-          </a>
-        )}
-      </div>
-      <button
-        onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
-        className="shrink-0 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 active:bg-slate-100"
-      >
-        {t.lang}
-      </button>
-    </header>
-  );
-}
-
-export default function OrderSite() {
-  const [lang, setLang] = useLang();
+export default function Checkout() {
+  const { lang, data, loadError, reload: load, cart: qty, setQty: setCartQty, clearCart, mounted } = useSite();
   const t = TEXT[lang];
-  const [data, setData] = useState(null); // { shop, menu }
-  const [loadError, setLoadError] = useState(false);
-  const saved = store.get(SAVED_KEY, {});
-  const [qty, setQty] = useState({});
   const [form, setForm] = useState(() => ({
     type: 'pickup',
     date: '',
     time: '',
-    name: saved.name ?? '',
-    phone: saved.phone ?? '',
-    address: saved.address ?? '',
+    name: '',
+    phone: '',
+    address: '',
     note: '',
     deliveryDate: '',
     website: '', // ô bẫy chống máy tự gửi, người thật không thấy
   }));
+  // Tên / SĐT / địa chỉ lần đặt trước (lưu trên máy khách)
+  useEffect(() => {
+    if (!mounted) return;
+    const s = store.get(SAVED_KEY, {});
+    setForm((f) => ({ ...f, name: f.name || s.name || '', phone: f.phone || s.phone || '', address: f.address || s.address || '' }));
+  }, [mounted]);
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [serverError, setServerError] = useState(null);
@@ -170,16 +108,6 @@ export default function OrderSite() {
     return () => io.disconnect();
   });
 
-  const load = async () => {
-    setLoadError(false);
-    const { data: res, error } = await supabase.rpc('public_shop');
-    if (error || !res) return setLoadError(true);
-    setData(res);
-  };
-  useEffect(() => {
-    load();
-  }, []);
-
   const shop = data?.shop ?? {};
   const menu = data?.menu ?? [];
   const web = shop.webOrdering ?? {};
@@ -192,9 +120,6 @@ export default function OrderSite() {
   const zones = shop.shippingZones ?? DEFAULT_ZONES;
   const closed = web.enabled === false;
 
-  useEffect(() => {
-    document.title = shop.shopName ? `${shop.shopName} – ${t.title}` : t.title;
-  }, [shop.shopName, t.title]);
 
   // Ngày giờ mặc định: giờ sớm nhất được đặt
   const earliest = useMemo(() => earliestTime(lead), [lead, data]);
@@ -243,7 +168,7 @@ export default function OrderSite() {
     return out;
   }, [lang, t]);
 
-  const items = menu.filter((m) => qty[m.id] > 0).map((m) => ({ ...m, qty: qty[m.id] }));
+  const items = menu.filter((m) => qty[m.id] > 0).map((m) => ({ ...m, price: Number(m.price), qty: qty[m.id] }));
   const count = items.reduce((s, i) => s + i.qty, 0);
   const subtotal = items.reduce((s, i) => s + i.qty * i.price, 0);
   const isDelivery = form.type === 'delivery';
@@ -269,7 +194,7 @@ export default function OrderSite() {
   const shown = submitted ? errors : {};
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
-  const setItem = (id, n) => setQty((q) => ({ ...q, [id]: Math.max(0, Math.min(50, n)) }));
+  const setItem = (id, n) => setCartQty(id, n);
 
   const submit = async () => {
     setSubmitted(true);
@@ -289,7 +214,7 @@ export default function OrderSite() {
       deliverAt: due.toISOString(),
       items: items.map((i) => ({ id: i.id, qty: i.qty })),
     };
-    const { data: res, error } = await supabase.rpc('place_web_order', { payload });
+    const { data: res, error } = await siteClient().rpc('place_web_order', { payload });
     setSending(false);
     if (error) return setServerError(t.errors.network);
     if (res?.error) {
@@ -304,10 +229,11 @@ export default function OrderSite() {
     }
     store.set(SAVED_KEY, { name: payload.name, phone: payload.phone, address: form.address.trim() });
     setDone({ ...res, type: form.type, items, when: due });
+    clearCart();
     window.scrollTo({ top: 0 });
   };
 
-  const page = 'min-h-screen bg-page px-4 pb-32 pt-6 sm:px-6 lg:pb-12';
+  const page = 'px-4 pb-32 pt-6 sm:px-6 lg:pb-12';
 
   if (loadError) {
     return (
@@ -319,7 +245,7 @@ export default function OrderSite() {
       </div>
     );
   }
-  if (!data) {
+  if (!data || !mounted) {
     return (
       <div className={`${page} flex items-center justify-center`}>
         <Loader2 className="animate-spin text-slate-500" />
@@ -336,7 +262,6 @@ export default function OrderSite() {
     return (
       <div className={page}>
         <div className="mx-auto max-w-xl space-y-5">
-          <Header shop={shop} t={t} lang={lang} setLang={setLang} />
           <section className="space-y-4 rounded-3xl border border-slate-200 bg-card p-6 text-center">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
               <Check size={30} />
@@ -369,7 +294,6 @@ export default function OrderSite() {
             <button
               onClick={() => {
                 setDone(null);
-                setQty({});
                 setSubmitted(false);
                 setForm((f) => ({ ...f, date: '', time: '', note: '' }));
                 load();
@@ -386,8 +310,8 @@ export default function OrderSite() {
 
   return (
     <div className={page}>
-      <div className="mx-auto max-w-5xl space-y-5">
-        <Header shop={shop} t={t} lang={lang} setLang={setLang} />
+      <div className="mx-auto max-w-6xl space-y-5">
+        <h1 className="text-3xl font-bold text-slate-900">{t.title}</h1>
 
         <div className="flex flex-wrap gap-2 text-sm">
           <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-slate-800">

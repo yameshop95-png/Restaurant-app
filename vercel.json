@@ -1,5 +1,7 @@
 {
+  "buildCommand": "npm run build",
   "cleanUrls": true,
+  "rewrites": [{ "source": "/order/:path*", "destination": "/order/index.html" }],
   "functions": {
     "api/analyze.js": { "maxDuration": 120 }
   }

@@ -16,14 +16,18 @@ const orderPageWithoutPwa = {
   },
 };
 
-export default defineConfig({
-  // 2 trang: app nhận order cho quán (/) và website đặt món cho khách (/order)
-  build: {
-    rollupOptions: {
-      input: { main: 'index.html', order: 'order.html' },
-    },
-  },
-  plugins: [
+export default defineConfig(({ isSsrBuild }) => ({
+  // 2 trang: app nhận order cho quán (/) và website cho khách (/order, dựng sẵn từng trang bằng scripts/prerender.mjs)
+  build: isSsrBuild
+    ? {}
+    : {
+        rollupOptions: {
+          input: { main: 'index.html', order: 'order.html' },
+        },
+      },
+  plugins: isSsrBuild
+    ? [react(), tailwindcss()]
+    : [
     react(),
     tailwindcss(),
     // Cài app ra màn hình chính + mở được khi mạng yếu (lưu sẵn giao diện app trên máy)
@@ -47,6 +51,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg}'],
+        // Trang website (/order) không thuộc app; order.html được thay bằng các trang dựng sẵn sau build
+        globIgnores: ['order.html', 'order/**', 'site/**'],
         // Máy chủ AI luôn phải gọi qua mạng, không trả trang app thay thế
         navigateFallbackDenylist: [/^\/api\//, /^\/order/],
         // Font chữ (Google Fonts): lưu lại để lần sau mở không cần mạng vẫn đúng font
@@ -61,4 +67,4 @@ export default defineConfig({
     }),
     orderPageWithoutPwa,
   ],
-});
+}));
