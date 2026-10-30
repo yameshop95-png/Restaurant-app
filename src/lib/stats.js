@@ -9,7 +9,9 @@ export function startOfWeek(now = new Date()) {
 
 export const orderTotal = (order) => order.items.reduce((sum, i) => sum + i.price * i.qty, 0);
 
-export function summarize(orders, now = new Date()) {
+export function summarize(allOrders, now = new Date()) {
+  // Đơn đã huỷ không tính vào doanh thu
+  const orders = allOrders.filter((o) => o.status !== 'cancelled');
   const weekStart = startOfWeek(now);
   const weekOrders = orders.filter((o) => new Date(o.createdAt) >= weekStart);
 

@@ -1,4 +1,8 @@
+import OrdersPage from './OrdersPage';
+
 export { default as HomePage } from './HomePage';
+export { OrdersPage };
+export const DeliveryPage = (props) => <OrdersPage {...props} type="delivery" />;
 
 // Các component placeholder cho từng tab. Tách ra file riêng khi bắt đầu làm chi tiết.
 
@@ -9,25 +13,6 @@ function PageCard({ title, children }) {
       <div className="text-sm text-slate-500">{children}</div>
     </section>
   );
-}
-
-export function OrdersPage({ counts, onResolve }) {
-  return (
-    <PageCard title="Đơn hàng tại quán">
-      <p className="mb-4">Có {counts.pendingOrders} đơn đang chờ xác nhận.</p>
-      <button
-        onClick={onResolve}
-        disabled={!counts.pendingOrders}
-        className="rounded-lg bg-orange-500 px-4 py-2 font-medium text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        Xác nhận 1 đơn (demo)
-      </button>
-    </PageCard>
-  );
-}
-
-export function DeliveryPage({ counts }) {
-  return <PageCard title="Đơn ship">Có {counts.pendingDelivery} đơn giao hàng đang chờ tài xế.</PageCard>;
 }
 
 export function MenuPage() {
