@@ -7,7 +7,8 @@ const STORAGE_KEY = 'restaurant-app.orders';
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return Array.isArray(saved) ? saved : [];
+    // Đơn "tại quán" của bản cũ được tính là đơn đến lấy
+    return Array.isArray(saved) ? saved.map((o) => (o.type === 'dine-in' ? { ...o, type: 'pickup' } : o)) : [];
   } catch {
     return [];
   }
@@ -24,8 +25,9 @@ export default function useOrders() {
     }
   }, [orders]);
 
-  // Order: { id, number, type: 'dine-in' | 'delivery',
-  //          customer: { name, phone, address }, deliverAt (ISO, chỉ đơn ship), table (chỉ đơn tại quán), note,
+  // Order: { id, number, type: 'pickup' | 'delivery',
+  //          customer: { name, phone, address }, deliverAt (ISO: giờ giao / giờ đến lấy),
+  //          table (đơn tại quán của bản cũ), note,
   //          shippingFee, discount (A$),
   //          items: [{ name, price, qty, note? }], status: 'pending' | 'done' | 'shipped' | 'cancelled',
   //          paid: boolean, paymentMethod: 'cash' | 'transfer' | 'payid' | null, paidAt (ISO), createdAt }

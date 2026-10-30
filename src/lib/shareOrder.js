@@ -24,7 +24,7 @@ export function orderText(order, shopName, mapsApp = 'google') {
   // Ba khối cách nhau một dòng trống: thông tin giao, món, tổng tiền
   const blocks = [
     [
-      `${shopName ? `[${shopName}] ` : ''}Đơn #${order.number}${order.deliverAt ? ` – giao ${when(order.deliverAt)}` : ''}`,
+      `${shopName ? `[${shopName}] ` : ''}Đơn #${order.number}${order.deliverAt ? ` – ${order.type === 'delivery' ? 'giao' : 'đến lấy'} ${when(order.deliverAt)}` : ''}`,
       c && `Khách: ${c.name}`,
       c?.phone && `SĐT: ${c.phone}`,
       c?.address && `Địa chỉ: ${c.address}`,

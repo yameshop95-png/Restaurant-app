@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
 import { History, MapPin, Minus, Phone, Plus, UserRound, X } from 'lucide-react';
 import { sameCustomer, searchCustomers } from '../hooks/useCustomers';
+import { ORDER_TYPES } from '../lib/orderStatus';
 import { formatMoney } from '../lib/stats';
 
-const TITLE = { 'dine-in': 'Tạo đơn tại quán', delivery: 'Tạo đơn ship' };
+const TITLE = { pickup: 'Tạo đơn đến lấy', delivery: 'Tạo đơn giao hàng' };
 
 // "YYYY-MM-DDTHH:mm" theo giờ máy, dùng cho ô ngày/giờ
 const localDateTime = (date = new Date()) => {
@@ -53,17 +54,16 @@ const initialQty = (order, menu) =>
     })
   );
 
-// Đơn ship: bắt buộc tên, SĐT, địa chỉ, ngày giờ giao. Đơn tại quán: chỉ bắt buộc tên.
+// Đơn giao hàng: bắt buộc tên, SĐT, địa chỉ, ngày giờ giao. Đơn đến lấy: bắt buộc tên, ngày giờ đến lấy.
 function validate(form, items, isDelivery, subtotal) {
+  const when = isDelivery ? 'giao' : 'đến lấy';
   const errors = {};
   const phoneDigits = form.phone.replace(/\D/g, '').length;
   if (!form.name.trim()) errors.name = 'Nhập tên khách hàng';
   if (isDelivery ? phoneDigits < 8 : phoneDigits > 0 && phoneDigits < 8) errors.phone = 'Số điện thoại chưa đúng';
-  if (isDelivery) {
-    if (!form.address.trim()) errors.address = 'Nhập địa chỉ';
-    if (!form.date) errors.date = 'Chọn ngày giao';
-    if (!form.time) errors.time = 'Chọn giờ giao';
-  }
+  if (isDelivery && !form.address.trim()) errors.address = 'Nhập địa chỉ';
+  if (!form.date) errors.date = `Chọn ngày ${when}`;
+  if (!form.time) errors.time = `Chọn giờ ${when}`;
   if (!items.length) errors.items = 'Chọn ít nhất 1 món';
   const fee = parseMoney(form.shippingFee);
   const discount = parseMoney(form.discount);
@@ -93,6 +93,7 @@ const inputClass = (error) =>
 // Truyền `order` để sửa đơn đã tạo; không truyền là tạo đơn mới.
 export default function NewOrderSheet({ type, order, menu, customers = [], orders = [], onSubmit, onClose }) {
   const isDelivery = type === 'delivery';
+  const typeInfo = ORDER_TYPES[isDelivery ? 'delivery' : 'pickup'];
   const [form, setForm] = useState(() => initialForm(order));
   const [qty, setQty] = useState(() => initialQty(order, menu));
   // Ghi chú riêng từng món, theo id món trong thực đơn
@@ -186,7 +187,8 @@ export default function NewOrderSheet({ type, order, menu, customers = [], order
         phone: form.phone.trim(),
         address: isDelivery ? form.address.trim() : '',
       },
-      deliverAt: isDelivery ? new Date(`${form.date}T${form.time}`).toISOString() : null,
+      deliverAt: new Date(`${form.date}T${form.time}`).toISOString(),
+      // Số bàn chỉ còn ở đơn tại quán của bản cũ: giữ nguyên khi sửa
       table: isDelivery ? '' : form.table.trim(),
       note: form.note,
       items,
@@ -263,26 +265,20 @@ export default function NewOrderSheet({ type, order, menu, customers = [], order
             />
           </Field>
 
-          {isDelivery ? (
-            <>
-              <Field label="Địa chỉ" error={errors.address}>
-                <textarea rows={2} value={form.address} onChange={set('address')} className={inputClass(errors.address)} />
-              </Field>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Ngày giao" error={errors.date}>
-                  <input type="date" value={form.date} onChange={set('date')} className={inputClass(errors.date)} />
-                </Field>
-                <Field label="Giờ giao" error={errors.time}>
-                  <input type="time" value={form.time} onChange={set('time')} className={inputClass(errors.time)} />
-                </Field>
-              </div>
-            </>
-          ) : (
-            <Field label="Số bàn" required={false}>
-              <input value={form.table} onChange={set('table')} placeholder="VD: 5" className={inputClass()} />
+          {isDelivery && (
+            <Field label="Địa chỉ" error={errors.address}>
+              <textarea rows={2} value={form.address} onChange={set('address')} className={inputClass(errors.address)} />
             </Field>
           )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={typeInfo.dateLabel} error={errors.date}>
+              <input type="date" value={form.date} onChange={set('date')} className={inputClass(errors.date)} />
+            </Field>
+            <Field label={typeInfo.timeLabel} error={errors.time}>
+              <input type="time" value={form.time} onChange={set('time')} className={inputClass(errors.time)} />
+            </Field>
+          </div>
 
           <div>
             <p className="mb-1 text-sm font-semibold text-slate-700">

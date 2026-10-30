@@ -9,7 +9,7 @@ import useOrders from './hooks/useOrders';
 import useSettings from './hooks/useSettings';
 import { exportAll } from './lib/backup';
 import { alertBeep, dueInfo, upcomingOrders } from './lib/due';
-import { paymentLabel, STATUS_LABEL } from './lib/orderStatus';
+import { paymentLabel, statusLabel } from './lib/orderStatus';
 import { HomePage, OrdersPage, DeliveryPage, ReportPage, CustomersPage, MenuPage, SettingsPage } from './pages';
 
 // Map id tab -> component hiển thị trong Main Content Area.
@@ -38,7 +38,7 @@ export default function App() {
     if (!order) return;
     const before = order.status;
     setStatus(id, status);
-    setToast({ label: `Đơn #${order.number}: ${STATUS_LABEL[status]}`, undo: () => setStatus(id, before) });
+    setToast({ label: `Đơn #${order.number}: ${statusLabel(status, order.type)}`, undo: () => setStatus(id, before) });
   };
   const changePaid = (id, paid, method) => {
     const order = orders.find((o) => o.id === id);
@@ -75,7 +75,7 @@ export default function App() {
     updateSettings({ lastBackupAt: new Date().toISOString() });
   };
 
-  // Tạo hoặc sửa đơn đều cập nhật luôn danh bạ khách hàng (khách tại quán không để SĐT thì không lưu)
+  // Tạo hoặc sửa đơn đều cập nhật luôn danh bạ khách hàng (khách đến lấy không để SĐT thì không lưu)
   const rememberCustomer = (customer) => customer.phone && saveCustomer(customer);
   const createOrder = (order) => {
     addOrder(order);
@@ -88,8 +88,9 @@ export default function App() {
 
   const pending = orders.filter((o) => o.status === 'pending');
   const counts = {
-    pendingOrders: pending.filter((o) => o.type === 'dine-in').length,
+    pendingPickup: pending.filter((o) => o.type !== 'delivery').length,
     pendingDelivery: pending.filter((o) => o.type === 'delivery').length,
+    pendingAll: pending.length,
   };
 
   const handleTabChange = (tab) => {
@@ -98,7 +99,7 @@ export default function App() {
   };
 
   const ActivePage = PAGES[activeTab];
-  const pendingTotal = counts.pendingOrders + counts.pendingDelivery;
+  const pendingTotal = counts.pendingAll;
 
   return (
     <div className="min-h-screen bg-slate-100">

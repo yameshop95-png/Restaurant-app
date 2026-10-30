@@ -15,7 +15,7 @@ function Badge({ count, active }) {
 }
 
 export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now, settings, isOpen, onClose }) {
-  const totalPending = counts.pendingOrders + counts.pendingDelivery;
+  const totalPending = counts.pendingAll;
   const overdue = upcoming.filter((o) => new Date(o.deliverAt) < now).length;
   // Bấm vào ô "cần giao" thì mở tab của đơn gấp nhất
   const urgentTab = upcoming[0]?.type === 'delivery' ? 'delivery' : 'orders';
@@ -65,7 +65,7 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
           </button>
         </div>
 
-        {/* Đơn cần giao trong 1 giờ tới (kể cả đơn đã trễ) */}
+        {/* Đơn đến giờ giao / giờ khách đến lấy trong 1 giờ tới (kể cả đơn đã trễ) */}
         <button
           onClick={() => upcoming.length && onTabChange(urgentTab)}
           className={`mx-4 mt-4 flex items-center gap-3 rounded-xl px-4 py-3 text-left ${
@@ -76,11 +76,11 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
           <span className="text-sm">
             {upcoming.length ? (
               <>
-                <span className="font-semibold text-white">{upcoming.length} đơn</span> cần giao trong 1 giờ tới
+                <span className="font-semibold text-white">{upcoming.length} đơn</span> cần xong trong 1 giờ tới
                 {overdue > 0 && <span className="block font-semibold text-red-300">{overdue} đơn đã trễ giờ</span>}
               </>
             ) : (
-              <span className="text-slate-400">Không có đơn cần giao trong 1 giờ tới</span>
+              <span className="text-slate-400">Không có đơn cần xong trong 1 giờ tới</span>
             )}
           </span>
         </button>
@@ -95,7 +95,7 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
             <div className="min-w-0">
               <p className="text-sm font-bold">{totalPending} đơn mới chờ xử lý</p>
               <p className="text-xs text-red-100">
-                {counts.pendingOrders} tại quán · {counts.pendingDelivery} ship
+                {counts.pendingPickup} đến lấy · {counts.pendingDelivery} giao hàng
               </p>
             </div>
           </button>

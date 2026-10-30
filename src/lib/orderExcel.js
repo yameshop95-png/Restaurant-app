@@ -29,11 +29,12 @@ const COLUMNS = [
   ['Thành tiền', 11],
 ];
 
-const TYPE_TEXT = { 'dine-in': 'Tại quán', delivery: 'Ship' };
+const TYPE_TEXT = { pickup: 'Đến lấy', delivery: 'Ship' };
 const STATUS_TEXT = STATUS_LABEL;
 const PAYMENT_KEY = Object.fromEntries(PAYMENT_METHODS.map((m) => [m.label.toLowerCase(), m.id]));
 const reverse = (map) => Object.fromEntries(Object.entries(map).map(([k, v]) => [v.toLowerCase(), k]));
-const TYPE_KEY = reverse(TYPE_TEXT);
+// File của bản cũ ghi "Tại quán": đọc thành đơn đến lấy
+const TYPE_KEY = { ...reverse(TYPE_TEXT), 'tại quán': 'pickup' };
 const STATUS_KEY = reverse(STATUS_TEXT);
 
 // Ngày giờ ghi dạng chữ "dd/mm/yyyy HH:mm" theo giờ máy, để đọc lại không bị lệch múi giờ
@@ -111,7 +112,7 @@ export function parseOrders(data) {
         id,
         number: Number(get(row, 'Số đơn')) || 0,
         createdAt: parseDateTime(get(row, 'Ngày tạo')) ?? new Date().toISOString(),
-        type: TYPE_KEY[text(row, 'Loại').toLowerCase()] ?? 'dine-in',
+        type: TYPE_KEY[text(row, 'Loại').toLowerCase()] ?? 'pickup',
         status: STATUS_KEY[text(row, 'Trạng thái').toLowerCase()] ?? 'pending',
         paid: text(row, 'Thanh toán').toLowerCase() === 'đã thanh toán',
         paymentMethod: PAYMENT_KEY[text(row, 'Cách thanh toán').toLowerCase()] ?? null,

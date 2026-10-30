@@ -11,6 +11,8 @@ import {
   Plus,
   RotateCcw,
   Search,
+  ShoppingBag,
+  FileSpreadsheet,
   Send,
   StickyNote,
   Truck,
@@ -20,11 +22,12 @@ import NewOrderSheet from '../components/NewOrderSheet';
 import RoutePlanner from '../components/RoutePlanner';
 import { normalizeText } from '../hooks/useCustomers';
 import { dueInfo, formatDue } from '../lib/due';
-import { PAYMENT_METHODS, paymentLabel, PREVIOUS_STATUS } from '../lib/orderStatus';
+import { exportOrderList } from '../lib/orderListExcel';
+import { ORDER_TYPES, PAYMENT_METHODS, paymentLabel, PREVIOUS_STATUS, statusLabel } from '../lib/orderStatus';
 import { mapsUrl, shareOrder } from '../lib/shareOrder';
 import { formatMoney, itemsTotal, orderTotal } from '../lib/stats';
 
-// Trạng thái xử lý đơn: Chờ xử lý → Hoàn thành (nấu xong) → Đã ship. Thanh toán là cờ riêng (`paid`).
+// Trạng thái xử lý đơn: Chờ xử lý → Hoàn thành (nấu xong) → Đã ship / Đã lấy. Thanh toán là cờ riêng (`paid`).
 const STATUS = {
   pending: { label: 'Chờ xử lý', badge: 'bg-amber-100 text-amber-700' },
   done: { label: 'Hoàn thành', badge: 'bg-emerald-100 text-emerald-700' },
@@ -61,6 +64,8 @@ const BACK_LABEL = {
   shipped: 'Chưa ship – chuyển về Hoàn thành',
   cancelled: 'Khôi phục đơn (về Chờ xử lý)',
 };
+const backLabel = (order) =>
+  order.type === 'pickup' && order.status === 'shipped' ? 'Khách chưa lấy – chuyển về Hoàn thành' : BACK_LABEL[order.status];
 
 function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPaid }) {
   const status = STATUS[order.status];
@@ -119,7 +124,9 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
           )}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
-          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.badge}`}>{status.label}</span>
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.badge}`}>
+            {statusLabel(order.status, order.type)}
+          </span>
           {!cancelled && (
             <span
               className={`rounded-full px-3 py-1 text-xs font-semibold ${
@@ -138,7 +145,15 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
         <div className="mt-3 space-y-1.5 text-[15px] text-slate-700">
           {order.deliverAt && (
             <p className="flex items-center gap-2 font-semibold text-blue-700">
-              <Truck size={16} className="shrink-0" /> Giao {formatTime(order.deliverAt, true)}
+              {order.type === 'delivery' ? (
+                <>
+                  <Truck size={16} className="shrink-0" /> Giao {formatTime(order.deliverAt, true)}
+                </>
+              ) : (
+                <>
+                  <ShoppingBag size={16} className="shrink-0" /> Đến lấy {formatTime(order.deliverAt, true)}
+                </>
+              )}
             </p>
           )}
           {order.table && (
@@ -216,7 +231,15 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
             onClick={() => onSetStatus(order.id, 'shipped')}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600"
           >
-            <Truck size={18} /> Đã ship
+            {order.type === 'delivery' ? (
+              <>
+                <Truck size={18} /> Đã ship
+              </>
+            ) : (
+              <>
+                <ShoppingBag size={18} /> Khách đã lấy
+              </>
+            )}
           </button>
           {!order.paid && !choosingPay && (
             <button
@@ -296,7 +319,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
           onClick={() => onSetStatus(order.id, PREVIOUS_STATUS[order.status])}
           className="mt-2 flex w-full items-center justify-center gap-1 py-1 text-sm text-slate-400 active:text-slate-600"
         >
-          <RotateCcw size={13} /> {BACK_LABEL[order.status]}
+          <RotateCcw size={13} /> {backLabel(order)}
         </button>
       )}
     </li>
@@ -326,9 +349,9 @@ function matchesDate(order, date) {
   return local(order.createdAt) === date || (order.deliverAt && local(order.deliverAt) === date);
 }
 
-// Dùng chung cho tab "Đơn hàng" (type = dine-in) và "Đơn ship" (type = delivery).
+// Tab "Đơn hàng": 2 tab con Đến lấy / Giao hàng. Tab "Đơn ship": chỉ đơn giao hàng (fixedType = 'delivery').
 export default function OrdersPage({
-  type = 'dine-in',
+  fixedType,
   orders,
   customers,
   menu,
@@ -339,27 +362,74 @@ export default function OrdersPage({
   now,
   settings,
 }) {
+  const [chosenType, setChosenType] = useState('pickup');
+  const type = fixedType ?? chosenType;
   const [filter, setFilter] = useState('pending');
+  const [exportMsg, setExportMsg] = useState(null);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
   const [view, setView] = useState('list'); // tab Đơn ship: 'list' | 'route'
   const [query, setQuery] = useState('');
   const [date, setDate] = useState('');
 
-  const ofType = orders.filter((o) => o.type === type);
+  const ofType = orders.filter((o) => (type === 'delivery' ? o.type === 'delivery' : o.type !== 'delivery'));
   // Đang tìm kiếm: tìm trong mọi trạng thái, mới tạo lên trước
   const searching = query.trim() !== '' || date !== '';
   const visible = searching
     ? ofType.filter((o) => matchesQuery(o, query) && matchesDate(o, date))
     : ofType.filter(FILTERS.find((f) => f.id === filter).match);
-  // Đơn chờ: giờ giao sớm nhất lên trước. Các mục khác: mới tạo lên trước.
-  if (filter === 'pending' && !searching) {
-    const due = (o) => new Date(o.deliverAt ?? o.createdAt).getTime();
-    visible.sort((a, b) => due(a) - due(b));
-  }
+  // Đơn chưa xong (Chờ xử lý / Hoàn thành): giờ lấy / giờ giao sớm nhất lên trước.
+  // Đơn đã xong, đã huỷ và kết quả tìm kiếm: mới nhất lên trước.
+  const due = (o) => new Date(o.deliverAt ?? o.createdAt).getTime();
+  if (!searching && (filter === 'pending' || filter === 'done')) visible.sort((a, b) => due(a) - due(b));
+  else visible.sort((a, b) => due(b) - due(a));
+
+  const filterLabel = (f) => (f.id === 'shipped' ? statusLabel('shipped', type) : f.label);
+  const exportExcel = async () => {
+    const viewLabel = searching ? 'kết quả tìm kiếm' : filterLabel(FILTERS.find((f) => f.id === filter));
+    try {
+      await exportOrderList(visible, type, viewLabel);
+      setExportMsg(`Đã tải file Excel gồm ${visible.length} đơn (${viewLabel})`);
+    } catch (err) {
+      setExportMsg(err.message || 'Không tải được file, thử lại nhé');
+    }
+    setTimeout(() => setExportMsg(null), 4000);
+  };
 
   return (
     <div className="mx-auto max-w-2xl pb-24">
+      {!fixedType && (
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          {Object.entries(ORDER_TYPES).map(([id, info]) => {
+            const active = type === id;
+            const waiting = orders.filter(
+              (o) => o.status === 'pending' && (id === 'delivery' ? o.type === 'delivery' : o.type !== 'delivery')
+            ).length;
+            return (
+              <button
+                key={id}
+                onClick={() => {
+                  setChosenType(id);
+                  setView('list');
+                }}
+                className={`flex items-center justify-center gap-2 rounded-2xl py-3 font-bold shadow-sm ${
+                  active ? 'bg-orange-500 text-white' : 'bg-white text-slate-700'
+                }`}
+              >
+                {id === 'delivery' ? <Truck size={18} /> : <ShoppingBag size={18} />} {info.label}
+                {waiting > 0 && (
+                  <span
+                    className={`rounded-full px-2 text-xs ${active ? 'bg-white text-orange-600' : 'bg-red-500 text-white'}`}
+                  >
+                    {waiting}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {type === 'delivery' && (
         <div className="mb-3 flex rounded-2xl bg-white p-1 shadow-sm">
           {[
@@ -431,11 +501,30 @@ export default function OrdersPage({
                     active ? 'bg-slate-900 text-white' : 'bg-white text-slate-600'
                   }`}
                 >
-                  {f.label} <span className={active ? 'text-slate-300' : 'text-slate-400'}>{n}</span>
+                  {filterLabel(f)} <span className={active ? 'text-slate-300' : 'text-slate-400'}>{n}</span>
                 </button>
               );
             })}
           </div>
+
+          {visible.length > 0 && (
+            <div className="mb-3 flex items-center justify-between gap-2 px-1">
+              <span className="text-sm text-slate-500">
+                {!searching && (filter === 'pending' || filter === 'done')
+                  ? `Xếp theo ${ORDER_TYPES[type].timeLabel.toLowerCase()} sớm nhất`
+                  : 'Mới nhất lên trước'}
+              </span>
+              <button
+                onClick={exportExcel}
+                className="flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200 active:bg-emerald-100"
+              >
+                <FileSpreadsheet size={16} /> Xuất Excel
+              </button>
+            </div>
+          )}
+          {exportMsg && (
+            <p className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{exportMsg}</p>
+          )}
 
           {visible.length === 0 ? (
             <p className="rounded-3xl bg-white/60 px-5 py-12 text-center text-slate-400">
