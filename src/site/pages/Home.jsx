@@ -1,7 +1,7 @@
 import { ArrowRight, Banknote, ShoppingBag, Truck } from 'lucide-react';
 import { formatMoney } from '../../lib/stats';
 import { DEFAULT_ZONES } from '../../lib/shippingZones';
-import { dishText, formatPostDate, path, sortedPosts } from '../lib';
+import { BLOG_ENABLED, dishText, formatPostDate, path, sortedPosts } from '../lib';
 import { DishCard, Link, Photo, useSite } from '../ui';
 
 export default function Home() {
@@ -18,14 +18,24 @@ export default function Home() {
       {/* Mở đầu: tên quán, câu giới thiệu, ảnh món */}
       <section className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-6 pt-8 sm:px-6 md:grid-cols-[1.05fr_1fr] md:pt-14">
         <div className="space-y-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-blue-500">{shop.shopName || t.defaultName}</p>
-          <h1 className="text-4xl font-extrabold leading-[1.08] text-slate-900 text-balance sm:text-5xl">{t.heroTitle}</h1>
+          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-blue-500">
+            {shop.shopName || t.defaultName}
+          </p>
+          <h1 className="text-4xl font-extrabold leading-[1.08] text-slate-900 text-balance sm:text-5xl">
+            {t.heroTitle}
+          </h1>
           <p className="max-w-xl text-lg text-slate-600">{t.heroText}</p>
           <div className="flex flex-wrap gap-3">
-            <Link to={path('/checkout')} className="flex items-center gap-2 rounded-2xl bg-blue-500 px-6 py-3.5 font-bold text-white active:bg-blue-600">
+            <Link
+              to={path('/checkout')}
+              className="flex items-center gap-2 rounded-2xl bg-blue-500 px-6 py-3.5 font-bold text-white active:bg-blue-600"
+            >
               {t.nav.order} <ArrowRight size={18} />
             </Link>
-            <Link to={path('/menu')} className="rounded-2xl border border-slate-300 px-6 py-3.5 font-bold text-slate-900 hover:bg-slate-50">
+            <Link
+              to={path('/menu')}
+              className="rounded-2xl border border-slate-300 px-6 py-3.5 font-bold text-slate-900 hover:bg-slate-50"
+            >
               {t.seeMenu}
             </Link>
           </div>
@@ -78,19 +88,21 @@ export default function Home() {
       </section>
 
       {/* Bài blog mới */}
-      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <div className="mb-5 flex items-end justify-between gap-4">
-          <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">{t.fromBlog}</h2>
-          <Link to={path('/blog')} className="shrink-0 text-sm font-semibold text-blue-500">
-            {t.allPosts} →
-          </Link>
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          {posts.map((p) => (
-            <PostCard key={p.slug} post={p} lang={lang} t={t} />
-          ))}
-        </div>
-      </section>
+      {BLOG_ENABLED && (
+        <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+          <div className="mb-5 flex items-end justify-between gap-4">
+            <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">{t.fromBlog}</h2>
+            <Link to={path('/blog')} className="shrink-0 text-sm font-semibold text-blue-500">
+              {t.allPosts} →
+            </Link>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {posts.map((p) => (
+              <PostCard key={p.slug} post={p} lang={lang} t={t} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Khu giao hàng */}
       <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
@@ -118,7 +130,9 @@ export function PostCard({ post, lang, t }) {
         <Photo src={post.cover} alt={post.title} />
       </Link>
       <div className="flex flex-1 flex-col gap-2 p-5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{formatPostDate(post.date, lang)}</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          {formatPostDate(post.date, lang)}
+        </p>
         <Link to={path(`/blog/${post.slug}`)}>
           <h3 className="text-lg font-bold leading-snug text-slate-900 text-balance">{post.title}</h3>
         </Link>

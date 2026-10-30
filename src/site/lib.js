@@ -6,6 +6,8 @@ import { normalizeText } from '../lib/text';
 export const BASE = '/order';
 export const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://restaurant-app-seven-lime.vercel.app';
 export const path = (p = '') => `${BASE}${p}`;
+// Blog tạm ẩn (chưa viết xong bài): không hiện trên menu, trang chủ, trang món, sitemap. Viết xong thì đổi thành true.
+export const BLOG_ENABLED = false;
 
 const key = (s) => normalizeText(s ?? '').replace(/[^a-z0-9]+/g, ' ').trim();
 export const slugify = (s) => key(s).replace(/ /g, '-');
@@ -49,7 +51,7 @@ export function parseRoute(pathname) {
   const parts = p.split('/').filter(Boolean);
   if (!parts.length) return { name: 'home' };
   if (parts[0] === 'menu') return parts[1] ? { name: 'dish', slug: parts[1] } : { name: 'menu' };
-  if (parts[0] === 'blog') return parts[1] ? { name: 'post', slug: parts[1] } : { name: 'blog' };
+  if (parts[0] === 'blog' && BLOG_ENABLED) return parts[1] ? { name: 'post', slug: parts[1] } : { name: 'blog' };
   if (parts[0] === 'checkout') return { name: 'checkout' };
   return { name: 'notfound' };
 }

@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
 import { MapPin, Minus, Phone, Plus, ShoppingBag } from 'lucide-react';
 import { formatMoney } from '../lib/stats';
-import { dishText, path } from './lib';
+import { BLOG_ENABLED, dishText, path } from './lib';
 
 export const SiteContext = createContext(null);
 export const useSite = () => useContext(SiteContext);
@@ -43,11 +43,13 @@ export function Photo({ src, alt, className = '', eager = false }) {
 
 export function QtyControl({ dish, size = 'md' }) {
   const { cart, setQty, t, mounted } = useSite();
-  const qty = mounted ? cart[dish.id] ?? 0 : 0;
+  const qty = mounted ? (cart[dish.id] ?? 0) : 0;
   const btn = size === 'lg' ? 'h-12 w-12' : 'h-10 w-10';
   if (!dish.id) return null;
   if (!dish.available) {
-    return <span className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-500">{t.soldOut}</span>;
+    return (
+      <span className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-500">{t.soldOut}</span>
+    );
   }
   if (!qty) {
     return (
@@ -91,7 +93,9 @@ export function DishCard({ dish }) {
   const txt = dishText(dish, lang);
   const href = path(`/menu/${dish.slug}`);
   return (
-    <article className={`flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-card ${dish.available ? '' : 'opacity-60'}`}>
+    <article
+      className={`flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-card ${dish.available ? '' : 'opacity-60'}`}
+    >
       <Link to={href} className="block aspect-[4/3] overflow-hidden" aria-label={txt.name}>
         <Photo src={dish.content?.photo} alt={txt.name} className="transition duration-300 hover:scale-105" />
       </Link>
@@ -129,8 +133,11 @@ export function Nav() {
         </Link>
         <nav className="ml-auto flex items-center gap-0.5">
           {item(path('/menu'), t.nav.menu, route.name === 'menu' || route.name === 'dish')}
-          {item(path('/blog'), t.nav.blog, route.name === 'blog' || route.name === 'post')}
-          <Link to={path('/checkout')} className="ml-1 rounded-xl bg-blue-500 px-3.5 py-2 text-sm font-bold text-white active:bg-blue-600">
+          {BLOG_ENABLED && item(path('/blog'), t.nav.blog, route.name === 'blog' || route.name === 'post')}
+          <Link
+            to={path('/checkout')}
+            className="ml-1 rounded-xl bg-blue-500 px-3.5 py-2 text-sm font-bold text-white active:bg-blue-600"
+          >
             {t.nav.order}
           </Link>
           <button
@@ -173,9 +180,17 @@ export function Footer() {
             </p>
           )}
           <p className="flex flex-wrap gap-x-4 gap-y-1 pt-2 sm:justify-end">
-            <Link to={path('/menu')} className="hover:text-slate-900">{t.nav.menu}</Link>
-            <Link to={path('/blog')} className="hover:text-slate-900">{t.nav.blog}</Link>
-            <Link to={path('/checkout')} className="hover:text-slate-900">{t.nav.order}</Link>
+            <Link to={path('/menu')} className="hover:text-slate-900">
+              {t.nav.menu}
+            </Link>
+            {BLOG_ENABLED && (
+              <Link to={path('/blog')} className="hover:text-slate-900">
+                {t.nav.blog}
+              </Link>
+            )}
+            <Link to={path('/checkout')} className="hover:text-slate-900">
+              {t.nav.order}
+            </Link>
           </p>
         </div>
       </div>

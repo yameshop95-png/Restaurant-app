@@ -1,6 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import { POSTS } from '../data/posts';
-import { dishText, path } from '../lib';
+import { BLOG_ENABLED, dishText, path } from '../lib';
 import { DishCard, Link, Photo, Price, QtyControl, useSite } from '../ui';
 import { PostCard } from './Home';
 import NotFound from './NotFound';
@@ -10,7 +10,7 @@ export default function Dish({ slug }) {
   const dish = dishes.find((d) => d.slug === slug);
   if (!dish) return <NotFound />;
   const txt = dishText(dish, lang);
-  const posts = POSTS.filter((p) => p.dishes?.includes(dish.slug)).slice(0, 3);
+  const posts = !BLOG_ENABLED ? [] : POSTS.filter((p) => p.dishes?.includes(dish.slug)).slice(0, 3);
   const more = dishes.filter((d) => d.slug !== dish.slug && d.content?.category === dish.content?.category).slice(0, 3);
 
   return (
