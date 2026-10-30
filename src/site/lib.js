@@ -43,6 +43,7 @@ export function dishList(menu) {
         name: m.name,
         price: Number(m.price),
         available: m.available !== false,
+        portion: m.portion?.trim() || '',
         content: c,
         slug: c?.slug ?? slugify(m.name),
         index: i,
@@ -51,13 +52,14 @@ export function dishList(menu) {
     .sort((a, b) => order(a.content?.category) - order(b.content?.category) || a.index - b.index);
 }
 
+// Định lượng: lấy trong app (chủ quán nhập khi sửa món) trước, không có thì lấy nội dung website
 export const dishText = (dish, lang) => {
   const c = dish.content?.[lang] ?? dish.content?.en;
   return {
     name: c?.name ?? dish.name,
     short: c?.short ?? '',
     description: c?.description ?? '',
-    portion: c?.portion ?? '',
+    portion: dish.portion || c?.portion || '',
   };
 };
 

@@ -11,6 +11,7 @@ const inputClass = (error) =>
 function MenuItemSheet({ item, menu, onSave, onDelete, onClose }) {
   const [name, setName] = useState(item?.name ?? '');
   const [price, setPrice] = useState(item ? String(item.price) : '');
+  const [portion, setPortion] = useState(item?.portion ?? '');
   const [submitted, setSubmitted] = useState(false);
 
   const priceValue = Number(price.replace(',', '.'));
@@ -24,7 +25,7 @@ function MenuItemSheet({ item, menu, onSave, onDelete, onClose }) {
   const save = () => {
     setSubmitted(true);
     if (Object.keys(errors).length) return;
-    onSave({ name, price: Math.round(priceValue * 100) / 100 });
+    onSave({ name, price: Math.round(priceValue * 100) / 100, portion: portion.trim() });
     onClose();
   };
 
@@ -58,6 +59,19 @@ function MenuItemSheet({ item, menu, onSave, onDelete, onClose }) {
               className={inputClass(shown.price)}
             />
             {shown.price && <span className="mt-1 block text-sm text-red-600">{shown.price}</span>}
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-sm font-semibold text-slate-700">Định lượng</span>
+            <input
+              value={portion}
+              onChange={(e) => setPortion(e.target.value)}
+              maxLength={80}
+              placeholder="VD: 500 g · 1 cây · 6 cuốn / phần"
+              className={inputClass(false)}
+            />
+            <span className="mt-1 block text-sm text-slate-500">
+              Hiện trên website cho khách xem. Để trống nếu không cần.
+            </span>
           </label>
           {item && (
             <p className="text-sm text-slate-500">Đổi giá chỉ áp dụng cho đơn mới, các đơn đã tạo giữ giá cũ.</p>
@@ -140,7 +154,10 @@ export default function MenuPage({ menu, isOwner, onAddMenuItem, onUpdateMenuIte
                   <p className={`font-semibold ${available ? 'text-slate-900' : 'text-slate-400 line-through'}`}>
                     {m.name}
                   </p>
-                  <p className="text-sm text-slate-500">{formatMoney(m.price)}</p>
+                  <p className="text-sm text-slate-500">
+                    {formatMoney(m.price)}
+                    {m.portion && <span> · {m.portion}</span>}
+                  </p>
                 </div>
 
                 <button

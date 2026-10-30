@@ -43,7 +43,7 @@ function write({ prev, next, added, changed, removed }) {
   return ops;
 }
 
-// MenuItem: { id, name, price, available }. Thứ tự trong danh sách là thứ tự hiện khi tạo đơn.
+// MenuItem: { id, name, price, portion, available }. portion: định lượng (chữ tự do), hiện trên website. Thứ tự trong danh sách là thứ tự hiện khi tạo đơn.
 // Chỉ chủ quán sửa được tên / giá / thứ tự; nhân viên chỉ bật tắt Còn / Hết.
 export default function useMenu() {
   const { list: menu, setList, ready } = useCloudList('menu_items', { fromRow, sort, write });
@@ -55,8 +55,8 @@ export default function useMenu() {
       return next.map((m, i) => (m._position === i ? m : { ...m, _position: i }));
     });
 
-  const addItem = ({ name, price }) =>
-    setMenu((prev) => [...prev, { id: newId(), name: name.trim(), price, available: true }]);
+  const addItem = ({ name, price, portion = '' }) =>
+    setMenu((prev) => [...prev, { id: newId(), name: name.trim(), price, portion, available: true }]);
 
   const updateItem = (id, patch) =>
     setMenu((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch, name: (patch.name ?? m.name).trim() } : m)));
@@ -82,7 +82,14 @@ export default function useMenu() {
     const existing = new Map(menu.map((m) => [key(m), m]));
     const next = [...fromFile.values()].map((item) => {
       const prev = existing.get(key(item));
-      return prev ? { ...prev, price: item.price, available: item.available } : { id: newId(), ...item };
+      if (!prev) return { id: newId(), ...item };
+      // File cũ không có cột định lượng thì giữ định lượng đang có
+      return {
+        ...prev,
+        price: item.price,
+        available: item.available,
+        ...(item.portion != null && { portion: item.portion }),
+      };
     });
     setMenu([...next, ...menu.filter((m) => !fromFile.has(key(m)))]);
     return next.filter((m) => !existing.has(key(m))).length;

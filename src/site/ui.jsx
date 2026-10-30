@@ -119,7 +119,7 @@ export function DishCard({ dish }) {
         </Link>
         {txt.short && <p className="mt-2 text-[15px] leading-relaxed text-slate-500">{txt.short}</p>}
         {txt.portion && (
-          <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{txt.portion}</p>
+          <p className="mt-3 rounded-full bg-mist px-3 py-1 text-[13px] font-semibold text-ink">{txt.portion}</p>
         )}
         <div className="mt-auto pt-5">
           <QtyControl dish={dish} />
