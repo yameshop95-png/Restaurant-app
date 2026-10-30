@@ -1,4 +1,7 @@
-import { Banknote, CheckCircle2, ShoppingBag, Truck } from 'lucide-react';
+import { Banknote, CalendarCheck, Leaf, ShieldCheck, ShoppingBag, Truck } from 'lucide-react';
+
+// Biểu tượng cho từng ý trong t.points (cùng thứ tự)
+const POINT_ICONS = [Leaf, CalendarCheck, ShieldCheck, ShoppingBag, Truck, Banknote];
 import { formatMoney } from '../../lib/stats';
 import { DEFAULT_ZONES } from '../../lib/shippingZones';
 import { TEXT as ORDER_TEXT } from '../../order/i18n';
@@ -50,12 +53,18 @@ export default function Home() {
             </div>
             <div>
               <SectionTitle align="left" title={t.welcomeTitle(name)} text={t.welcomeText} />
-              <ul className="mt-8 grid gap-x-6 gap-y-4 sm:grid-cols-2">
-                {t.points.map((p) => (
-                  <li key={p} className="flex items-start gap-3 text-slate-500">
-                    <CheckCircle2 size={22} className="mt-0.5 shrink-0 text-blue-500" /> {p}
-                  </li>
-                ))}
+              <ul className="mt-8 grid gap-x-6 gap-y-4 sm:grid-flow-col sm:grid-cols-2 sm:grid-rows-3">
+                {t.points.map((p, i) => {
+                  const Icon = POINT_ICONS[i] ?? Leaf;
+                  return (
+                    <li
+                      key={p}
+                      className={`flex items-start gap-3 ${i < 3 ? 'font-semibold text-ink' : 'text-slate-500'}`}
+                    >
+                      <Icon size={22} className="mt-0.5 shrink-0 text-blue-500" /> {p}
+                    </li>
+                  );
+                })}
               </ul>
               <div className="mt-10 flex flex-wrap gap-4">
                 <Link to={path('/menu')} className="btn btn-dark">
@@ -153,7 +162,6 @@ export default function Home() {
 }
 
 function Hero({ t, tall, round, name, logo }) {
-  const icons = [ShoppingBag, Truck, Banknote];
   return (
     <section className="relative overflow-hidden">
       {/* Vòng tròn mảnh góc trên bên trái như mẫu */}
@@ -179,19 +187,19 @@ function Hero({ t, tall, round, name, logo }) {
           </div>
           <div className="mt-12 flex items-center gap-4">
             <ul className="flex gap-3">
-              {icons.map((Icon, i) => (
+              {POINT_ICONS.slice(0, 3).map((Icon, i) => (
                 <li
-                  key={t.steps[i][0]}
-                  title={t.steps[i][0]}
+                  key={t.points[i]}
+                  title={t.points[i]}
                   className="flex h-11 w-11 items-center justify-center rounded-full text-ink ring-1 ring-ink"
                 >
                   <Icon size={18} aria-hidden="true" />
-                  <span className="sr-only">{t.steps[i][0]}</span>
+                  <span className="sr-only">{t.points[i]}</span>
                 </li>
               ))}
             </ul>
             <span className="h-px w-16 bg-slate-300 sm:w-28" />
-            <span className="text-sm text-slate-500">{t.steps[2][0]}</span>
+            <span className="text-sm text-slate-500">{t.freshBadge}</span>
           </div>
         </div>
 
