@@ -141,15 +141,24 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow }
         <BackupReminder lastBackupAt={settings.lastBackupAt} onBackupNow={onBackupNow} />
       )}
 
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Tổng tuần này</h1>
-          <p className="mt-1 text-sm text-slate-500">Từ thứ Hai {formatDate(stats.weekStart)}</p>
+      {/* Logo + tên quán (logo riêng tải ở Cài đặt app, không có thì dùng logo mặc định) */}
+      <div className="flex items-center gap-4">
+        <img
+          src={settings.logo || '/logo-round.svg'}
+          alt=""
+          className="h-20 w-20 shrink-0 rounded-full object-cover sm:h-24 sm:w-24"
+        />
+        <div className="min-w-0">
+          <p className="truncate text-xl font-bold text-slate-900 sm:text-2xl">{settings.shopName || 'Quán của bạn'}</p>
+          <p className="text-sm text-slate-500">
+            <span className="capitalize">{formatDay(now)}</span>, {formatDate(now)}
+          </p>
         </div>
-        <div className="text-right">
-          <p className="font-semibold capitalize text-slate-800">{formatDay(now)}</p>
-          <p className="text-slate-500">{formatDate(now)}</p>
-        </div>
+      </div>
+
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Tổng tuần này</h1>
+        <p className="mt-1 text-sm text-slate-500">Từ thứ Hai {formatDate(stats.weekStart)}</p>
       </div>
 
       {isOwner ? (
