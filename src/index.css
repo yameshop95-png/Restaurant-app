@@ -81,6 +81,22 @@
   --color-violet-500: #8b5cf6;
   --color-violet-600: #cbd5e1;
   --color-violet-700: #e2e8f0;
+
+  /* Chuyển trạng thái đơn bằng vuốt: trượt nhẹ theo hướng vuốt */
+  --animate-slide-next: slide-next 0.22s ease-out;
+  --animate-slide-prev: slide-prev 0.22s ease-out;
+  @keyframes slide-next {
+    from {
+      opacity: 0.4;
+      transform: translateX(40px);
+    }
+  }
+  @keyframes slide-prev {
+    from {
+      opacity: 0.4;
+      transform: translateX(-40px);
+    }
+  }
 }
 
 @layer base {

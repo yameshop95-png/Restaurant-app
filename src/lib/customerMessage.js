@@ -36,9 +36,7 @@ export function customerMessage(order, kind, lang, shopName) {
   const at = when(order, lang);
 
   if (lang === 'en') {
-    const pay = order.paid
-      ? 'Paid, thank you.'
-      : 'Please pay on ' + (delivery ? 'delivery' : 'pickup') + ' by cash or bank transfer.';
+    const pay = order.paid ? 'Paid, thank you.' : `Please pay cash on ${delivery ? 'delivery' : 'pickup'}.`;
     if (kind === 'confirm') {
       return [
         `${shop}: Hi ${name}, we have your order #${order.number}.`,
@@ -55,7 +53,7 @@ export function customerMessage(order, kind, lang, shopName) {
       : `${shop}: Hi ${name}, order #${order.number} is ready for pickup. Total ${total}. ${pay} See you soon!`;
   }
 
-  const pay = order.paid ? 'Đã thanh toán, cảm ơn bạn.' : 'Trả khi nhận hàng, tiền mặt hoặc chuyển khoản.';
+  const pay = order.paid ? 'Đã thanh toán, cảm ơn bạn.' : 'Vui lòng trả tiền mặt khi nhận hàng.';
   if (kind === 'confirm') {
     return [
       `${shop}: Chào ${name}, quán đã nhận đơn #${order.number}.`,
