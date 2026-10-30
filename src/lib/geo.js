@@ -84,12 +84,24 @@ export function distanceKm(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-// Mở Google Maps chỉ đường qua các điểm theo thứ tự (Google cho tối đa 9 điểm dừng giữa đường)
-export function directionsUrl(start, points) {
+// Chỉ đường lái xe qua các điểm theo thứ tự, mở bằng Apple Maps hoặc Google Maps.
+// Google cho tối đa 9 điểm dừng giữa đường nên lấy 10 điểm đầu; Apple Maps (iOS 18.4+) dùng cùng giới hạn cho chắc.
+export const MAX_ROUTE_STOPS = 10;
+
+export function directionsUrl(start, points, app = 'google') {
   const fmt = (p) => `${p.lat},${p.lng}`;
-  const stops = points.slice(0, 10);
-  const params = new URLSearchParams({ api: '1', travelmode: 'driving', destination: fmt(stops[stops.length - 1]) });
+  const stops = points.slice(0, MAX_ROUTE_STOPS);
+  const destination = fmt(stops[stops.length - 1]);
+  const between = stops.slice(0, -1).map(fmt);
+  if (app === 'apple') {
+    // Không có điểm xuất phát thì Apple Maps tự tính từ vị trí hiện tại
+    const params = new URLSearchParams({ destination, mode: 'driving' });
+    if (start) params.set('source', fmt(start));
+    for (const w of between) params.append('waypoint', w);
+    return `https://maps.apple.com/directions?${params}`;
+  }
+  const params = new URLSearchParams({ api: '1', travelmode: 'driving', destination });
   if (start) params.set('origin', fmt(start));
-  if (stops.length > 1) params.set('waypoints', stops.slice(0, -1).map(fmt).join('|'));
+  if (between.length) params.set('waypoints', between.join('|'));
   return `https://www.google.com/maps/dir/?${params}`;
 }

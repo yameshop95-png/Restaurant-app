@@ -10,6 +10,8 @@ const DEFAULTS = {
   logo: null, // ảnh dạng data URL, đã thu nhỏ
   dueSound: true, // kêu + rung khi đơn sắp tới giờ giao / trễ giờ
   lastBackupAt: null,
+  // Ứng dụng bản đồ khi bấm địa chỉ / mở lộ trình: iPhone, iPad mặc định Apple Maps, máy khác Google Maps
+  mapsApp: /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent)) ? 'apple' : 'google',
 };
 
 function load() {

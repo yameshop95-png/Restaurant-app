@@ -5,6 +5,7 @@ import {
   Download,
   FileSpreadsheet,
   ImagePlus,
+  Map as MapIcon,
   Store,
   Trash2,
   Upload,
@@ -199,6 +200,48 @@ function ShopInfo({ settings, onUpdateSettings }) {
   );
 }
 
+function MapsSettings({ settings, onUpdateSettings }) {
+  const options = [
+    ['apple', 'Apple Maps', 'Bản đồ có sẵn trên iPhone'],
+    ['google', 'Google Maps', 'Cần cài app Google Maps'],
+  ];
+  return (
+    <section className="rounded-3xl border border-white/80 bg-white/80 px-5 py-4 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+          <MapIcon size={22} />
+        </div>
+        <div>
+          <h2 className="font-bold text-slate-900">Ứng dụng bản đồ</h2>
+          <p className="text-sm text-slate-500">Dùng khi bấm vào địa chỉ và khi mở lộ trình giao</p>
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {options.map(([id, label, hint]) => {
+          const active = settings.mapsApp === id;
+          return (
+            <button
+              key={id}
+              onClick={() => onUpdateSettings({ mapsApp: id })}
+              aria-pressed={active}
+              className={`rounded-2xl border-2 px-3 py-2.5 text-left ${active ? 'border-blue-500 bg-blue-50' : 'border-slate-200'}`}
+            >
+              <span className={`block font-semibold ${active ? 'text-blue-700' : 'text-slate-800'}`}>{label}</span>
+              <span className="text-xs text-slate-500">{hint}</span>
+            </button>
+          );
+        })}
+      </div>
+      {settings.mapsApp === 'apple' && (
+        <p className="mt-2 text-xs text-slate-400">
+          Lộ trình nhiều điểm trên Apple Maps cần iOS 18.4 trở lên. Máy cũ hơn hãy chọn Google Maps.
+        </p>
+      )}
+      <p className="mt-1 text-xs text-slate-400">Tin nhắn gửi shipper luôn dùng link Google Maps để máy nào cũng mở được.</p>
+    </section>
+  );
+}
+
 function AlertSettings({ settings, onUpdateSettings }) {
   return (
     <section className="flex items-center gap-3 rounded-3xl border border-white/80 bg-white/80 px-5 py-4 shadow-sm">
@@ -248,6 +291,7 @@ export default function SettingsPage({
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <ShopInfo settings={settings} onUpdateSettings={onUpdateSettings} />
+      <MapsSettings settings={settings} onUpdateSettings={onUpdateSettings} />
       <AlertSettings settings={settings} onUpdateSettings={onUpdateSettings} />
 
       <BackupSection

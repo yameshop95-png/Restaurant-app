@@ -1,6 +1,10 @@
 import { formatMoney, itemsTotal, orderTotal } from './stats';
 
-export const mapsUrl = (address) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+// Mở địa chỉ trong ứng dụng bản đồ đã chọn ở Cài đặt app: 'apple' (Apple Maps) hoặc 'google' (Google Maps)
+export const mapsUrl = (address, app = 'google') =>
+  app === 'apple'
+    ? `https://maps.apple.com/place?address=${encodeURIComponent(address)}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 
 const pad = (n) => String(n).padStart(2, '0');
 const when = (iso) => {
@@ -18,7 +22,8 @@ export function orderText(order, shopName) {
       c && `Khách: ${c.name}`,
       c?.phone && `SĐT: ${c.phone}`,
       c?.address && `Địa chỉ: ${c.address}`,
-      c?.address && `Bản đồ: ${mapsUrl(c.address)}`,
+      // Không biết shipper dùng iPhone hay Android nên dùng link Google Maps, máy nào cũng mở được
+      c?.address && `Bản đồ: ${mapsUrl(c.address, 'google')}`,
     ],
     [...order.items.map((i) => `${i.qty} × ${i.name}`), order.note && `Ghi chú: ${order.note}`],
     [

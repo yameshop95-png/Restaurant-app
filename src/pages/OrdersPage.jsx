@@ -54,7 +54,7 @@ const DUE_STYLE = {
   soon: { card: 'ring-2 ring-orange-400', banner: 'bg-orange-100 text-orange-800' },
 };
 
-function OrderCard({ order, now, shopName, onEdit, onSetStatus, onSetPaid }) {
+function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPaid }) {
   const status = STATUS[order.status];
   const cancelled = order.status === 'cancelled';
   const due = dueInfo(order, now);
@@ -143,7 +143,7 @@ function OrderCard({ order, now, shopName, onEdit, onSetStatus, onSetPaid }) {
           )}
           {order.customer.address && (
             <a
-              href={mapsUrl(order.customer.address)}
+              href={mapsUrl(order.customer.address, mapsApp)}
               target="_blank"
               rel="noreferrer"
               className="flex items-start gap-2 text-blue-700 underline decoration-blue-200 underline-offset-2"
@@ -401,6 +401,7 @@ export default function OrdersPage({
                   order={order}
                   now={now}
                   shopName={settings.shopName}
+                  mapsApp={settings.mapsApp}
                   onEdit={setEditing}
                   onSetStatus={onSetStatus}
                   onSetPaid={onSetPaid}

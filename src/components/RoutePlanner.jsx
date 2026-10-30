@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AlarmClock, Loader2, LocateFixed, MapPin, Navigation, Phone, Route, Store, Truck } from 'lucide-react';
 import { dueInfo, formatDue } from '../lib/due';
-import { cachedGeocode, currentPosition, directionsUrl, geocode } from '../lib/geo';
+import { cachedGeocode, currentPosition, directionsUrl, geocode, MAX_ROUTE_STOPS } from '../lib/geo';
 import { mapsUrl } from '../lib/shareOrder';
 import { planRoute, SLOT_OPTIONS } from '../lib/route';
 import { formatMoney, orderTotal } from '../lib/stats';
@@ -124,13 +124,14 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
         ))}
         {located.length > 0 && (
           <a
-            href={directionsUrl(start, located.map((s) => s.geo))}
+            href={directionsUrl(start, located.map((s) => s.geo), settings.mapsApp)}
             target="_blank"
             rel="noreferrer"
             className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-blue-500 py-3 font-semibold text-blue-600 active:bg-blue-50"
           >
             <Navigation size={18} />
-            Mở lộ trình trên Google Maps{located.length > 10 ? ' (10 điểm đầu)' : ''}
+            Mở lộ trình trên {settings.mapsApp === 'apple' ? 'Apple Maps' : 'Google Maps'}
+            {located.length > MAX_ROUTE_STOPS ? ` (${MAX_ROUTE_STOPS} điểm đầu)` : ''}
           </a>
         )}
         {plan.totalKm > 0 && (
@@ -176,7 +177,7 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
                         {distanceKm != null && <span className="text-slate-500">~{distanceKm.toFixed(1)} km</span>}
                       </p>
                       <a
-                        href={mapsUrl(order.customer.address)}
+                        href={mapsUrl(order.customer.address, settings.mapsApp)}
                         target="_blank"
                         rel="noreferrer"
                         className="block text-sm text-blue-700 underline decoration-blue-200 underline-offset-2"
