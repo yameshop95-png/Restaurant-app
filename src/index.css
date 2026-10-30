@@ -4,8 +4,10 @@
    --bg-main #121214 · --bg-card #1E1E24 · --accent-primary #FF5722 · --accent-gold #D4AF37
    --text-main #F8FAFC · --text-muted #94A3B8 · --border-color #2E2E38 · font Inter
    Các trang vẫn dùng tên class của Tailwind; ở đây đổi giá trị của chúng:
-   slate đảo chiều (số nhỏ = nền tối, số lớn = chữ sáng), blue/orange = cam chính,
-   emerald = xanh "đã thanh toán", red = cảnh báo, amber = vàng gold. */
+   slate đảo chiều (số nhỏ = nền tối, số lớn = chữ sáng).
+   Bản gọn, mỗi màu một việc: cam (blue/orange 400-600) chỉ cho nút bấm và mục đang chọn;
+   đỏ chỉ cho chữ / nhãn cần chú ý; xanh lá chỉ cho "đã thanh toán"; vàng gold cho số tiền tuần.
+   Các nền nhạt và chữ thông tin của blue / orange / amber / violet đều về xám. */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
@@ -31,23 +33,23 @@
   --color-slate-900: #f8fafc;
   --color-slate-950: #ffffff;
 
-  --color-blue-50: #2a1c17;
-  --color-blue-100: #3a221a;
-  --color-blue-200: #5a2e1f;
+  --color-blue-50: #23232a;
+  --color-blue-100: #2a2a33;
+  --color-blue-200: #3d3d49;
   --color-blue-400: #ff8a65;
   --color-blue-500: #ff5722;
   --color-blue-600: #e64a19;
-  --color-blue-700: #ff8a65;
-  --color-blue-800: #ffab91;
-  --color-blue-900: #ffccbc;
+  --color-blue-700: #e2e8f0;
+  --color-blue-800: #e2e8f0;
+  --color-blue-900: #f8fafc;
 
-  --color-orange-50: #2a1c17;
-  --color-orange-100: #3a221a;
+  --color-orange-50: #23232a;
+  --color-orange-100: #2a2a33;
   --color-orange-300: #ffab91;
   --color-orange-400: #ff8a65;
   --color-orange-500: #ff5722;
   --color-orange-600: #ff7043;
-  --color-orange-800: #ffccbc;
+  --color-orange-800: #e2e8f0;
 
   --color-emerald-50: #14271e;
   --color-emerald-100: #183324;
@@ -66,19 +68,19 @@
   --color-red-600: #f87171;
   --color-red-700: #fca5a5;
 
-  --color-amber-50: #2a2412;
-  --color-amber-100: #2f2814;
-  --color-amber-300: #7a6528;
+  --color-amber-50: #23232a;
+  --color-amber-100: #2a2a33;
+  --color-amber-300: #3d3d49;
   --color-amber-500: #d4af37;
   --color-amber-600: #b8962c;
   --color-amber-700: #e6c869;
   --color-amber-800: #ecd48a;
   --color-amber-900: #f3e3b0;
 
-  --color-violet-100: #2a2240;
+  --color-violet-100: #2a2a33;
   --color-violet-500: #8b5cf6;
-  --color-violet-600: #a78bfa;
-  --color-violet-700: #c4b5fd;
+  --color-violet-600: #cbd5e1;
+  --color-violet-700: #e2e8f0;
 }
 
 @layer base {

@@ -29,10 +29,11 @@ import { formatMoney, itemsTotal, orderTotal } from '../lib/stats';
 
 // Trạng thái xử lý đơn: Chờ xử lý → Hoàn thành (nấu xong) → Đã ship / Đã lấy. Thanh toán là cờ riêng (`paid`).
 const STATUS = {
-  pending: { label: 'Chờ xử lý', badge: 'bg-amber-100 text-amber-700' },
-  done: { label: 'Hoàn thành', badge: 'bg-emerald-100 text-emerald-700' },
-  shipped: { label: 'Đã ship', badge: 'bg-blue-100 text-blue-700' },
-  cancelled: { label: 'Đã huỷ', badge: 'bg-slate-200 text-slate-500' },
+  // Trạng thái chỉ là nhãn xám; màu dành cho thanh toán và cảnh báo
+  pending: { label: 'Chờ xử lý', badge: 'bg-slate-100 text-slate-800' },
+  done: { label: 'Hoàn thành', badge: 'bg-slate-100 text-slate-800' },
+  shipped: { label: 'Đã ship', badge: 'bg-slate-100 text-slate-800' },
+  cancelled: { label: 'Đã huỷ', badge: 'bg-slate-50 text-slate-500' },
 };
 
 const FILTERS = [
@@ -55,8 +56,8 @@ function formatTime(iso, withDay = false) {
 }
 
 const DUE_STYLE = {
-  overdue: { card: 'ring-2 ring-red-500', banner: 'bg-red-500 text-white' },
-  soon: { card: 'ring-2 ring-orange-400', banner: 'bg-orange-100 text-orange-800' },
+  overdue: { card: 'ring-1 ring-red-500', banner: 'bg-red-50 text-red-600' },
+  soon: { card: 'ring-1 ring-slate-500', banner: 'bg-slate-100 text-slate-900' },
 };
 
 const BACK_LABEL = {
@@ -116,7 +117,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
               {order.customer?.address && (
                 <button
                   onClick={share}
-                  className="flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-sm font-semibold text-blue-700 active:bg-blue-100"
+                  className="flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600 active:bg-slate-200"
                 >
                   <Send size={14} /> Gửi cho shipper
                 </button>
@@ -131,7 +132,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
           {!cancelled && (
             <span
               className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                order.paid ? 'bg-emerald-100 text-emerald-700' : 'bg-red-500 text-white'
+                order.paid ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
               }`}
             >
               {order.paid
@@ -145,7 +146,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
       {order.customer && (
         <div className="mt-3 space-y-1.5 text-[15px] text-slate-700">
           {order.deliverAt && (
-            <p className="flex items-center gap-2 font-semibold text-blue-700">
+            <p className="flex items-center gap-2 font-semibold text-slate-900">
               {order.type === 'delivery' ? (
                 <>
                   <Truck size={16} className="shrink-0" /> Giao {formatTime(order.deliverAt, true)}
@@ -158,7 +159,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
             </p>
           )}
           {order.table && (
-            <p className="flex items-center gap-2 font-semibold text-blue-700">
+            <p className="flex items-center gap-2 font-semibold text-slate-900">
               <Armchair size={16} className="shrink-0" /> Bàn {order.table}
             </p>
           )}
@@ -175,7 +176,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
               href={mapsUrl(order.customer.address, mapsApp)}
               target="_blank"
               rel="noreferrer"
-              className="flex items-start gap-2 text-blue-700 underline decoration-blue-200 underline-offset-2"
+              className="flex items-start gap-2 text-slate-700 underline decoration-slate-300 underline-offset-2"
             >
               <MapPin size={16} className="mt-0.5 shrink-0" /> {order.customer.address}
             </a>
@@ -183,7 +184,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
         </div>
       )}
 
-      {shareMsg && <p className="mt-2 rounded-xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700">{shareMsg}</p>}
+      {shareMsg && <p className="mt-2 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800">{shareMsg}</p>}
 
       {order.customer && order.note && (
         <p className="mt-3 flex items-start gap-2 rounded-xl bg-red-50 px-3 py-2 font-semibold text-red-600">
@@ -214,7 +215,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
             </p>
           )}
           {order.discount > 0 && (
-            <p className="flex justify-between text-emerald-600">
+            <p className="flex justify-between">
               <span>Giảm giá</span> <span>− {formatMoney(order.discount)}</span>
             </p>
           )}
@@ -245,7 +246,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
           {!order.paid && !choosingPay && (
             <button
               onClick={askPayment}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-500 py-3 font-semibold text-white active:bg-emerald-600"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-300 py-3 font-semibold text-slate-800 active:bg-slate-100"
             >
               <Banknote size={18} /> Đã thanh toán
             </button>
@@ -254,8 +255,8 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
       )}
 
       {choosingPay && !order.paid && (
-        <div className="mt-3 rounded-2xl bg-emerald-50 p-3">
-          <p className="mb-2 text-sm font-semibold text-emerald-800">Khách trả bằng:</p>
+        <div className="mt-3 rounded-2xl bg-slate-50 p-3">
+          <p className="mb-2 text-sm font-semibold text-slate-700">Khách trả bằng:</p>
           <div className="grid grid-cols-3 gap-2">
             {PAYMENT_METHODS.map((m) => (
               <button
@@ -264,7 +265,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
                   setChoosingPay(false);
                   onSetPaid(order.id, true, m.id);
                 }}
-                className="rounded-xl bg-emerald-500 py-2.5 text-sm font-semibold text-white active:bg-emerald-600"
+                className="rounded-xl border border-slate-300 bg-slate-100 py-2.5 text-sm font-semibold text-slate-900 active:bg-slate-200"
               >
                 {m.label}
               </button>
@@ -290,7 +291,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
           !choosingPay && (
             <button
               onClick={askPayment}
-              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-emerald-500 py-2.5 font-semibold text-emerald-600 active:bg-emerald-50"
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-300 py-2.5 font-semibold text-slate-800 active:bg-slate-100"
             >
               <Banknote size={18} /> Đã thanh toán
             </button>
@@ -307,7 +308,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
           </button>
           <button
             onClick={() => onSetStatus(order.id, 'done')}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-500 py-3 font-semibold text-white active:bg-emerald-600"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600"
           >
             <Check size={18} /> Hoàn thành
           </button>
@@ -420,7 +421,7 @@ export default function OrdersPage({
                 {id === 'delivery' ? <Truck size={18} /> : <ShoppingBag size={18} />} {info.label}
                 {waiting > 0 && (
                   <span
-                    className={`rounded-full px-2 text-xs ${active ? 'bg-card text-orange-600' : 'bg-red-500 text-white'}`}
+                    className={`rounded-full px-2 text-xs ${active ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-800'}`}
                   >
                     {waiting}
                   </span>
@@ -517,14 +518,14 @@ export default function OrdersPage({
               </span>
               <button
                 onClick={exportExcel}
-                className="flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200 active:bg-emerald-100"
+                className="flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-800 active:bg-slate-100"
               >
                 <FileSpreadsheet size={16} /> Xuất Excel
               </button>
             </div>
           )}
           {exportMsg && (
-            <p className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{exportMsg}</p>
+            <p className="mb-3 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800">{exportMsg}</p>
           )}
 
           {visible.length === 0 ? (
@@ -553,7 +554,7 @@ export default function OrdersPage({
 
       <button
         onClick={() => setCreating(true)}
-        className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-5 lg:bottom-6 z-20 flex items-center gap-2 rounded-full bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-blue-500/30 active:bg-blue-600"
+        className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-5 lg:bottom-6 z-20 flex items-center gap-2 rounded-full bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-black/40 active:bg-blue-600"
       >
         <Plus size={20} /> Tạo đơn
       </button>

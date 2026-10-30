@@ -161,7 +161,7 @@ export function StaffManager({ account }) {
                     {p.name}
                     {p.id === account.id && <span className="text-sm font-normal text-slate-400"> (bạn)</span>}
                   </p>
-                  <p className={`text-sm ${p.role === 'owner' ? 'font-semibold text-orange-600' : 'text-slate-500'}`}>
+                  <p className={`text-sm ${p.role === 'owner' ? 'font-semibold text-slate-800' : 'text-slate-500'}`}>
                     {ROLE_LABEL[p.role]}
                   </p>
                 </div>

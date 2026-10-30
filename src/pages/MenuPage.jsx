@@ -146,7 +146,7 @@ export default function MenuPage({ menu, isOwner, onAddMenuItem, onUpdateMenuIte
                 <button
                   onClick={() => onUpdateMenuItem(m.id, { available: !available })}
                   className={`w-16 shrink-0 rounded-full py-1.5 text-sm font-bold ${
-                    available ? 'bg-emerald-100 text-emerald-700' : 'bg-red-500 text-white'
+                    available ? 'bg-slate-100 text-slate-700' : 'bg-red-50 text-red-600 ring-1 ring-red-500/60'
                   }`}
                   aria-label={`${m.name}: ${available ? 'còn món, bấm để báo hết' : 'hết món, bấm để báo còn'}`}
                 >
@@ -169,7 +169,7 @@ export default function MenuPage({ menu, isOwner, onAddMenuItem, onUpdateMenuIte
       {isOwner && (
         <button
           onClick={() => setEditing(null)}
-          className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-5 lg:bottom-6 z-20 flex items-center gap-2 rounded-full bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-blue-500/30 active:bg-blue-600"
+          className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-5 lg:bottom-6 z-20 flex items-center gap-2 rounded-full bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-black/40 active:bg-blue-600"
         >
           <Plus size={20} /> Thêm món
         </button>

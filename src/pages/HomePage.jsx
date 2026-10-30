@@ -42,7 +42,7 @@ function BackupReminder({ lastBackupAt, onBackupNow }) {
   };
 
   return (
-    <section className="rounded-3xl bg-amber-100 px-5 py-4 text-amber-900 shadow-sm ring-1 ring-amber-300">
+    <section className="rounded-3xl border border-slate-200 bg-card px-5 py-4 text-slate-800">
       <p className="flex items-center gap-2 font-bold">
         <Archive size={18} className="shrink-0" />
         {days == null ? 'Chưa sao lưu dữ liệu lần nào' : `Đã ${days} ngày chưa sao lưu dữ liệu`}
@@ -53,7 +53,7 @@ function BackupReminder({ lastBackupAt, onBackupNow }) {
       <button
         onClick={backup}
         disabled={busy}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 py-3 font-semibold text-white active:bg-amber-600 disabled:opacity-60"
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600 disabled:opacity-60"
       >
         {busy ? <Loader2 size={18} className="animate-spin" /> : <Archive size={18} />} Sao lưu ngay
       </button>
@@ -163,14 +163,14 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow }
             </Card>
             <section
               className={`rounded-3xl px-5 pb-4 pt-4 shadow-sm ${
-                stats.weekUnpaid.count ? 'bg-red-500 text-white shadow-red-500/30' : 'bg-card text-slate-500'
+                stats.weekUnpaid.count ? 'border border-red-500/60 bg-card text-red-600' : 'border border-slate-200 bg-card text-slate-500'
               }`}
             >
-              <h2 className={`text-[15px] ${stats.weekUnpaid.count ? 'font-semibold text-white/85' : ''}`}>Chưa thanh toán</h2>
-              <p className={`mt-1 text-2xl font-bold tracking-tight ${stats.weekUnpaid.count ? '' : 'text-slate-900'}`}>
+              <h2 className="text-[15px] text-slate-500">Chưa thanh toán</h2>
+              <p className={`mt-1 text-2xl font-bold tracking-tight ${stats.weekUnpaid.count ? 'text-red-600' : 'text-slate-900'}`}>
                 {formatMoney(stats.weekUnpaid.total)}
               </p>
-              <p className={`text-sm ${stats.weekUnpaid.count ? 'text-white/85' : ''}`}>{stats.weekUnpaid.count} đơn</p>
+              <p className="text-sm text-slate-500">{stats.weekUnpaid.count} đơn</p>
             </section>
           </div>
           {stats.olderUnpaid.count > 0 && (
@@ -183,7 +183,7 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow }
             <h2 className="text-[15px] text-slate-500">Tiền tuần này</h2>
             <div className="mt-1 flex items-end justify-between gap-3">
               <p className="text-4xl font-bold tracking-tight text-gold sm:text-5xl">{formatMoney(stats.weekRevenue)}</p>
-              <span className="shrink-0 rounded-full bg-orange-500 px-4 py-1.5 font-semibold text-white">
+              <span className="shrink-0 rounded-full bg-slate-100 px-4 py-1.5 font-semibold text-slate-800">
                 {stats.weekOrderCount} đơn
               </span>
             </div>
@@ -225,7 +225,7 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow }
                 <div className="mt-1.5 flex items-center gap-3">
                   <div className="h-1.5 flex-1 rounded-full bg-slate-200">
                     <div
-                      className="h-full rounded-full bg-blue-500"
+                      className="h-full rounded-full bg-slate-600"
                       style={{ width: `${(item.qty / maxQty) * 100}%` }}
                     />
                   </div>

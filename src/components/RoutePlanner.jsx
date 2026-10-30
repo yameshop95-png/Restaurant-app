@@ -162,7 +162,7 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
       {plan.slots.map((slot) => (
         <section key={slot.label} className="overflow-hidden rounded-3xl border border-slate-200 bg-card shadow-sm">
           <h2
-            className={`flex items-center gap-2 px-5 py-3 font-bold ${slot.overdue ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-800'}`}
+            className={`flex items-center gap-2 px-5 py-3 font-bold ${slot.overdue ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-800'}`}
           >
             <AlarmClock size={17} /> {slot.label}
           </h2>
@@ -188,7 +188,7 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
                       <p className="flex flex-wrap items-center gap-x-2 text-sm">
                         <span className="font-semibold text-blue-700">Giao {hhmm(order.deliverAt)}</span>
                         {due && (
-                          <span className={due.level === 'overdue' ? 'font-semibold text-red-600' : 'font-semibold text-orange-600'}>
+                          <span className={due.level === 'overdue' ? 'font-semibold text-red-600' : 'font-semibold text-slate-900'}>
                             {formatDue(due)}
                           </span>
                         )}

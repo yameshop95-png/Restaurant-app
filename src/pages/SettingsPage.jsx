@@ -48,7 +48,7 @@ function BackupSection({ icon: Icon, title, countText, description, exportLabel,
   return (
     <section className="overflow-hidden rounded-3xl border border-slate-200 bg-card shadow-sm">
       <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
           <FileSpreadsheet size={22} />
         </div>
         <div>
@@ -65,7 +65,7 @@ function BackupSection({ icon: Icon, title, countText, description, exportLabel,
         <button
           onClick={() => run(onExport)}
           disabled={busy || !canExport}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 py-3.5 font-semibold text-white active:bg-emerald-600 disabled:bg-slate-300"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-500 py-3.5 font-semibold text-white active:bg-blue-600 disabled:bg-slate-300 disabled:text-slate-500"
         >
           <Download size={19} /> {exportLabel}
         </button>
@@ -82,7 +82,7 @@ function BackupSection({ icon: Icon, title, countText, description, exportLabel,
         {message && (
           <p
             className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${
-              message.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'
+              message.ok ? 'bg-slate-100 text-slate-800' : 'bg-red-50 text-red-600'
             }`}
           >
             {message.text}
@@ -238,7 +238,7 @@ function InstallApp() {
         </div>
       </div>
       {installed ? (
-        <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
+        <p className="mt-3 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800">
           ✓ Đang dùng app đã cài trên màn hình chính
         </p>
       ) : isIOS ? (
@@ -339,7 +339,7 @@ function AlertSettings({ settings, onUpdateSettings }) {
         aria-checked={settings.dueSound}
         aria-label="Âm báo giờ giao"
         onClick={() => onUpdateSettings({ dueSound: !settings.dueSound })}
-        className={`relative h-8 w-14 shrink-0 rounded-full transition ${settings.dueSound ? 'bg-emerald-500' : 'bg-slate-300'}`}
+        className={`relative h-8 w-14 shrink-0 rounded-full transition ${settings.dueSound ? 'bg-blue-500' : 'bg-slate-300'}`}
       >
         <span
           className={`absolute top-1 h-6 w-6 rounded-full bg-card shadow transition-all ${settings.dueSound ? 'left-7' : 'left-1'}`}

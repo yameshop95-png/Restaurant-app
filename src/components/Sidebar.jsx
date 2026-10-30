@@ -69,15 +69,15 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
         <button
           onClick={() => upcoming.length && onTabChange(urgentTab)}
           className={`mx-4 mt-4 flex items-center gap-3 rounded-xl px-4 py-3 text-left ${
-            overdue ? 'bg-red-500/20 ring-1 ring-red-400/60' : 'bg-slate-50'
+            overdue ? 'bg-slate-50 ring-1 ring-red-500/60' : 'bg-slate-50'
           }`}
         >
-          <AlarmClock size={18} className={overdue ? 'text-red-300' : upcoming.length ? 'text-orange-400' : 'text-slate-500'} />
+          <AlarmClock size={18} className={overdue ? 'text-red-400' : upcoming.length ? 'text-slate-700' : 'text-slate-500'} />
           <span className="text-sm">
             {upcoming.length ? (
               <>
                 <span className="font-semibold text-white">{upcoming.length} đơn</span> cần xong trong 1 giờ tới
-                {overdue > 0 && <span className="block font-semibold text-red-300">{overdue} đơn đã trễ giờ</span>}
+                {overdue > 0 && <span className="block font-semibold text-red-400">{overdue} đơn đã trễ giờ</span>}
               </>
             ) : (
               <span className="text-slate-500">Không có đơn cần xong trong 1 giờ tới</span>
@@ -89,12 +89,12 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
         {totalPending > 0 && (
           <button
             onClick={() => onTabChange('orders')}
-            className="mx-4 mt-3 flex items-center gap-3 rounded-xl bg-red-500 px-4 py-3 text-left text-white shadow-lg shadow-red-500/30 ring-2 ring-red-400/50 transition hover:bg-red-600"
+            className="mx-4 mt-3 flex items-center gap-3 rounded-xl border border-red-500/50 bg-slate-50 px-4 py-3 text-left text-white transition hover:bg-slate-100"
           >
-            <BellRing size={22} className="shrink-0 animate-bounce" />
+            <BellRing size={22} className="shrink-0 animate-bounce text-red-400" />
             <div className="min-w-0">
               <p className="text-sm font-bold">{totalPending} đơn mới chờ xử lý</p>
-              <p className="text-xs text-white/80">
+              <p className="text-xs text-slate-500">
                 {counts.pendingPickup} đến lấy · {counts.pendingDelivery} giao hàng
               </p>
             </div>
@@ -112,7 +112,7 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
                 aria-current={active ? 'page' : undefined}
                 className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
                   active
-                    ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                    ? 'bg-orange-500 text-white '
                     : 'text-slate-700 hover:bg-slate-100 hover:text-white'
                 }`}
               >

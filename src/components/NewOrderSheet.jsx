@@ -332,7 +332,7 @@ export default function NewOrderSheet({ type, order, menu, customers = [], order
                       )}
                       <button
                         onClick={() => change(m.id, 1)}
-                        className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-white active:bg-blue-600"
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 text-slate-900 active:bg-slate-100"
                         aria-label={`Thêm ${m.name}`}
                       >
                         <Plus size={18} />

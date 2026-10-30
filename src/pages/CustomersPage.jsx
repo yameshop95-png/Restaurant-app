@@ -135,7 +135,7 @@ export default function CustomersPage({ customers, orders, isOwner, onAddCustome
         <button
           onClick={() => setDebtOnly((v) => !v)}
           className={`mb-4 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left ${
-            debtOnly ? 'bg-red-500 text-white' : 'bg-red-50 text-red-700 ring-1 ring-red-200'
+            debtOnly ? 'bg-red-50 text-red-600 ring-1 ring-red-500' : 'bg-card text-red-600 ring-1 ring-slate-200'
           }`}
         >
           <CircleDollarSign size={22} className="shrink-0" />
@@ -158,7 +158,7 @@ export default function CustomersPage({ customers, orders, isOwner, onAddCustome
             const s = statsById.get(c.id);
             return (
               <li key={c.id} className="flex items-start gap-3 px-4 py-3">
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600">
                   <UserRound size={18} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -179,7 +179,7 @@ export default function CustomersPage({ customers, orders, isOwner, onAddCustome
                     </p>
                   )}
                   {s.debt > 0 && (
-                    <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-red-500 px-2.5 py-0.5 text-xs font-bold text-white">
+                    <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-bold text-red-600">
                       Còn nợ {formatMoney(s.debt)} ({s.debtCount} đơn)
                     </p>
                   )}
@@ -198,7 +198,7 @@ export default function CustomersPage({ customers, orders, isOwner, onAddCustome
 
       <button
         onClick={() => setEditing(null)}
-        className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-5 lg:bottom-6 z-20 flex items-center gap-2 rounded-full bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-blue-500/30 active:bg-blue-600"
+        className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-5 lg:bottom-6 z-20 flex items-center gap-2 rounded-full bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-black/40 active:bg-blue-600"
       >
         <Plus size={20} /> Thêm khách
       </button>
