@@ -153,7 +153,7 @@ export const DISHES = [
     slug: 'banh-gio',
     category: 'rolls',
     featured: true,
-    photo: null,
+    photo: '/site/photos/banh-gio.webp',
     en: {
       name: 'Bánh giò – pyramid rice dumpling',
       short: 'Soft rice dumpling wrapped in banana leaf with a savoury pork filling.',
