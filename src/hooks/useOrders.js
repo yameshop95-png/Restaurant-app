@@ -26,7 +26,8 @@ export default function useOrders() {
 
   // Order: { id, number, type: 'dine-in' | 'delivery',
   //          customer: { name, phone, address }, deliverAt (ISO), note,
-  //          items: [{ name, price, qty }], status: 'pending' | 'done' | 'cancelled', createdAt }
+  //          items: [{ name, price, qty }], status: 'pending' | 'done' | 'shipped' | 'cancelled',
+  //          paid: boolean, createdAt }
   const addOrder = ({ type, customer, deliverAt, note, items }) =>
     setOrders((prev) => [
       {
@@ -38,6 +39,7 @@ export default function useOrders() {
         note: note.trim(),
         items,
         status: 'pending',
+        paid: false,
         createdAt: new Date().toISOString(),
       },
       ...prev,
@@ -46,5 +48,8 @@ export default function useOrders() {
   const setStatus = (id, status) =>
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
 
-  return { orders, addOrder, setStatus };
+  const setPaid = (id, paid) =>
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, paid } : o)));
+
+  return { orders, addOrder, setStatus, setPaid };
 }

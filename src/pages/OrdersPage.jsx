@@ -1,19 +1,23 @@
 import { useState } from 'react';
-import { Check, Clock, MapPin, Phone, Plus, StickyNote, Truck, X } from 'lucide-react';
+import { Banknote, Check, Clock, MapPin, Phone, Plus, StickyNote, Truck, X } from 'lucide-react';
 import NewOrderSheet from '../components/NewOrderSheet';
 import { formatMoney, orderTotal } from '../lib/stats';
 
-const FILTERS = [
-  { id: 'pending', label: 'Chờ xử lý' },
-  { id: 'done', label: 'Hoàn thành' },
-  { id: 'cancelled', label: 'Đã huỷ' },
-];
-
-const STATUS_BADGE = {
-  pending: 'bg-amber-100 text-amber-700',
-  done: 'bg-emerald-100 text-emerald-700',
-  cancelled: 'bg-slate-200 text-slate-500',
+// Trạng thái xử lý đơn: Chờ xử lý → Hoàn thành (nấu xong) → Đã ship. Thanh toán là cờ riêng (`paid`).
+const STATUS = {
+  pending: { label: 'Chờ xử lý', badge: 'bg-amber-100 text-amber-700' },
+  done: { label: 'Hoàn thành', badge: 'bg-emerald-100 text-emerald-700' },
+  shipped: { label: 'Đã ship', badge: 'bg-blue-100 text-blue-700' },
+  cancelled: { label: 'Đã huỷ', badge: 'bg-slate-200 text-slate-500' },
 };
+
+const FILTERS = [
+  { id: 'pending', label: 'Chờ xử lý', match: (o) => o.status === 'pending' },
+  { id: 'done', label: 'Hoàn thành', match: (o) => o.status === 'done' },
+  { id: 'shipped', label: 'Đã ship', match: (o) => o.status === 'shipped' },
+  { id: 'paid', label: 'Đã thanh toán', match: (o) => o.paid && o.status !== 'cancelled' },
+  { id: 'cancelled', label: 'Đã huỷ', match: (o) => o.status === 'cancelled' },
+];
 
 function formatTime(iso, withDay = false) {
   const d = new Date(iso);
@@ -25,8 +29,9 @@ function formatTime(iso, withDay = false) {
   return `${time} · ${date}`;
 }
 
-function OrderCard({ order, onSetStatus }) {
-  const label = FILTERS.find((f) => f.id === order.status).label;
+function OrderCard({ order, onSetStatus, onSetPaid }) {
+  const status = STATUS[order.status];
+  const cancelled = order.status === 'cancelled';
   return (
     <li className="rounded-3xl border border-white/80 bg-white/80 p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
@@ -41,9 +46,18 @@ function OrderCard({ order, onSetStatus }) {
             <Clock size={12} /> Tạo lúc {formatTime(order.createdAt)}
           </p>
         </div>
-        <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${STATUS_BADGE[order.status]}`}>
-          {label}
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.badge}`}>{status.label}</span>
+          {!cancelled && (
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                order.paid ? 'bg-emerald-100 text-emerald-700' : 'bg-red-500 text-white'
+              }`}
+            >
+              {order.paid ? 'Đã thanh toán' : 'Chưa thanh toán'}
+            </span>
+          )}
+        </div>
       </div>
 
       {order.customer && (
@@ -84,8 +98,34 @@ function OrderCard({ order, onSetStatus }) {
         <span className="text-xl font-bold text-slate-900">{formatMoney(orderTotal(order))}</span>
       </div>
 
+      {order.status === 'done' && (
+        <button
+          onClick={() => onSetStatus(order.id, 'shipped')}
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600"
+        >
+          <Truck size={18} /> Đã ship
+        </button>
+      )}
+
+      {!cancelled &&
+        (order.paid ? (
+          <button
+            onClick={() => window.confirm(`Đánh dấu đơn #${order.number} là chưa thanh toán?`) && onSetPaid(order.id, false)}
+            className="mt-2 w-full py-1 text-sm text-slate-400 underline-offset-2 active:underline"
+          >
+            Bỏ đánh dấu đã thanh toán
+          </button>
+        ) : (
+          <button
+            onClick={() => onSetPaid(order.id, true)}
+            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-emerald-500 py-2.5 font-semibold text-emerald-600 active:bg-emerald-50"
+          >
+            <Banknote size={18} /> Đã thanh toán
+          </button>
+        ))}
+
       {order.status === 'pending' && (
-        <div className="mt-3 flex gap-2">
+        <div className="mt-2 flex gap-2">
           <button
             onClick={() => window.confirm(`Huỷ đơn #${order.number}?`) && onSetStatus(order.id, 'cancelled')}
             className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-4 py-3 font-semibold text-slate-600 active:bg-slate-200"
@@ -105,12 +145,12 @@ function OrderCard({ order, onSetStatus }) {
 }
 
 // Dùng chung cho tab "Đơn hàng" (type = dine-in) và "Đơn ship" (type = delivery).
-export default function OrdersPage({ type = 'dine-in', orders, onAddOrder, onSetStatus }) {
+export default function OrdersPage({ type = 'dine-in', orders, onAddOrder, onSetStatus, onSetPaid }) {
   const [filter, setFilter] = useState('pending');
   const [creating, setCreating] = useState(false);
 
   const ofType = orders.filter((o) => o.type === type);
-  const visible = ofType.filter((o) => o.status === filter);
+  const visible = ofType.filter(FILTERS.find((f) => f.id === filter).match);
   // Đơn chờ: giờ giao sớm nhất lên trước. Các mục khác: mới tạo lên trước.
   if (filter === 'pending') {
     const due = (o) => new Date(o.deliverAt ?? o.createdAt).getTime();
@@ -121,7 +161,7 @@ export default function OrdersPage({ type = 'dine-in', orders, onAddOrder, onSet
     <div className="mx-auto max-w-2xl pb-24">
       <div className="mb-4 flex gap-2 overflow-x-auto">
         {FILTERS.map((f) => {
-          const n = ofType.filter((o) => o.status === f.id).length;
+          const n = ofType.filter(f.match).length;
           const active = filter === f.id;
           return (
             <button
@@ -144,7 +184,7 @@ export default function OrdersPage({ type = 'dine-in', orders, onAddOrder, onSet
       ) : (
         <ul className="space-y-3">
           {visible.map((order) => (
-            <OrderCard key={order.id} order={order} onSetStatus={onSetStatus} />
+            <OrderCard key={order.id} order={order} onSetStatus={onSetStatus} onSetPaid={onSetPaid} />
           ))}
         </ul>
       )}

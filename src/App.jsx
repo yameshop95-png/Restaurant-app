@@ -17,7 +17,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeStaff] = useState(4);
-  const { orders, addOrder, setStatus } = useOrders();
+  const { orders, addOrder, setStatus, setPaid } = useOrders();
 
   const pending = orders.filter((o) => o.status === 'pending');
   const counts = {
@@ -59,6 +59,7 @@ export default function App() {
             activeStaff={activeStaff}
             onAddOrder={addOrder}
             onSetStatus={setStatus}
+            onSetPaid={setPaid}
           />
         </main>
       </div>

@@ -36,6 +36,31 @@ export default function HomePage({ orders }) {
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-3">
+        <Card title="Đã thanh toán">
+          <div className="px-5 pb-4 pt-1">
+            <p className="text-2xl font-bold tracking-tight text-emerald-600">{formatMoney(stats.weekPaid.total)}</p>
+            <p className="text-sm text-slate-500">{stats.weekPaid.count} đơn</p>
+          </div>
+        </Card>
+        <section
+          className={`rounded-3xl px-5 pb-4 pt-4 shadow-sm ${
+            stats.weekUnpaid.count ? 'bg-red-500 text-white shadow-red-500/30' : 'bg-white/70 text-slate-500'
+          }`}
+        >
+          <h2 className={`text-[15px] ${stats.weekUnpaid.count ? 'font-semibold text-red-50' : ''}`}>Chưa thanh toán</h2>
+          <p className={`mt-1 text-2xl font-bold tracking-tight ${stats.weekUnpaid.count ? '' : 'text-slate-900'}`}>
+            {formatMoney(stats.weekUnpaid.total)}
+          </p>
+          <p className={`text-sm ${stats.weekUnpaid.count ? 'text-red-50' : ''}`}>{stats.weekUnpaid.count} đơn</p>
+        </section>
+      </div>
+      {stats.olderUnpaid.count > 0 && (
+        <p className="-mt-1 rounded-2xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-600">
+          + {formatMoney(stats.olderUnpaid.total)} chưa thu từ các tuần trước ({stats.olderUnpaid.count} đơn)
+        </p>
+      )}
+
       <Card title="Tiền tuần này">
         <div className="flex items-end justify-between px-5 pb-5 pt-1">
           <p className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">

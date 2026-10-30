@@ -26,8 +26,17 @@ export function summarize(allOrders, now = new Date()) {
     }
   }
 
+  const sumOf = (list) => list.reduce((sum, o) => sum + orderTotal(o), 0);
+  const weekPaid = weekOrders.filter((o) => o.paid);
+  const weekUnpaid = weekOrders.filter((o) => !o.paid);
+  // Đơn chưa thu tiền từ tuần trước: không tính vào tuần này nhưng vẫn cần nhắc.
+  const olderUnpaid = orders.filter((o) => !o.paid && new Date(o.createdAt) < weekStart);
+
   return {
     weekStart,
+    weekPaid: { total: sumOf(weekPaid), count: weekPaid.length },
+    weekUnpaid: { total: sumOf(weekUnpaid), count: weekUnpaid.length },
+    olderUnpaid: { total: sumOf(olderUnpaid), count: olderUnpaid.length },
     weekOrderCount: weekOrders.length,
     weekRevenue: weekOrders.reduce((sum, o) => sum + orderTotal(o), 0),
     allTimeRevenue: orders.reduce((sum, o) => sum + orderTotal(o), 0),
