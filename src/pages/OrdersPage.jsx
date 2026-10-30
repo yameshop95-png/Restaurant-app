@@ -99,14 +99,25 @@ function OrderCard({ order, onSetStatus, onSetPaid }) {
       </div>
 
       {order.status === 'done' && (
-        <button
-          onClick={() => onSetStatus(order.id, 'shipped')}
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600"
-        >
-          <Truck size={18} /> Đã ship
-        </button>
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={() => onSetStatus(order.id, 'shipped')}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600"
+          >
+            <Truck size={18} /> Đã ship
+          </button>
+          {!order.paid && (
+            <button
+              onClick={() => onSetPaid(order.id, true)}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-500 py-3 font-semibold text-white active:bg-emerald-600"
+            >
+              <Banknote size={18} /> Đã thanh toán
+            </button>
+          )}
+        </div>
       )}
 
+      {/* Ở bước "Hoàn thành", nút thanh toán đã nằm cạnh nút "Đã ship" phía trên */}
       {!cancelled &&
         (order.paid ? (
           <button
@@ -116,12 +127,14 @@ function OrderCard({ order, onSetStatus, onSetPaid }) {
             Bỏ đánh dấu đã thanh toán
           </button>
         ) : (
-          <button
-            onClick={() => onSetPaid(order.id, true)}
-            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-emerald-500 py-2.5 font-semibold text-emerald-600 active:bg-emerald-50"
-          >
-            <Banknote size={18} /> Đã thanh toán
-          </button>
+          order.status !== 'done' && (
+            <button
+              onClick={() => onSetPaid(order.id, true)}
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-emerald-500 py-2.5 font-semibold text-emerald-600 active:bg-emerald-50"
+            >
+              <Banknote size={18} /> Đã thanh toán
+            </button>
+          )
         ))}
 
       {order.status === 'pending' && (
