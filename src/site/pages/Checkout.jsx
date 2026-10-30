@@ -90,7 +90,12 @@ export default function Checkout() {
   useEffect(() => {
     if (!mounted) return;
     const s = store.get(SAVED_KEY, {});
-    setForm((f) => ({ ...f, name: f.name || s.name || '', phone: f.phone || s.phone || '', address: f.address || s.address || '' }));
+    setForm((f) => ({
+      ...f,
+      name: f.name || s.name || '',
+      phone: f.phone || s.phone || '',
+      address: f.address || s.address || '',
+    }));
   }, [mounted]);
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
@@ -119,7 +124,6 @@ export default function Checkout() {
   const dCut = web.deliveryCutoff || '20:00';
   const zones = shop.shippingZones ?? DEFAULT_ZONES;
   const closed = web.enabled === false;
-
 
   // Ngày giờ mặc định: giờ sớm nhất được đặt
   const earliest = useMemo(() => earliestTime(lead), [lead, data]);
@@ -213,6 +217,7 @@ export default function Checkout() {
       note: form.note.trim(),
       deliverAt: due.toISOString(),
       items: items.map((i) => ({ id: i.id, qty: i.qty })),
+      lang, // để quán nhắn tin xác nhận đúng ngôn ngữ khách dùng
     };
     const { data: res, error } = await siteClient().rpc('place_web_order', { payload });
     setSending(false);

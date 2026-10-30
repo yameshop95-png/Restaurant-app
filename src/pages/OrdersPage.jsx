@@ -6,6 +6,7 @@ import {
   Check,
   Clock,
   MapPin,
+  MessageSquare,
   Pencil,
   Phone,
   Plus,
@@ -20,6 +21,7 @@ import {
   Truck,
   X,
 } from 'lucide-react';
+import MessageCustomerSheet from '../components/MessageCustomerSheet';
 import NewOrderSheet from '../components/NewOrderSheet';
 import RoutePlanner from '../components/RoutePlanner';
 import { normalizeText } from '../hooks/useCustomers';
@@ -70,7 +72,9 @@ const BACK_LABEL = {
   cancelled: 'Khôi phục đơn (về Chờ xử lý)',
 };
 const backLabel = (order) =>
-  order.type === 'pickup' && order.status === 'shipped' ? 'Khách chưa lấy – chuyển về Hoàn thành' : BACK_LABEL[order.status];
+  order.type === 'pickup' && order.status === 'shipped'
+    ? 'Khách chưa lấy – chuyển về Hoàn thành'
+    : BACK_LABEL[order.status];
 
 function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPaid }) {
   const status = STATUS[order.status];
@@ -79,6 +83,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
   const [shareMsg, setShareMsg] = useState(null);
   // Bấm "Đã thanh toán" thì hỏi khách trả bằng gì
   const [choosingPay, setChoosingPay] = useState(false);
+  const [messaging, setMessaging] = useState(false);
   const askPayment = () => setChoosingPay(true);
 
   const share = async () => {
@@ -94,7 +99,9 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
   return (
     <li className={`rounded-3xl border border-slate-200 bg-card p-4 shadow-sm ${due ? DUE_STYLE[due.level].card : ''}`}>
       {due && (
-        <p className={`-mx-1 -mt-1 mb-3 flex items-center gap-2 rounded-2xl px-3 py-2 font-bold ${DUE_STYLE[due.level].banner}`}>
+        <p
+          className={`-mx-1 -mt-1 mb-3 flex items-center gap-2 rounded-2xl px-3 py-2 font-bold ${DUE_STYLE[due.level].banner}`}
+        >
           <AlarmClock size={18} className="shrink-0" /> {formatDue(due)}
         </p>
       )}
@@ -124,6 +131,14 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
               >
                 <Printer size={14} /> In bill
               </button>
+              {order.customer?.phone && (
+                <button
+                  onClick={() => setMessaging(true)}
+                  className="flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600 active:bg-slate-200"
+                >
+                  <MessageSquare size={14} /> Nhắn khách
+                </button>
+              )}
               {order.customer?.address && (
                 <button
                   onClick={share}
@@ -199,7 +214,9 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
         </div>
       )}
 
-      {shareMsg && <p className="mt-2 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800">{shareMsg}</p>}
+      {shareMsg && (
+        <p className="mt-2 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800">{shareMsg}</p>
+      )}
 
       {order.customer && order.note && (
         <p className="mt-3 flex items-start gap-2 rounded-xl bg-red-50 px-3 py-2 font-semibold text-red-600">
@@ -296,7 +313,9 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
       {!cancelled &&
         (order.paid ? (
           <button
-            onClick={() => window.confirm(`Đánh dấu đơn #${order.number} là chưa thanh toán?`) && onSetPaid(order.id, false)}
+            onClick={() =>
+              window.confirm(`Đánh dấu đơn #${order.number} là chưa thanh toán?`) && onSetPaid(order.id, false)
+            }
             className="mt-2 w-full py-1 text-sm text-slate-400 underline-offset-2 active:underline"
           >
             Bỏ đánh dấu đã thanh toán
@@ -339,6 +358,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
           <RotateCcw size={13} /> {backLabel(order)}
         </button>
       )}
+      {messaging && <MessageCustomerSheet order={order} shopName={shopName} onClose={() => setMessaging(false)} />}
     </li>
   );
 }
@@ -350,7 +370,13 @@ function matchesQuery(order, query) {
   if (/^\d+$/.test(q) && String(order.number) === q) return true;
   const digits = query.replace(/\D/g, '');
   if (digits.length >= 3 && (order.customer?.phone ?? '').replace(/\D/g, '').includes(digits)) return true;
-  const text = [order.customer?.name, order.customer?.address, order.table && `ban ${order.table}`, order.note, ...order.items.flatMap((i) => [i.name, i.note])]
+  const text = [
+    order.customer?.name,
+    order.customer?.address,
+    order.table && `ban ${order.table}`,
+    order.note,
+    ...order.items.flatMap((i) => [i.name, i.note]),
+  ]
     .filter(Boolean)
     .join(' | ');
   return normalizeText(text).includes(q);
@@ -421,7 +447,7 @@ export default function OrdersPage({
           {Object.entries(ORDER_TYPES).map(([id, info]) => {
             const active = type === id;
             const waiting = orders.filter(
-              (o) => o.status === 'pending' && (id === 'delivery' ? o.type === 'delivery' : o.type !== 'delivery')
+              (o) => o.status === 'pending' && (id === 'delivery' ? o.type === 'delivery' : o.type !== 'delivery'),
             ).length;
             return (
               <button
@@ -546,7 +572,11 @@ export default function OrdersPage({
 
           {visible.length === 0 ? (
             <p className="rounded-3xl bg-card px-5 py-12 text-center text-slate-400">
-              {searching ? 'Không tìm thấy đơn nào' : filter === 'pending' ? 'Không có đơn nào đang chờ' : 'Chưa có đơn'}
+              {searching
+                ? 'Không tìm thấy đơn nào'
+                : filter === 'pending'
+                  ? 'Không có đơn nào đang chờ'
+                  : 'Chưa có đơn'}
             </p>
           ) : (
             <ul className="space-y-3">
@@ -564,7 +594,6 @@ export default function OrdersPage({
               ))}
             </ul>
           )}
-
         </>
       )}
 
