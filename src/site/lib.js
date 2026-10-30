@@ -8,6 +8,8 @@ export const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://restaurant-app
 export const path = (p = '') => `${BASE}${p}`;
 // Blog tạm ẩn (chưa viết xong bài): không hiện trên menu, trang chủ, trang món, sitemap. Viết xong thì đổi thành true.
 export const BLOG_ENABLED = false;
+// Trang mạng xã hội của quán (chân trang + dữ liệu cho Google)
+export const SOCIAL = { facebook: 'https://www.facebook.com/share/19sRx1kTJc/' };
 
 const key = (s) =>
   normalizeText(s ?? '')

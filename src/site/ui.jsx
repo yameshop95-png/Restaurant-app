@@ -1,8 +1,8 @@
 import { createContext, useContext } from 'react';
-import { Mail, MapPin, Minus, Phone, Plus, ShoppingBag } from 'lucide-react';
+import { Facebook, Mail, MapPin, Minus, Phone, Plus, ShoppingBag } from 'lucide-react';
 import { formatMoney } from '../lib/stats';
 import { TEXT as ORDER_TEXT } from '../order/i18n';
-import { BLOG_ENABLED, dishText, orderingRules, path } from './lib';
+import { BLOG_ENABLED, dishText, orderingRules, path, SOCIAL } from './lib';
 
 export const SiteContext = createContext(null);
 export const useSite = () => useContext(SiteContext);
@@ -281,6 +281,16 @@ export function Footer() {
               </li>
             )}
           </ul>
+          <p className={`${head} mt-6`}>{t.followUs}</p>
+          <a
+            href={SOCIAL.facebook}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Facebook"
+            className="mt-1 inline-flex h-10 w-10 items-center justify-center rounded-full text-ink ring-1 ring-ink transition hover:bg-ink hover:text-white"
+          >
+            <Facebook size={18} />
+          </a>
         </div>
       </div>
       <div className="mx-auto mt-12 flex max-w-6xl flex-wrap justify-between gap-3 border-t border-slate-200 px-4 py-8 text-[15px] text-slate-500 sm:px-6">

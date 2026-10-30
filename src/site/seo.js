@@ -1,5 +1,5 @@
 import { CATEGORIES } from './data/dishes';
-import { dishText, findPost, path, SITE_URL, sortedPosts } from './lib';
+import { dishText, findPost, path, SITE_URL, SOCIAL, sortedPosts } from './lib';
 import { SITE_TEXT } from './text';
 
 // Thẻ <head> cho từng trang (tiếng Anh, để Google đọc): tiêu đề, mô tả, link chuẩn, ảnh chia sẻ, dữ liệu có cấu trúc
@@ -18,6 +18,7 @@ export function pageMeta(route, data, dishes) {
     priceRange: '$',
     areaServed: ['Albury', 'Wodonga', 'Lavington', 'Thurgoona'],
     hasMenu: url(path('/menu')),
+    sameAs: Object.values(SOCIAL),
     ...(shop.shopPhone && { telephone: shop.shopPhone }),
     ...(shop.shopAddress && { address: { '@type': 'PostalAddress', streetAddress: shop.shopAddress, addressCountry: 'AU' } }),
   };
