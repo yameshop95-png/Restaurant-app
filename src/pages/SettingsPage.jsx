@@ -237,7 +237,10 @@ function MapsSettings({ settings, onUpdateSettings }) {
           Lộ trình nhiều điểm trên Apple Maps cần iOS 18.4 trở lên. Máy cũ hơn hãy chọn Google Maps.
         </p>
       )}
-      <p className="mt-1 text-xs text-slate-400">Tin nhắn gửi shipper luôn dùng link Google Maps để máy nào cũng mở được.</p>
+      <p className="mt-1 text-xs text-slate-400">
+        Link bản đồ trong tin nhắn gửi shipper cũng dùng ứng dụng này
+        {settings.mapsApp === 'apple' && ' (shipper dùng Android sẽ mở bản đồ Apple trên trình duyệt)'}.
+      </p>
     </section>
   );
 }

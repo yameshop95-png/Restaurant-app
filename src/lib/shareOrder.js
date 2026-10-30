@@ -13,7 +13,7 @@ const when = (iso) => {
 };
 
 // Nội dung đơn để dán vào Zalo / Messenger cho shipper
-export function orderText(order, shopName) {
+export function orderText(order, shopName, mapsApp = 'google') {
   const c = order.customer;
   // Ba khối cách nhau một dòng trống: thông tin giao, món, tổng tiền
   const blocks = [
@@ -22,8 +22,8 @@ export function orderText(order, shopName) {
       c && `Khách: ${c.name}`,
       c?.phone && `SĐT: ${c.phone}`,
       c?.address && `Địa chỉ: ${c.address}`,
-      // Không biết shipper dùng iPhone hay Android nên dùng link Google Maps, máy nào cũng mở được
-      c?.address && `Bản đồ: ${mapsUrl(c.address, 'google')}`,
+      // Link bản đồ theo ứng dụng đã chọn ở Cài đặt app
+      c?.address && `Bản đồ: ${mapsUrl(c.address, mapsApp)}`,
     ],
     [...order.items.map((i) => `${i.qty} × ${i.name}`), order.note && `Ghi chú: ${order.note}`],
     [
@@ -38,8 +38,8 @@ export function orderText(order, shopName) {
 
 // Mở bảng chia sẻ của điện thoại (Zalo, Messenger...) nếu có; không thì copy vào bộ nhớ tạm.
 // Trả về 'shared' | 'copied' | 'cancelled'.
-export async function shareOrder(order, shopName) {
-  const text = orderText(order, shopName);
+export async function shareOrder(order, shopName, mapsApp) {
+  const text = orderText(order, shopName, mapsApp);
   if (navigator.share) {
     try {
       await navigator.share({ text });

@@ -62,7 +62,7 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
 
   const share = async () => {
     try {
-      const result = await shareOrder(order, shopName);
+      const result = await shareOrder(order, shopName, mapsApp);
       if (result === 'copied') setShareMsg('Đã copy nội dung đơn, dán vào Zalo / Messenger cho shipper');
     } catch {
       setShareMsg('Không copy được, hãy thử lại');
