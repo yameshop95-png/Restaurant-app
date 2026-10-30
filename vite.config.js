@@ -10,7 +10,7 @@ export default defineConfig({
     // Cài app ra màn hình chính + mở được khi mạng yếu (lưu sẵn giao diện app trên máy)
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.png', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'logo.svg', 'logo-round.svg'],
       manifest: {
         name: 'Nhận order',
         short_name: 'Nhận order',

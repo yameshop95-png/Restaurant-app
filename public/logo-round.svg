@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="56 56 400 400">
+  <title>Logo quán: người phụ nữ đội nón lá đổ bánh cuốn</title>
+  <defs>
+    <clipPath id="c"><circle cx="256" cy="256" r="200"/></clipPath>
+  </defs>
+  <circle cx="256" cy="256" r="200" fill="#FF5722"/>
+  <g clip-path="url(#c)">
+    <!-- hơi nước -->
+    <g fill="none" stroke="#FFF4E6" stroke-width="12" stroke-linecap="round">
+      <path d="M352 236 q-16 -22 0 -44 q16 -22 0 -44"/>
+      <path d="M400 244 q-14 -20 0 -40 q14 -20 0 -40"/>
+    </g>
+    <!-- nồi hấp bánh cuốn: thân bạc, miệng căng khăn, lớp bột tròn -->
+    <path d="M296 330 h150 l-12 110 h-126 z" fill="#CBD5E1"/>
+    <rect x="296" y="352" width="150" height="14" fill="#94A3B8"/>
+    <rect x="286" y="318" width="170" height="20" rx="10" fill="#E2E8F0"/>
+    <ellipse cx="371" cy="318" rx="84" ry="19" fill="#FFFFFF"/>
+    <ellipse cx="377" cy="318" rx="50" ry="11" fill="#FFE3B8"/>
+    <!-- áo -->
+    <path d="M78 470 q-4 -150 92 -190 q44 -14 80 6 q30 18 38 54 l-14 130 z" fill="#1E1E24"/>
+    <!-- tay vươn ra cầm muôi -->
+    <path d="M238 330 q40 -10 72 -44" fill="none" stroke="#1E1E24" stroke-width="30" stroke-linecap="round"/>
+    <circle cx="314" cy="282" r="16" fill="#F3D3B0"/>
+    <!-- muôi múc bột: cán + lòng muôi nghiêng, dòng bột đổ xuống khăn -->
+    <path d="M318 278 L356 254" stroke="#D4AF37" stroke-width="9" stroke-linecap="round"/>
+    <path d="M348 246 q14 -10 30 -2 q8 8 0 20 q-16 8 -30 -4 z" fill="#D4AF37"/>
+    <path d="M374 266 q3 22 -1 46" fill="none" stroke="#FFE3B8" stroke-width="7" stroke-linecap="round"/>
+    <!-- cổ, mặt -->
+    <rect x="186" y="250" width="32" height="40" rx="12" fill="#F3D3B0"/>
+    <circle cx="205" cy="234" r="34" fill="#F3D3B0"/>
+    <!-- nón lá -->
+    <path d="M92 232 L200 100 L312 226 Q204 254 92 232 Z" fill="#D4AF37"/>
+    <g stroke="#A8862A" stroke-width="5" fill="none" stroke-linecap="round">
+      <path d="M124 216 Q204 232 282 212"/>
+      <path d="M150 186 Q204 198 258 184"/>
+      <path d="M174 156 Q204 164 232 156"/>
+    </g>
+  </g>
+</svg>

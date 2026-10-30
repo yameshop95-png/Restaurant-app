@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChefHat, Delete, Loader2, WifiOff } from 'lucide-react';
+import { Delete, Loader2, WifiOff } from 'lucide-react';
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', null, '0', 'del'];
 
@@ -46,9 +46,7 @@ export default function PinLogin({ onLogin, offlineError, onRetry }) {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-page px-6 py-10 text-white">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500">
-        <ChefHat size={34} />
-      </div>
+      <img src="/logo-round.svg" alt="" className="h-24 w-24" />
       <h1 className="mt-4 text-2xl font-bold">Nhập mã PIN</h1>
       <p className="mt-1 text-sm text-slate-400">Mã 4 số chủ quán cấp cho bạn</p>
 

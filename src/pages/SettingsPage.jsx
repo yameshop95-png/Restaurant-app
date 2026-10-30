@@ -232,7 +232,7 @@ function InstallApp() {
   return (
     <section className="rounded-3xl border border-slate-200 bg-card px-5 py-4 shadow-sm">
       <div className="flex items-center gap-3">
-        <img src="/pwa-192x192.png" alt="" className="h-10 w-10 shrink-0 rounded-xl" />
+        <img src="/logo-round.svg" alt="" className="h-10 w-10 shrink-0" />
         <div>
           <h2 className="font-bold text-slate-900">Cài app ra màn hình chính</h2>
           <p className="text-sm text-slate-500">Có icon riêng, mở toàn màn hình, vẫn mở được khi mạng yếu</p>

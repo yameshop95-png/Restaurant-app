@@ -1,4 +1,4 @@
-import { AlarmClock, BellRing, ChefHat, LogOut, Phone, UserRound, X } from 'lucide-react';
+import { AlarmClock, BellRing, LogOut, Phone, UserRound, X } from 'lucide-react';
 import { NAV_ITEMS } from './navigation';
 
 function Badge({ count, active }) {
@@ -45,9 +45,7 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
             {settings.logo ? (
               <img src={settings.logo} alt="" className="h-11 w-11 shrink-0 rounded-xl bg-card object-cover" />
             ) : (
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500 text-white">
-                <ChefHat size={24} />
-              </div>
+              <img src="/logo-round.svg" alt="" className="h-11 w-11 shrink-0" />
             )}
             <div className="min-w-0">
               <p className="truncate text-lg font-bold text-white">{settings.shopName || 'Quán của bạn'}</p>
