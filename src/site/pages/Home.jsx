@@ -129,20 +129,17 @@ export default function Home() {
       {/* Kêu gọi đặt món (chỗ ô đăng ký nhận tin của mẫu) */}
       <section className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="relative overflow-hidden rounded-[28px] bg-ink px-6 py-16 text-center sm:px-12 sm:py-20">
-          {pick(4) && (
-            <img
-              src={pick(4).content.photo}
-              alt=""
-              loading="lazy"
-              className="absolute inset-0 h-full w-full object-cover opacity-30"
-            />
-          )}
-          <Deco name="pan" className="-left-20 -top-24 w-72 opacity-20 invert sm:w-96" />
-          <Deco name="basil" className="-bottom-10 -right-6 w-40 opacity-20 invert sm:w-56" />
+          <img
+            src="/site/photos/cta-weekend.webp"
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div aria-hidden className="absolute inset-0 bg-ink/55" />
           <h2 className="relative mx-auto max-w-2xl font-serif text-4xl font-bold leading-tight text-white text-balance sm:text-5xl">
             {t.ctaTitle}
           </h2>
-          <p className="relative mx-auto mt-4 max-w-md leading-7 text-white/75">{t.ctaText}</p>
+          <p className="relative mx-auto mt-4 max-w-lg leading-7 text-white/85 text-balance">{t.ctaText}</p>
           <div className="relative mx-auto mt-9 flex max-w-xl flex-col items-stretch gap-3 rounded-[14px] bg-white p-2 text-left sm:flex-row sm:items-center sm:justify-between sm:pl-5">
             <span className="px-3 pt-2 text-sm text-slate-500 sm:p-0">{t.ctaNote(cutDay, rules.cutoff)}</span>
             <Link to={path('/checkout')} className="btn btn-accent shrink-0 px-6 py-3.5 text-base">
