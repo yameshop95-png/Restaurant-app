@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Banknote, Check, Clock, Loader2, MapPin, Minus, Phone, Plus, ShoppingBag, Truck } from 'lucide-react';
+import { Banknote, Check, Loader2, MapPin, Minus, Phone, Plus, ShoppingBag, Truck } from 'lucide-react';
 import { DEFAULT_ZONES, matchZone } from '../lib/shippingZones';
 import { formatMoney } from '../lib/stats';
 import { TEXT } from './i18n';
@@ -11,7 +11,7 @@ import { TEXT } from './i18n';
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL || 'https://hgkqcswzggsbpusrhpue.supabase.co',
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_qm7OXVxaPuwAhAB2zjOXow_7zBFNnON',
-  { auth: { persistSession: false, autoRefreshToken: false } }
+  { auth: { persistSession: false, autoRefreshToken: false } },
 );
 
 const SAVED_KEY = 'order-site.customer';
@@ -75,7 +75,9 @@ function Stepper({ qty, name, t, onChange, disabled }) {
         disabled={disabled}
         aria-label={t.add(name)}
         className={`flex h-10 w-10 items-center justify-center rounded-full ${
-          qty > 0 ? 'bg-blue-500 text-white active:bg-blue-600' : 'border border-slate-300 text-slate-900 active:bg-slate-100'
+          qty > 0
+            ? 'bg-blue-500 text-white active:bg-blue-600'
+            : 'border border-slate-300 text-slate-900 active:bg-slate-100'
         } disabled:opacity-30`}
       >
         <Plus size={18} />
@@ -106,7 +108,11 @@ const inputClass = (error) =>
 function Header({ shop, t, lang, setLang }) {
   return (
     <header className="flex items-start gap-4">
-      <img src={shop.logo || '/logo-round.svg'} alt="" className="h-20 w-20 shrink-0 rounded-full object-cover sm:h-24 sm:w-24" />
+      <img
+        src={shop.logo || '/logo-round.svg'}
+        alt=""
+        className="h-20 w-20 shrink-0 rounded-full object-cover sm:h-24 sm:w-24"
+      />
       <div className="min-w-0 flex-1">
         <h1 className="text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">{shop.shopName || t.title}</h1>
         {shop.shopAddress && (
@@ -145,6 +151,7 @@ export default function OrderSite() {
     phone: saved.phone ?? '',
     address: saved.address ?? '',
     note: '',
+    deliveryDate: '',
     website: '', // ô bẫy chống máy tự gửi, người thật không thấy
   }));
   const [submitted, setSubmitted] = useState(false);
@@ -177,6 +184,11 @@ export default function OrderSite() {
   const menu = data?.menu ?? [];
   const web = shop.webOrdering ?? {};
   const lead = Number.isFinite(Number(web.leadMinutes)) ? Number(web.leadMinutes) : 30;
+  // Giao hàng chỉ một buổi mỗi tuần (mặc định sáng thứ 7), hạn chót hôm trước lúc deliveryCutoff
+  const dDay = Number.isInteger(Number(web.deliveryDay)) ? Number(web.deliveryDay) : 6;
+  const dStart = web.deliveryStart || '08:00';
+  const dEnd = web.deliveryEnd || '12:00';
+  const dCut = web.deliveryCutoff || '20:00';
   const zones = shop.shippingZones ?? DEFAULT_ZONES;
   const closed = web.enabled === false;
 
@@ -191,6 +203,27 @@ export default function OrderSite() {
     setForm((f) => (f.date ? f : { ...f, date: dateKey(earliest), time: timeKey(earliest) }));
   }, [data, earliest]);
 
+  // 2 ngày giao gần nhất còn trước hạn chót
+  const deliveryDays = useMemo(() => {
+    const out = [];
+    const now = new Date();
+    const [ch, cm] = dCut.split(':').map(Number);
+    for (let i = 0; i < 22 && out.length < 2; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      if (d.getDay() !== dDay) continue;
+      const cutoff = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1, ch, cm);
+      if (now < cutoff)
+        out.push({ key: dateKey(d), label: `${t.weekdays[d.getDay()]} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}` });
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dDay, dCut, t, data]);
+  useEffect(() => {
+    if (deliveryDays.length && !deliveryDays.some((d) => d.key === form.deliveryDate)) {
+      setForm((f) => ({ ...f, deliveryDate: deliveryDays[0].key }));
+    }
+  }, [deliveryDays, form.deliveryDate]);
+
   const days = useMemo(() => {
     const out = [];
     const start = new Date();
@@ -203,7 +236,8 @@ export default function OrderSite() {
           ? t.today
           : i === 1
             ? t.tomorrow
-            : d.toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-AU', { weekday: 'short' }) + ` ${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
+            : d.toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-AU', { weekday: 'short' }) +
+              ` ${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
       out.push({ key: dateKey(d), label });
     }
     return out;
@@ -216,14 +250,21 @@ export default function OrderSite() {
   const zone = isDelivery ? matchZone(form.address, zones) : null;
   const fee = zone ? Number(zone.fee) || 0 : 0;
   const total = subtotal + fee;
-  const due = form.date && form.time ? new Date(`${form.date}T${form.time}`) : null;
+  const due = isDelivery
+    ? form.deliveryDate
+      ? new Date(`${form.deliveryDate}T${dStart}`)
+      : null
+    : form.date && form.time
+      ? new Date(`${form.date}T${form.time}`)
+      : null;
 
   const errors = {};
   if (!form.name.trim()) errors.name = t.errName;
   if (form.phone.replace(/\D/g, '').length < 8) errors.phone = t.errPhone;
   if (isDelivery && form.address.trim().length < 5) errors.address = t.errAddress;
   else if (isDelivery && !zone) errors.address = t.zoneUnknown;
-  if (!due || due.getTime() < Date.now() + lead * 60000 - 60000) errors.time = t.errTime(lead);
+  if (isDelivery ? !due : !due || due.getTime() < Date.now() + lead * 60000 - 60000)
+    errors.time = isDelivery ? t.errors.cutoff : t.errTime(lead);
   if (!count) errors.items = t.errItems;
   const shown = submitted ? errors : {};
 
@@ -254,6 +295,7 @@ export default function OrderSite() {
     if (res?.error) {
       const msg = t.errors[res.error];
       if (res.error === 'time') return setServerError(t.errTime(res.leadMinutes ?? lead));
+      if (res.error === 'cutoff' || res.error === 'delivery_day') load();
       if (res.error === 'unavailable') {
         load();
         return setServerError(t.errors.unavailable(res.item));
@@ -286,7 +328,11 @@ export default function OrderSite() {
   }
 
   if (done) {
-    const when = `${timeKey(done.when)} ${pad(done.when.getDate())}/${pad(done.when.getMonth() + 1)}`;
+    const dm = `${pad(done.when.getDate())}/${pad(done.when.getMonth() + 1)}`;
+    const when =
+      done.type === 'delivery'
+        ? `${t.weekdays[done.when.getDay()]} ${dm} (${dStart}–${dEnd})`
+        : `${lang === 'vi' ? 'lúc' : 'at'} ${timeKey(done.when)} ${dm}`;
     return (
       <div className={page}>
         <div className="mx-auto max-w-xl space-y-5">
@@ -345,7 +391,11 @@ export default function OrderSite() {
 
         <div className="flex flex-wrap gap-2 text-sm">
           <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-slate-800">
-            <Clock size={15} /> {t.leadNote(lead)}
+            <ShoppingBag size={15} className="shrink-0" /> {t.pickupRule(lead)}
+          </span>
+          <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-slate-800">
+            <Truck size={15} className="shrink-0" />{' '}
+            {t.deliveryRule(t.weekdays[dDay], dStart, dEnd, t.weekdays[(dDay + 6) % 7], dCut)}
           </span>
           <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-slate-800">
             <Banknote size={15} /> {t.payOnPickup}
@@ -357,7 +407,10 @@ export default function OrderSite() {
             <h2 className="text-xl font-bold text-slate-900">{t.closedTitle}</h2>
             <p className="mt-2 text-slate-600">{t.errors.closed}</p>
             {shop.shopPhone && (
-              <a href={`tel:${shop.shopPhone}`} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-500 px-5 py-3 font-semibold text-white">
+              <a
+                href={`tel:${shop.shopPhone}`}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-500 px-5 py-3 font-semibold text-white"
+              >
                 <Phone size={18} /> {t.callUs} {shop.shopPhone}
               </a>
             )}
@@ -368,7 +421,9 @@ export default function OrderSite() {
             <section className="min-w-0">
               <h2 className="mb-3 text-lg font-bold text-slate-900">{t.menu}</h2>
               {menu.length === 0 ? (
-                <p className="rounded-3xl border border-slate-200 bg-card px-5 py-10 text-center text-slate-500">{t.emptyMenu}</p>
+                <p className="rounded-3xl border border-slate-200 bg-card px-5 py-10 text-center text-slate-500">
+                  {t.emptyMenu}
+                </p>
               ) : (
                 <ul className="divide-y divide-slate-200 overflow-hidden rounded-3xl border border-slate-200 bg-card">
                   {menu.map((m) => {
@@ -379,7 +434,9 @@ export default function OrderSite() {
                           <p className="font-semibold text-slate-900">{m.name}</p>
                           <p className="text-sm text-slate-500">{out ? t.soldOut : formatMoney(Number(m.price))}</p>
                         </div>
-                        {!out && <Stepper qty={qty[m.id] ?? 0} name={m.name} t={t} onChange={(n) => setItem(m.id, n)} />}
+                        {!out && (
+                          <Stepper qty={qty[m.id] ?? 0} name={m.name} t={t} onChange={(n) => setItem(m.id, n)} />
+                        )}
                       </li>
                     );
                   })}
@@ -389,7 +446,10 @@ export default function OrderSite() {
             </section>
 
             {/* Thông tin nhận món + tổng tiền */}
-            <section ref={checkoutRef} className="min-w-0 scroll-mt-4 space-y-4 rounded-3xl border border-slate-200 bg-card p-5 lg:sticky lg:top-4">
+            <section
+              ref={checkoutRef}
+              className="min-w-0 scroll-mt-4 space-y-4 rounded-3xl border border-slate-200 bg-card p-5 lg:sticky lg:top-4"
+            >
               <h2 className="text-lg font-bold text-slate-900">{t.yourOrder}</h2>
 
               <div className="grid grid-cols-2 gap-2">
@@ -410,32 +470,81 @@ export default function OrderSite() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <Field label={t.date}>
-                  <select id="order-date" value={form.date} onChange={set('date')} className={inputClass(false)}>
-                    {days.map((d) => (
+              {isDelivery ? (
+                <Field label={t.deliveryDay} error={shown.time} hint={t.deliveryWindow(dStart, dEnd)}>
+                  <select
+                    id="order-delivery-date"
+                    value={form.deliveryDate}
+                    onChange={set('deliveryDate')}
+                    className={inputClass(shown.time)}
+                  >
+                    {deliveryDays.map((d) => (
                       <option key={d.key} value={d.key} className="bg-card">
                         {d.label}
                       </option>
                     ))}
                   </select>
                 </Field>
-                <Field label={isDelivery ? t.deliveryTime : t.pickupTime} error={shown.time} hint={t.earliest(`${timeKey(earliest)}${dateKey(earliest) !== dateKey(new Date()) ? ` ${pad(earliest.getDate())}/${pad(earliest.getMonth() + 1)}` : ''}`)}>
-                  <input id="order-time" type="time" step="300" value={form.time} onChange={set('time')} className={inputClass(shown.time)} />
-                </Field>
-              </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label={t.date}>
+                    <select id="order-date" value={form.date} onChange={set('date')} className={inputClass(false)}>
+                      {days.map((d) => (
+                        <option key={d.key} value={d.key} className="bg-card">
+                          {d.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field
+                    label={isDelivery ? t.deliveryTime : t.pickupTime}
+                    error={shown.time}
+                    hint={t.earliest(
+                      `${timeKey(earliest)}${dateKey(earliest) !== dateKey(new Date()) ? ` ${pad(earliest.getDate())}/${pad(earliest.getMonth() + 1)}` : ''}`,
+                    )}
+                  >
+                    <input
+                      id="order-time"
+                      type="time"
+                      step="300"
+                      value={form.time}
+                      onChange={set('time')}
+                      className={inputClass(shown.time)}
+                    />
+                  </Field>
+                </div>
+              )}
 
               <Field label={t.name} error={shown.name}>
-                <input id="order-name" autoComplete="name" value={form.name} onChange={set('name')} className={inputClass(shown.name)} />
+                <input
+                  id="order-name"
+                  autoComplete="name"
+                  value={form.name}
+                  onChange={set('name')}
+                  className={inputClass(shown.name)}
+                />
               </Field>
               <Field label={t.phone} error={shown.phone}>
-                <input id="order-phone" type="tel" autoComplete="tel" value={form.phone} onChange={set('phone')} className={inputClass(shown.phone)} />
+                <input
+                  id="order-phone"
+                  type="tel"
+                  autoComplete="tel"
+                  value={form.phone}
+                  onChange={set('phone')}
+                  className={inputClass(shown.phone)}
+                />
               </Field>
               {isDelivery && (
                 <Field
                   label={t.address}
                   error={shown.address}
-                  hint={zone ? `${t.zoneFee(zone.name)}: ${t.shipping} ${formatMoney(fee)}` : form.address.trim().length >= 5 ? t.zoneUnknown : t.zoneTyping}
+                  hint={
+                    zone
+                      ? `${t.zoneFee(zone.name)}: ${t.shipping} ${formatMoney(fee)}`
+                      : form.address.trim().length >= 5
+                        ? t.zoneUnknown
+                        : t.zoneTyping
+                  }
                 >
                   <textarea
                     id="order-address"
@@ -461,7 +570,15 @@ export default function OrderSite() {
                 </details>
               )}
               <Field label={t.note}>
-                <textarea id="order-note" rows={2} maxLength={300} value={form.note} onChange={set('note')} placeholder={t.notePlaceholder} className={inputClass(false)} />
+                <textarea
+                  id="order-note"
+                  rows={2}
+                  maxLength={300}
+                  value={form.note}
+                  onChange={set('note')}
+                  placeholder={t.notePlaceholder}
+                  className={inputClass(false)}
+                />
               </Field>
               {/* Ô bẫy: ẩn với người dùng */}
               <input
@@ -500,7 +617,9 @@ export default function OrderSite() {
                 <p className="text-xs text-slate-500">{t.payOnPickup}</p>
               </div>
 
-              {serverError && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">{serverError}</p>}
+              {serverError && (
+                <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">{serverError}</p>
+              )}
               <button
                 ref={submitRef}
                 onClick={submit}
