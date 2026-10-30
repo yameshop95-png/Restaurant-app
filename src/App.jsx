@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
+import { createMockOrders } from './data/mockOrders';
 import { HomePage, OrdersPage, DeliveryPage, MenuPage, SettingsPage } from './pages';
 
 // Map id tab -> component hiển thị trong Main Content Area.
@@ -16,6 +17,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeStaff] = useState(4);
+  const [orders] = useState(() => createMockOrders());
   const [counts, setCounts] = useState({ pendingOrders: 3, pendingDelivery: 2 });
 
   // Demo: giả lập có đơn mới đổ về mỗi 20s. Thay bằng WebSocket/API thật khi tích hợp backend.
@@ -57,7 +59,7 @@ export default function App() {
         />
 
         <main className="mx-auto max-w-7xl p-4 sm:p-6">
-          <ActivePage counts={counts} activeStaff={activeStaff} onResolve={resolveOrder} />
+          <ActivePage orders={orders} counts={counts} activeStaff={activeStaff} onResolve={resolveOrder} />
         </main>
       </div>
     </div>
