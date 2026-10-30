@@ -1,5 +1,8 @@
-// Xuất / nhập toàn bộ đơn hàng bằng file Excel (.xlsx).
+// Đơn hàng <-> sheet Excel "Đơn hàng".
 // Mỗi dòng là một món trong đơn; các dòng cùng "Mã đơn" thuộc cùng một đơn.
+import { boldHeader, pickSheet, readSheets, today, writeSheets } from './excelFile';
+
+export const ORDER_SHEET = 'Đơn hàng';
 
 const COLUMNS = [
   ['Mã đơn', 38],
@@ -40,9 +43,7 @@ function parseDateTime(value) {
   return new Date(+yyyy, +mm - 1, +dd, +hh, +mi).toISOString();
 }
 
-export async function exportOrders(orders) {
-  const { default: writeExcelFile } = await import('write-excel-file/browser');
-  const header = COLUMNS.map(([value]) => ({ value, fontWeight: 'bold' }));
+export function ordersSheet(orders) {
   const rows = [...orders]
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     .flatMap((o) =>
@@ -64,17 +65,18 @@ export async function exportOrders(orders) {
         { value: item.qty * item.price, type: Number, format: '0.00' },
       ])
     );
-  const date = new Date().toISOString().slice(0, 10);
-  await writeExcelFile([header, ...rows], {
-    sheet: 'Đơn hàng',
+  return {
+    sheet: ORDER_SHEET,
+    data: [boldHeader(COLUMNS.map(([name]) => name)), ...rows],
     columns: COLUMNS.map(([, width]) => ({ width })),
-    stickyRowsCount: 1,
-  }).toFile(`don-hang-${date}.xlsx`);
+  };
 }
 
-export async function importOrdersFile(file) {
-  const { readSheet } = await import('read-excel-file/browser');
-  const [headerRow = [], ...rows] = await readSheet(file);
+export const exportOrders = (orders) => writeSheets([ordersSheet(orders)], `don-hang-${today()}.xlsx`);
+
+export function parseOrders(data) {
+  if (!data) throw new Error(`Không tìm thấy sheet "${ORDER_SHEET}" trong file`);
+  const [headerRow = [], ...rows] = data;
   const headers = headerRow.map((h) => String(h ?? '').trim().toLowerCase());
   const idx = Object.fromEntries(COLUMNS.map(([name]) => [name, headers.indexOf(name.toLowerCase())]));
   if (idx['Mã đơn'] < 0 || idx['Món'] < 0) {
@@ -111,3 +113,5 @@ export async function importOrdersFile(file) {
   }
   return [...byId.values()];
 }
+
+export const importOrdersFile = async (file) => parseOrders(pickSheet(await readSheets(file), ORDER_SHEET));

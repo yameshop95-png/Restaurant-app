@@ -1,0 +1,39 @@
+import { useEffect, useState } from 'react';
+
+// Thông tin quán và tuỳ chọn app, lưu trong localStorage.
+const STORAGE_KEY = 'restaurant-app.settings';
+
+const DEFAULTS = {
+  shopName: '',
+  shopPhone: '',
+  logo: null, // ảnh dạng data URL, đã thu nhỏ
+  dueSound: true, // kêu + rung khi đơn sắp tới giờ giao / trễ giờ
+  lastBackupAt: null,
+};
+
+function load() {
+  try {
+    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(STORAGE_KEY)) };
+  } catch {
+    return DEFAULTS;
+  }
+}
+
+export default function useSettings() {
+  const [settings, setSettings] = useState(load);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    } catch {
+      // Không lưu được (bộ nhớ đầy, chế độ ẩn danh...): vẫn dùng được trong phiên hiện tại.
+    }
+  }, [settings]);
+
+  useEffect(() => {
+    document.title = settings.shopName ? `${settings.shopName} – Nhận order` : 'Nhận order';
+  }, [settings.shopName]);
+
+  const updateSettings = (patch) => setSettings((s) => ({ ...s, ...patch }));
+  return { settings, updateSettings };
+}

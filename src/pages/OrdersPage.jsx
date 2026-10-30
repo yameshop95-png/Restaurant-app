@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Banknote, Check, Clock, MapPin, Pencil, Phone, Plus, StickyNote, Truck, X } from 'lucide-react';
+import { AlarmClock, Banknote, Check, Clock, MapPin, Pencil, Phone, Plus, Send, StickyNote, Truck, X } from 'lucide-react';
 import NewOrderSheet from '../components/NewOrderSheet';
+import { dueInfo, formatDue } from '../lib/due';
+import { mapsUrl, shareOrder } from '../lib/shareOrder';
 import { formatMoney, orderTotal } from '../lib/stats';
 
 // Trạng thái xử lý đơn: Chờ xử lý → Hoàn thành (nấu xong) → Đã ship. Thanh toán là cờ riêng (`paid`).
@@ -30,11 +32,34 @@ function formatTime(iso, withDay = false) {
   return `${time} · ${date}`;
 }
 
-function OrderCard({ order, onEdit, onSetStatus, onSetPaid }) {
+const DUE_STYLE = {
+  overdue: { card: 'ring-2 ring-red-500', banner: 'bg-red-500 text-white' },
+  soon: { card: 'ring-2 ring-orange-400', banner: 'bg-orange-100 text-orange-800' },
+};
+
+function OrderCard({ order, now, shopName, onEdit, onSetStatus, onSetPaid }) {
   const status = STATUS[order.status];
   const cancelled = order.status === 'cancelled';
+  const due = dueInfo(order, now);
+  const [shareMsg, setShareMsg] = useState(null);
+
+  const share = async () => {
+    try {
+      const result = await shareOrder(order, shopName);
+      if (result === 'copied') setShareMsg('Đã copy nội dung đơn, dán vào Zalo / Messenger cho shipper');
+    } catch {
+      setShareMsg('Không copy được, hãy thử lại');
+    }
+    setTimeout(() => setShareMsg(null), 4000);
+  };
+
   return (
-    <li className="rounded-3xl border border-white/80 bg-white/80 p-4 shadow-sm">
+    <li className={`rounded-3xl border border-white/80 bg-white/80 p-4 shadow-sm ${due ? DUE_STYLE[due.level].card : ''}`}>
+      {due && (
+        <p className={`-mx-1 -mt-1 mb-3 flex items-center gap-2 rounded-2xl px-3 py-2 font-bold ${DUE_STYLE[due.level].banner}`}>
+          <AlarmClock size={18} className="shrink-0" /> {formatDue(due)}
+        </p>
+      )}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-lg font-bold text-slate-900">
@@ -47,12 +72,20 @@ function OrderCard({ order, onEdit, onSetStatus, onSetPaid }) {
             <Clock size={12} /> Tạo lúc {formatTime(order.createdAt)}
           </p>
           {!cancelled && (
-            <button
-              onClick={() => onEdit(order)}
-              className="mt-1.5 flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600 active:bg-slate-200"
-            >
-              <Pencil size={14} /> Sửa đơn
-            </button>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <button
+                onClick={() => onEdit(order)}
+                className="flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600 active:bg-slate-200"
+              >
+                <Pencil size={14} /> Sửa đơn
+              </button>
+              <button
+                onClick={share}
+                className="flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-sm font-semibold text-blue-700 active:bg-blue-100"
+              >
+                <Send size={14} /> Gửi cho shipper
+              </button>
+            </div>
           )}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
@@ -79,11 +112,20 @@ function OrderCard({ order, onEdit, onSetStatus, onSetPaid }) {
           <a href={`tel:${order.customer.phone}`} className="flex items-center gap-2 text-slate-700 underline-offset-2 active:underline">
             <Phone size={16} className="shrink-0 text-slate-400" /> {order.customer.phone}
           </a>
-          <p className="flex items-start gap-2">
-            <MapPin size={16} className="mt-0.5 shrink-0 text-slate-400" /> {order.customer.address}
-          </p>
+          {order.customer.address && (
+            <a
+              href={mapsUrl(order.customer.address)}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-start gap-2 text-blue-700 underline decoration-blue-200 underline-offset-2"
+            >
+              <MapPin size={16} className="mt-0.5 shrink-0" /> {order.customer.address}
+            </a>
+          )}
         </div>
       )}
+
+      {shareMsg && <p className="mt-2 rounded-xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700">{shareMsg}</p>}
 
       {order.customer && order.note && (
         <p className="mt-3 flex items-start gap-2 rounded-xl bg-red-50 px-3 py-2 font-semibold text-red-600">
@@ -176,6 +218,8 @@ export default function OrdersPage({
   onUpdateOrder,
   onSetStatus,
   onSetPaid,
+  now,
+  settings,
 }) {
   const [filter, setFilter] = useState('pending');
   const [creating, setCreating] = useState(false);
@@ -219,6 +263,8 @@ export default function OrdersPage({
             <OrderCard
               key={order.id}
               order={order}
+              now={now}
+              shopName={settings.shopName}
               onEdit={setEditing}
               onSetStatus={onSetStatus}
               onSetPaid={onSetPaid}

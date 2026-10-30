@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Archive, Loader2 } from 'lucide-react';
+import { BACKUP_REMINDER_DAYS, daysSinceBackup } from '../lib/backup';
 import { formatDate, formatDay, formatMoney, summarize } from '../lib/stats';
 
 function Card({ title, children, className = '' }) {
@@ -12,19 +14,63 @@ function Card({ title, children, className = '' }) {
   );
 }
 
-export default function HomePage({ orders }) {
-  // Cập nhật "bây giờ" mỗi phút để số liệu tuần tự reset khi sang sáng thứ Hai.
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 60000);
-    return () => clearInterval(timer);
-  }, []);
+// Nhắc sao lưu khi đã quá 7 ngày, hoặc chưa sao lưu lần nào mà đã dùng app hơn 1 ngày
+function needsBackup(orders, lastBackupAt, now) {
+  if (!orders.length) return false;
+  const days = daysSinceBackup(lastBackupAt, now);
+  if (days != null) return days >= BACKUP_REMINDER_DAYS;
+  const firstOrderAt = orders.reduce((min, o) => (o.createdAt < min ? o.createdAt : min), orders[0].createdAt);
+  return now - new Date(firstOrderAt) >= 86400000;
+}
 
+function BackupReminder({ lastBackupAt, onBackupNow }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const days = daysSinceBackup(lastBackupAt);
+
+  const backup = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await onBackupNow();
+    } catch (err) {
+      setError(err.message || 'Không tải được file, thử lại nhé');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="rounded-3xl bg-amber-100 px-5 py-4 text-amber-900 shadow-sm ring-1 ring-amber-300">
+      <p className="flex items-center gap-2 font-bold">
+        <Archive size={18} className="shrink-0" />
+        {days == null ? 'Chưa sao lưu dữ liệu lần nào' : `Đã ${days} ngày chưa sao lưu dữ liệu`}
+      </p>
+      <p className="mt-1 text-sm">
+        Đơn hàng, khách và thực đơn chỉ lưu trên máy này. Tải 1 file Excel về rồi cất vào Drive / Zalo để không bị mất.
+      </p>
+      <button
+        onClick={backup}
+        disabled={busy}
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 py-3 font-semibold text-white active:bg-amber-600 disabled:opacity-60"
+      >
+        {busy ? <Loader2 size={18} className="animate-spin" /> : <Archive size={18} />} Sao lưu ngay
+      </button>
+      {error && <p className="mt-2 text-sm font-semibold text-red-700">{error}</p>}
+    </section>
+  );
+}
+
+export default function HomePage({ orders, now, settings, onBackupNow }) {
   const stats = useMemo(() => summarize(orders, now), [orders, now]);
   const maxQty = stats.weekItems[0]?.qty ?? 0;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
+      {needsBackup(orders, settings.lastBackupAt, now) && (
+        <BackupReminder lastBackupAt={settings.lastBackupAt} onBackupNow={onBackupNow} />
+      )}
+
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Tổng tuần này</h1>

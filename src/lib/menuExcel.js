@@ -1,28 +1,28 @@
-// Xuất / nhập thực đơn bằng file Excel (.xlsx).
-// Thư viện được tải khi cần để không làm chậm lúc mở app.
+// Thực đơn <-> sheet Excel "Thực đơn"
+import { boldHeader, pickSheet, readSheets, today, writeSheets } from './excelFile';
 
-const HEADERS = ['Tên món', 'Giá (A$)', 'Trạng thái'];
+export const MENU_SHEET = 'Thực đơn';
 
-export async function exportMenu(menu) {
-  const { default: writeExcelFile } = await import('write-excel-file/browser');
-  const header = HEADERS.map((value) => ({ value, fontWeight: 'bold' }));
+export function menuSheet(menu) {
   // Giữ đúng thứ tự món như trong app
   const rows = menu.map((m) => [
     m.name,
     { value: m.price, type: Number, format: '0.00' },
     m.available === false ? 'Hết' : 'Còn',
   ]);
-  const date = new Date().toISOString().slice(0, 10);
-  await writeExcelFile([header, ...rows], {
-    sheet: 'Thực đơn',
+  return {
+    sheet: MENU_SHEET,
+    data: [boldHeader(['Tên món', 'Giá (A$)', 'Trạng thái']), ...rows],
     columns: [{ width: 30 }, { width: 12 }, { width: 12 }],
-  }).toFile(`thuc-don-${date}.xlsx`);
+  };
 }
 
-// Nhận file do app xuất ra, hoặc file tự soạn có cột "Tên món" và "Giá". Cột "Trạng thái" không bắt buộc.
-export async function importMenuFile(file) {
-  const { readSheet } = await import('read-excel-file/browser');
-  const [headerRow = [], ...rows] = await readSheet(file);
+export const exportMenu = (menu) => writeSheets([menuSheet(menu)], `thuc-don-${today()}.xlsx`);
+
+// Nhận sheet do app xuất ra, hoặc sheet tự soạn có cột "Tên món" và "Giá". Cột "Trạng thái" không bắt buộc.
+export function parseMenu(data) {
+  if (!data) throw new Error(`Không tìm thấy sheet "${MENU_SHEET}" trong file`);
+  const [headerRow = [], ...rows] = data;
   const headers = headerRow.map((h) => String(h ?? '').toLowerCase());
   const col = (...keys) => headers.findIndex((h) => keys.some((k) => h.includes(k)));
   const iName = col('tên', 'ten', 'món', 'name');
@@ -43,3 +43,5 @@ export async function importMenuFile(file) {
   }
   return items;
 }
+
+export const importMenuFile = async (file) => parseMenu(pickSheet(await readSheets(file), MENU_SHEET));

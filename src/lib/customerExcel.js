@@ -1,11 +1,9 @@
-// Xuất / nhập danh bạ khách hàng bằng file Excel (.xlsx).
-// Thư viện được tải khi cần để không làm chậm lúc mở app.
+// Danh bạ khách hàng <-> sheet Excel "Khách hàng"
+import { boldHeader, pickSheet, readSheets, today, writeSheets } from './excelFile';
 
-const HEADERS = ['Tên khách hàng', 'Số điện thoại', 'Địa chỉ'];
+export const CUSTOMER_SHEET = 'Khách hàng';
 
-export async function exportCustomers(customers) {
-  const { default: writeExcelFile } = await import('write-excel-file/browser');
-  const header = HEADERS.map((value) => ({ value, fontWeight: 'bold' }));
+export function customersSheet(customers) {
   const rows = [...customers]
     .sort((a, b) => a.name.localeCompare(b.name, 'vi'))
     .map((c) => [
@@ -14,17 +12,19 @@ export async function exportCustomers(customers) {
       { value: c.phone || null, type: String },
       c.address || null,
     ]);
-  const date = new Date().toISOString().slice(0, 10);
-  await writeExcelFile([header, ...rows], {
-    sheet: 'Khách hàng',
+  return {
+    sheet: CUSTOMER_SHEET,
+    data: [boldHeader(['Tên khách hàng', 'Số điện thoại', 'Địa chỉ']), ...rows],
     columns: [{ width: 28 }, { width: 18 }, { width: 50 }],
-  }).toFile(`khach-hang-${date}.xlsx`);
+  };
 }
 
-// Nhận file do app xuất ra, hoặc file tự soạn có cột "Tên", "SĐT"/"Điện thoại", "Địa chỉ".
-export async function importCustomersFile(file) {
-  const { readSheet } = await import('read-excel-file/browser');
-  const [headerRow = [], ...rows] = await readSheet(file);
+export const exportCustomers = (customers) => writeSheets([customersSheet(customers)], `khach-hang-${today()}.xlsx`);
+
+// Nhận sheet do app xuất ra, hoặc sheet tự soạn có cột "Tên", "SĐT"/"Điện thoại", "Địa chỉ".
+export function parseCustomers(data) {
+  if (!data) throw new Error(`Không tìm thấy sheet "${CUSTOMER_SHEET}" trong file`);
+  const [headerRow = [], ...rows] = data;
   const headers = headerRow.map((h) => String(h ?? '').toLowerCase());
   const col = (...keys) => headers.findIndex((h) => keys.some((k) => h.includes(k)));
   const iName = col('tên', 'ten', 'name');
@@ -37,3 +37,5 @@ export async function importCustomersFile(file) {
     .map((row) => ({ name: cell(row, iName), phone: cell(row, iPhone), address: cell(row, iAddress) }))
     .filter((c) => c.name);
 }
+
+export const importCustomersFile = async (file) => parseCustomers(pickSheet(await readSheets(file), CUSTOMER_SHEET));
