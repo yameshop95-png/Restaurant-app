@@ -184,6 +184,15 @@ function ShopInfo({ settings, onUpdateSettings }) {
             className={inputClass}
           />
         </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-semibold text-slate-700">Địa chỉ quán</span>
+          <input
+            value={settings.shopAddress}
+            onChange={(e) => onUpdateSettings({ shopAddress: e.target.value })}
+            placeholder="Điểm xuất phát lộ trình giao khi không có GPS"
+            className={inputClass}
+          />
+        </label>
         <p className="text-xs text-slate-400">Tự lưu khi gõ. Tên quán hiện ở menu và trong tin nhắn gửi shipper.</p>
       </div>
     </section>

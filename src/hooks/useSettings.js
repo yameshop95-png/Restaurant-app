@@ -6,6 +6,7 @@ const STORAGE_KEY = 'restaurant-app.settings';
 const DEFAULTS = {
   shopName: '',
   shopPhone: '',
+  shopAddress: '', // điểm xuất phát lộ trình giao khi không lấy được GPS
   logo: null, // ảnh dạng data URL, đã thu nhỏ
   dueSound: true, // kêu + rung khi đơn sắp tới giờ giao / trễ giờ
   lastBackupAt: null,

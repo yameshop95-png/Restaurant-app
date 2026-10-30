@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import NewOrderSheet from '../components/NewOrderSheet';
+import RoutePlanner from '../components/RoutePlanner';
 import { normalizeText } from '../hooks/useCustomers';
 import { dueInfo, formatDue } from '../lib/due';
 import { mapsUrl, shareOrder } from '../lib/shareOrder';
@@ -293,6 +294,7 @@ export default function OrdersPage({
   const [filter, setFilter] = useState('pending');
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [view, setView] = useState('list'); // tab Đơn ship: 'list' | 'route'
   const [query, setQuery] = useState('');
   const [date, setDate] = useState('');
 
@@ -310,80 +312,104 @@ export default function OrdersPage({
 
   return (
     <div className="mx-auto max-w-2xl pb-24">
-      <div className="mb-3 flex gap-2">
-        <div className="relative min-w-0 flex-1">
-          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Tìm tên, SĐT, số đơn, món…"
-            className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-          />
-        </div>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          aria-label="Lọc theo ngày"
-          className={`w-36 shrink-0 rounded-2xl border bg-white px-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 ${
-            date ? 'border-blue-500 text-slate-900' : 'border-slate-200 text-slate-400'
-          }`}
-        />
-      </div>
-      {searching && (
-        <div className="mb-3 flex items-center justify-between px-1 text-sm">
-          <span className="text-slate-600">
-            Tìm thấy <b>{visible.length}</b> đơn{date && ` ngày ${date.split('-').reverse().join('/')}`}
-          </span>
-          <button
-            onClick={() => {
-              setQuery('');
-              setDate('');
-            }}
-            className="font-semibold text-blue-600"
-          >
-            Xoá tìm kiếm
-          </button>
+      {type === 'delivery' && (
+        <div className="mb-3 flex rounded-2xl bg-white p-1 shadow-sm">
+          {[
+            ['list', 'Danh sách'],
+            ['route', 'Lộ trình giao'],
+          ].map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setView(id)}
+              className={`flex-1 rounded-xl py-2 text-sm font-semibold ${view === id ? 'bg-slate-900 text-white' : 'text-slate-600'}`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       )}
 
-      <div className={`mb-4 flex gap-2 overflow-x-auto ${searching ? 'hidden' : ''}`}>
-        {FILTERS.map((f) => {
-          const n = ofType.filter(f.match).length;
-          const active = filter === f.id;
-          return (
-            <button
-              key={f.id}
-              onClick={() => setFilter(f.id)}
-              className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                active ? 'bg-slate-900 text-white' : 'bg-white text-slate-600'
-              }`}
-            >
-              {f.label} <span className={active ? 'text-slate-300' : 'text-slate-400'}>{n}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {visible.length === 0 ? (
-        <p className="rounded-3xl bg-white/60 px-5 py-12 text-center text-slate-400">
-          {searching ? 'Không tìm thấy đơn nào' : filter === 'pending' ? 'Không có đơn nào đang chờ' : 'Chưa có đơn'}
-        </p>
+      {view === 'route' ? (
+        <RoutePlanner orders={ofType} now={now} settings={settings} onSetStatus={onSetStatus} />
       ) : (
-        <ul className="space-y-3">
-          {visible.map((order) => (
-            <OrderCard
-              key={order.id}
-              order={order}
-              now={now}
-              shopName={settings.shopName}
-              onEdit={setEditing}
-              onSetStatus={onSetStatus}
-              onSetPaid={onSetPaid}
+        <>
+          <div className="mb-3 flex gap-2">
+            <div className="relative min-w-0 flex-1">
+              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Tìm tên, SĐT, số đơn, món…"
+                className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              aria-label="Lọc theo ngày"
+              className={`w-36 shrink-0 rounded-2xl border bg-white px-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 ${
+                date ? 'border-blue-500 text-slate-900' : 'border-slate-200 text-slate-400'
+              }`}
             />
-          ))}
-        </ul>
+          </div>
+          {searching && (
+            <div className="mb-3 flex items-center justify-between px-1 text-sm">
+              <span className="text-slate-600">
+                Tìm thấy <b>{visible.length}</b> đơn{date && ` ngày ${date.split('-').reverse().join('/')}`}
+              </span>
+              <button
+                onClick={() => {
+                  setQuery('');
+                  setDate('');
+                }}
+                className="font-semibold text-blue-600"
+              >
+                Xoá tìm kiếm
+              </button>
+            </div>
+          )}
+
+          <div className={`mb-4 flex gap-2 overflow-x-auto ${searching ? 'hidden' : ''}`}>
+            {FILTERS.map((f) => {
+              const n = ofType.filter(f.match).length;
+              const active = filter === f.id;
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => setFilter(f.id)}
+                  className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    active ? 'bg-slate-900 text-white' : 'bg-white text-slate-600'
+                  }`}
+                >
+                  {f.label} <span className={active ? 'text-slate-300' : 'text-slate-400'}>{n}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {visible.length === 0 ? (
+            <p className="rounded-3xl bg-white/60 px-5 py-12 text-center text-slate-400">
+              {searching ? 'Không tìm thấy đơn nào' : filter === 'pending' ? 'Không có đơn nào đang chờ' : 'Chưa có đơn'}
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {visible.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  now={now}
+                  shopName={settings.shopName}
+                  onEdit={setEditing}
+                  onSetStatus={onSetStatus}
+                  onSetPaid={onSetPaid}
+                />
+              ))}
+            </ul>
+          )}
+
+        </>
       )}
 
       <button
