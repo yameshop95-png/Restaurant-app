@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { normalizeText } from './useCustomers';
 
 // Thực đơn lưu trong localStorage, quản lý ở tab "Quản lý món ăn".
 const STORAGE_KEY = 'restaurant-app.menu';
@@ -55,5 +56,19 @@ export default function useMenu() {
       return next;
     });
 
-  return { menu, addItem, updateItem, deleteItem, moveItem };
+  // Khôi phục từ Excel: xếp theo thứ tự trong file; món trùng tên được cập nhật giá + trạng thái,
+  // món chỉ có trong app (không có trong file) giữ lại ở cuối. Trả về số món được thêm mới.
+  const importMenu = (items) => {
+    const key = (m) => normalizeText(m.name);
+    const fromFile = new Map(items.map((item) => [key(item), item]));
+    const existing = new Map(menu.map((m) => [key(m), m]));
+    const next = [...fromFile.values()].map((item) => {
+      const prev = existing.get(key(item));
+      return prev ? { ...prev, price: item.price, available: item.available } : { id: newId(), ...item };
+    });
+    setMenu([...next, ...menu.filter((m) => !fromFile.has(key(m)))]);
+    return next.filter((m) => !existing.has(key(m))).length;
+  };
+
+  return { menu, addItem, updateItem, deleteItem, moveItem, importMenu };
 }

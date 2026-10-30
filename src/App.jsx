@@ -22,7 +22,7 @@ export default function App() {
   const [activeStaff] = useState(4);
   const { orders, addOrder, updateOrder, setStatus, setPaid } = useOrders();
   const { customers, saveCustomer, importCustomers, updateCustomer, deleteCustomer } = useCustomers();
-  const { menu, addItem, updateItem, deleteItem, moveItem } = useMenu();
+  const { menu, addItem, updateItem, deleteItem, moveItem, importMenu } = useMenu();
 
   // Tạo hoặc sửa đơn đều cập nhật luôn danh bạ khách hàng
   const createOrder = (order) => {
@@ -83,6 +83,7 @@ export default function App() {
             onUpdateMenuItem={updateItem}
             onDeleteMenuItem={deleteItem}
             onMoveMenuItem={moveItem}
+            onImportMenu={importMenu}
             onImportCustomers={importCustomers}
             onSetStatus={setStatus}
             onSetPaid={setPaid}
