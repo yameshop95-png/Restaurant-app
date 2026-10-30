@@ -425,11 +425,14 @@ export default function OrdersPage({
     if (i >= 0 && i < FILTERS.length) setFilter(FILTERS[i].id);
   };
   const swipe = useSwipe({ onNext: () => step(1), onPrev: () => step(-1) });
-  // Giữ nút trạng thái đang chọn luôn nhìn thấy trên thanh cuộn ngang
+  // Giữ nút trạng thái đang chọn luôn nhìn thấy: chỉ cuộn thanh nút, không dùng scrollIntoView
+  // (trên iPhone lệnh đó kéo lệch cả màn hình theo)
   useEffect(() => {
-    tabsRef.current
-      ?.querySelector('[aria-pressed="true"]')
-      ?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    const bar = tabsRef.current;
+    const chip = bar?.querySelector('[aria-pressed="true"]');
+    if (!bar || !chip) return;
+    const left = chip.offsetLeft - bar.offsetLeft - (bar.clientWidth - chip.offsetWidth) / 2;
+    bar.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
   }, [filter]);
   const [exportMsg, setExportMsg] = useState(null);
   const [creating, setCreating] = useState(false);
@@ -574,57 +577,63 @@ export default function OrdersPage({
             })}
           </div>
 
-          <div
-            {...(searching ? {} : swipe)}
-            key={searching ? 'search' : filter}
-            className={`min-h-[60vh] ${!searching && slide ? (slide === 'next' ? 'animate-slide-next' : 'animate-slide-prev') : ''}`}
-          >
-            {visible.length > 0 && (
-              <div className="mb-3 flex items-center justify-between gap-2 px-1">
-                <span className="text-sm text-slate-500">
-                  {!searching && (filter === 'pending' || filter === 'done')
-                    ? `Xếp theo ${ORDER_TYPES[type].timeLabel.toLowerCase()} sớm nhất`
-                    : 'Mới nhất lên trước'}
-                </span>
-                <button
-                  onClick={exportExcel}
-                  className="flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-800 active:bg-slate-100"
-                >
-                  <FileSpreadsheet size={16} /> Xuất Excel
-                </button>
-              </div>
-            )}
-            {exportMsg && (
-              <p className="mb-3 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800">{exportMsg}</p>
-            )}
+          <div className="overflow-x-clip">
+            <div
+              {...(searching ? {} : swipe)}
+              key={searching ? 'search' : filter}
+              className={`min-h-[60vh] touch-pan-y ${!searching && slide ? (slide === 'next' ? 'animate-slide-next' : 'animate-slide-prev') : ''}`}
+            >
+              {visible.length > 0 && (
+                <div className="mb-3 flex items-center justify-between gap-2 px-1">
+                  <span className="text-sm text-slate-500">
+                    {!searching && (filter === 'pending' || filter === 'done')
+                      ? `Xếp theo ${ORDER_TYPES[type].timeLabel.toLowerCase()} sớm nhất`
+                      : 'Mới nhất lên trước'}
+                  </span>
+                  <button
+                    onClick={exportExcel}
+                    className="flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-800 active:bg-slate-100"
+                  >
+                    <FileSpreadsheet size={16} /> Xuất Excel
+                  </button>
+                </div>
+              )}
+              {exportMsg && (
+                <p className="mb-3 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800">
+                  {exportMsg}
+                </p>
+              )}
 
-            {visible.length === 0 ? (
-              <p className="rounded-3xl bg-card px-5 py-12 text-center text-slate-400">
-                {searching
-                  ? 'Không tìm thấy đơn nào'
-                  : filter === 'pending'
-                    ? 'Không có đơn nào đang chờ'
-                    : 'Chưa có đơn'}
-              </p>
-            ) : (
-              <ul className="space-y-3">
-                {visible.map((order) => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    now={now}
-                    shopName={settings.shopName}
-                    mapsApp={settings.mapsApp}
-                    onEdit={setEditing}
-                    onSetStatus={onSetStatus}
-                    onSetPaid={onSetPaid}
-                  />
-                ))}
-              </ul>
-            )}
-            {!searching && (
-              <p className="mt-4 text-center text-xs text-slate-400 lg:hidden">Vuốt trái / phải để chuyển trạng thái</p>
-            )}
+              {visible.length === 0 ? (
+                <p className="rounded-3xl bg-card px-5 py-12 text-center text-slate-400">
+                  {searching
+                    ? 'Không tìm thấy đơn nào'
+                    : filter === 'pending'
+                      ? 'Không có đơn nào đang chờ'
+                      : 'Chưa có đơn'}
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {visible.map((order) => (
+                    <OrderCard
+                      key={order.id}
+                      order={order}
+                      now={now}
+                      shopName={settings.shopName}
+                      mapsApp={settings.mapsApp}
+                      onEdit={setEditing}
+                      onSetStatus={onSetStatus}
+                      onSetPaid={onSetPaid}
+                    />
+                  ))}
+                </ul>
+              )}
+              {!searching && (
+                <p className="mt-4 text-center text-xs text-slate-400 lg:hidden">
+                  Vuốt trái / phải để chuyển trạng thái
+                </p>
+              )}
+            </div>
           </div>
         </>
       )}

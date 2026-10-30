@@ -103,6 +103,11 @@
   :root {
     color-scheme: dark;
   }
+  /* Không để cả màn hình trượt ngang theo khi vuốt chuyển trang */
+  html,
+  body {
+    overflow-x: clip;
+  }
   body {
     @apply bg-page text-slate-900 antialiased;
   }
