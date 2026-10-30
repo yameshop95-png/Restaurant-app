@@ -15,7 +15,7 @@ export const DISHES = [
     slug: 'banh-cuon',
     category: 'rolls',
     featured: true,
-    photo: null,
+    photo: '/site/photos/banh-cuon.webp',
     en: {
       name: 'Bánh cuốn – steamed rice rolls',
       short: 'Silky steamed rice sheets rolled around seasoned pork and wood ear mushroom.',
@@ -36,7 +36,7 @@ export const DISHES = [
     slug: 'gio-lua',
     category: 'gio-cha',
     featured: true,
-    photo: null,
+    photo: '/site/photos/gio-lua.webp',
     en: {
       name: 'Giò lụa – Vietnamese pork roll',
       short: 'Smooth, springy pork roll wrapped in banana leaves.',
@@ -210,7 +210,7 @@ export const DISHES = [
     match: 'Lạp Xưởng',
     slug: 'lap-xuong',
     category: 'meats',
-    photo: null,
+    photo: '/site/photos/lap-xuong.webp',
     en: {
       name: 'Lạp xưởng – sweet pork sausage',
       short: 'Sweet, savoury dried pork sausage for sticky rice and fried rice.',
