@@ -266,7 +266,7 @@ export default function Checkout() {
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
               <Check size={30} />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900">{t.doneTitle}</h2>
+            <h2 className="font-serif text-3xl font-bold text-ink">{t.doneTitle}</h2>
             <p className="text-3xl font-bold text-gold">{t.doneNumber(done.number)}</p>
             <p className="font-semibold text-slate-800">{t.doneWhen(done.type, when)}</p>
             <ul className="space-y-1 border-y border-slate-200 py-3 text-left text-[15px]">
@@ -311,7 +311,7 @@ export default function Checkout() {
   return (
     <div className={page}>
       <div className="mx-auto max-w-6xl space-y-5">
-        <h1 className="text-3xl font-bold text-slate-900">{t.title}</h1>
+        <h1 className="font-serif text-4xl font-bold text-ink">{t.title}</h1>
 
         <div className="flex flex-wrap gap-2 text-sm">
           <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-slate-800">

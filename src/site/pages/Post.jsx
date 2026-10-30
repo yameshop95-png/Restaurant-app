@@ -17,7 +17,7 @@ export default function Post({ slug }) {
           <ArrowLeft size={16} /> {t.blogTitle}
         </Link>
         <p className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-500">{formatPostDate(post.date, lang)}</p>
-        <h1 className="mt-2 text-3xl font-extrabold leading-tight text-slate-900 text-balance sm:text-5xl">{post.title}</h1>
+        <h1 className="mt-2 font-serif text-4xl font-bold leading-tight text-ink text-balance sm:text-5xl">{post.title}</h1>
         <p className="mt-4 text-xl leading-relaxed text-slate-600">{post.description}</p>
         {post.cover && (
           <div className="mt-8 aspect-[16/9] overflow-hidden rounded-[2rem] border border-slate-200">

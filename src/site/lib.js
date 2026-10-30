@@ -9,7 +9,10 @@ export const path = (p = '') => `${BASE}${p}`;
 // Blog tạm ẩn (chưa viết xong bài): không hiện trên menu, trang chủ, trang món, sitemap. Viết xong thì đổi thành true.
 export const BLOG_ENABLED = false;
 
-const key = (s) => normalizeText(s ?? '').replace(/[^a-z0-9]+/g, ' ').trim();
+const key = (s) =>
+  normalizeText(s ?? '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 export const slugify = (s) => key(s).replace(/ /g, '-');
 
 // Ghép thực đơn trong app (giá, còn / hết) với nội dung website (ảnh, mô tả, định lượng)
@@ -20,12 +23,28 @@ export function dishList(menu) {
     return i < 0 ? CATEGORIES.length : i;
   };
   if (!menu) {
-    return DISHES.map((c, i) => ({ id: null, name: c.vi.name, price: null, available: true, content: c, slug: c.slug, index: i }));
+    return DISHES.map((c, i) => ({
+      id: null,
+      name: c.vi.name,
+      price: null,
+      available: true,
+      content: c,
+      slug: c.slug,
+      index: i,
+    }));
   }
   return menu
     .map((m, i) => {
       const c = content.get(key(m.name)) ?? null;
-      return { id: m.id, name: m.name, price: Number(m.price), available: m.available !== false, content: c, slug: c?.slug ?? slugify(m.name), index: i };
+      return {
+        id: m.id,
+        name: m.name,
+        price: Number(m.price),
+        available: m.available !== false,
+        content: c,
+        slug: c?.slug ?? slugify(m.name),
+        index: i,
+      };
     })
     .sort((a, b) => order(a.content?.category) - order(b.content?.category) || a.index - b.index);
 }
@@ -45,7 +64,10 @@ export const sortedPosts = () => [...POSTS].sort((a, b) => b.date.localeCompare(
 
 // Đường dẫn → trang. Trên máy dev trang có thể là /order.html
 export function parseRoute(pathname) {
-  let p = (pathname || '/').replace(/\/index\.html$/, '').replace(/\.html$/, '').replace(/\/+$/, '');
+  let p = (pathname || '/')
+    .replace(/\/index\.html$/, '')
+    .replace(/\.html$/, '')
+    .replace(/\/+$/, '');
   if (!p.startsWith(BASE)) return { name: 'home' };
   p = p.slice(BASE.length);
   const parts = p.split('/').filter(Boolean);
@@ -57,4 +79,21 @@ export function parseRoute(pathname) {
 }
 
 export const formatPostDate = (iso, lang) =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+  new Date(`${iso}T00:00:00`).toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-AU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
+// Quy định nhận đơn website (chủ quán chỉnh trong app: Cài đặt → Đặt món online)
+export function orderingRules(shop) {
+  const web = shop?.webOrdering ?? {};
+  const num = (v, d) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : d);
+  return {
+    lead: num(web.leadMinutes, 30),
+    day: num(web.deliveryDay, 6),
+    start: web.deliveryStart || '08:00',
+    end: web.deliveryEnd || '12:00',
+    cutoff: web.deliveryCutoff || '20:00',
+  };
+}

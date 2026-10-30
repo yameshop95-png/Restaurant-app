@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+/* Website cho khách: theo mẫu Figma "Restaurant website Landing Page" (nền sáng).
+   Mực #101A24 · chữ phụ #5C6574 · nền xám #F3F3F4 · cam #EA6D27 · tiêu đề David Libre, chữ thường Inter.
+   App nhân viên dùng ../index.css (nền tối), không dính gì tới file này.
+   Các trang vẫn dùng tên class Tailwind: blue đổi thành cam của mẫu, slate-900 là màu mực. */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-serif: 'David Libre', Georgia, 'Times New Roman', serif;
+
+  --color-page: #ffffff;
+  --color-card: #ffffff;
+  --color-mist: #f3f3f4;
+  --color-ink: #101a24;
+  --color-gold: #ea6d27;
+
+  --color-slate-500: #5c6574;
+  --color-slate-600: #5c6574;
+  --color-slate-900: #101a24;
+
+  --color-blue-50: #fdf1ea;
+  --color-blue-100: #fbe2d3;
+  --color-blue-200: #f6c4a6;
+  --color-blue-400: #f08a52;
+  --color-blue-500: #ea6d27;
+  --color-blue-600: #d25c18;
+  --color-blue-700: #ad4a12;
+  --color-blue-800: #8a3b0f;
+  --color-blue-900: #6b2e0b;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  body {
+    @apply bg-page text-slate-900 antialiased;
+  }
+}
+
+@layer components {
+  /* Nút như mẫu: góc trên phải bo nhiều hơn, có bóng */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-7 py-3.5 font-serif text-lg font-medium leading-none text-white transition;
+    border-radius: 10px 18px 10px 10px;
+  }
+  /* Dùng chung với .btn: class="btn btn-dark" */
+  .btn-dark {
+    @apply bg-ink shadow-[0_16px_30px_-12px_rgba(16,26,36,0.45)] hover:bg-[#1c2a38];
+  }
+  .btn-accent {
+    @apply bg-blue-500 shadow-[0_16px_30px_-10px_rgba(234,109,39,0.55)] hover:bg-blue-600;
+  }
+  .deco {
+    @apply pointer-events-none absolute select-none;
+  }
+}

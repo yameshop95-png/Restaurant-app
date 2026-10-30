@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import SiteApp from './SiteApp.jsx';
-import '../index.css';
+import './site.css';
 
 // Trang đã dựng sẵn HTML lúc build thì "tiếp quản" (hydrate). Vẽ mới khi: chạy thử trên máy dev, hoặc địa chỉ không có
 // trang dựng sẵn (Vercel trả trang chủ cho mọi /order/... lạ, nội dung khác nên không ghép được).
