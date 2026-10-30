@@ -4,13 +4,14 @@ import TopBar from './components/TopBar';
 import useCustomers from './hooks/useCustomers';
 import useMenu from './hooks/useMenu';
 import useOrders from './hooks/useOrders';
-import { HomePage, OrdersPage, DeliveryPage, CustomersPage, MenuPage, SettingsPage } from './pages';
+import { HomePage, OrdersPage, DeliveryPage, ReportPage, CustomersPage, MenuPage, SettingsPage } from './pages';
 
 // Map id tab -> component hiển thị trong Main Content Area.
 const PAGES = {
   home: HomePage,
   orders: OrdersPage,
   delivery: DeliveryPage,
+  report: ReportPage,
   customers: CustomersPage,
   menu: MenuPage,
   settings: SettingsPage,
@@ -20,7 +21,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeStaff] = useState(4);
-  const { orders, addOrder, updateOrder, setStatus, setPaid } = useOrders();
+  const { orders, addOrder, updateOrder, setStatus, setPaid, importOrders } = useOrders();
   const { customers, saveCustomer, importCustomers, updateCustomer, deleteCustomer } = useCustomers();
   const { menu, addItem, updateItem, deleteItem, moveItem, importMenu } = useMenu();
 
@@ -84,6 +85,7 @@ export default function App() {
             onDeleteMenuItem={deleteItem}
             onMoveMenuItem={moveItem}
             onImportMenu={importMenu}
+            onImportOrders={importOrders}
             onImportCustomers={importCustomers}
             onSetStatus={setStatus}
             onSetPaid={setPaid}

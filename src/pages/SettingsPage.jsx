@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
-import { Download, FileSpreadsheet, Upload, Users, UtensilsCrossed } from 'lucide-react';
+import { ClipboardList, Download, FileSpreadsheet, Upload, Users, UtensilsCrossed } from 'lucide-react';
 import { exportCustomers, importCustomersFile } from '../lib/customerExcel';
 import { exportMenu, importMenuFile } from '../lib/menuExcel';
+import { exportOrders, importOrdersFile } from '../lib/orderExcel';
 
 // Một khối "Tải file Excel / Nhập từ Excel". `onExport` và `onImport` trả về câu thông báo khi xong.
 function BackupSection({ icon: Icon, title, countText, description, exportLabel, canExport, onExport, onImport }) {
@@ -75,13 +76,32 @@ function BackupSection({ icon: Icon, title, countText, description, exportLabel,
   );
 }
 
-export default function SettingsPage({ customers, menu, onImportCustomers, onImportMenu }) {
+export default function SettingsPage({ orders, customers, menu, onImportOrders, onImportCustomers, onImportMenu }) {
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <p className="px-1 text-sm text-slate-600">
         Dữ liệu chỉ lưu trên máy này. Thỉnh thoảng hãy tải file Excel về để phòng khi app lỗi, đổi máy hoặc lỡ xoá
         dữ liệu trình duyệt. Khi cần, chọn <b>Nhập từ Excel</b> để khôi phục.
       </p>
+
+      <BackupSection
+        icon={ClipboardList}
+        title="Sao lưu đơn hàng (Excel)"
+        countText={`Đang lưu ${orders.length} đơn`}
+        description="Gồm tất cả đơn (cả đơn đã huỷ): khách, giờ giao, ghi chú, trạng thái, thanh toán và từng món. Khi nhập lại, chỉ thêm các đơn chưa có trong app, đơn đã có giữ nguyên."
+        exportLabel="Tải file Excel đơn hàng"
+        canExport={orders.length > 0}
+        onExport={async () => {
+          await exportOrders(orders);
+          return `Đã tải file Excel gồm ${orders.length} đơn`;
+        }}
+        onImport={async (file) => {
+          const list = await importOrdersFile(file);
+          if (!list.length) throw new Error('File không có đơn nào');
+          const added = onImportOrders(list);
+          return `Đã đọc ${list.length} đơn trong file: thêm mới ${added}, bỏ qua ${list.length - added} đơn đã có`;
+        }}
+      />
 
       <BackupSection
         icon={Users}

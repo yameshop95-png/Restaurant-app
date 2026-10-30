@@ -23,7 +23,8 @@ function formatTime(iso, withDay = false) {
   const d = new Date(iso);
   const time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
   const dayDiff = Math.round((new Date(d).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000);
-  const date = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+  // Tự định dạng: toLocaleDateString('vi-VN') chỉ có ngày + tháng ra "20-10" trên một số trình duyệt
+  const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
   if (dayDiff === 0) return withDay ? `${time} hôm nay` : time;
   if (withDay && dayDiff === 1) return `${time} ngày mai (${date})`;
   return `${time} · ${date}`;

@@ -57,5 +57,14 @@ export default function useOrders() {
       prev.map((o) => (o.id === id ? { ...o, customer, deliverAt, note: note.trim(), items } : o))
     );
 
-  return { orders, addOrder, updateOrder, setStatus, setPaid };
+  // Khôi phục từ Excel: chỉ thêm đơn chưa có (theo id), đơn đã có trong app giữ nguyên.
+  // Trả về số đơn được thêm.
+  const importOrders = (list) => {
+    const known = new Set(orders.map((o) => o.id));
+    const fresh = list.filter((o) => !known.has(o.id));
+    setOrders([...orders, ...fresh].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+    return fresh.length;
+  };
+
+  return { orders, addOrder, updateOrder, setStatus, setPaid, importOrders };
 }
