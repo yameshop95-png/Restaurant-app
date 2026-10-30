@@ -6,8 +6,8 @@ export const NAV_ITEMS = [
   // Đơn hàng: 2 tab con Đến lấy / Giao hàng, nên đếm tất cả đơn chờ
   { id: 'orders', label: 'Đơn hàng', icon: ClipboardList, badgeKey: 'pendingAll' },
   { id: 'delivery', label: 'Đơn ship', icon: Bike, badgeKey: 'pendingDelivery' },
-  { id: 'report', label: 'Báo cáo', icon: ChartColumn },
   { id: 'customers', label: 'Khách hàng', icon: Users },
   { id: 'menu', label: 'Quản lý món ăn', icon: UtensilsCrossed },
+  { id: 'report', label: 'Báo cáo', icon: ChartColumn },
   { id: 'settings', label: 'Cài đặt app', icon: Settings },
 ];
