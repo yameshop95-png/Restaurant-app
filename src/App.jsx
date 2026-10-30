@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
+import useCustomers from './hooks/useCustomers';
 import useOrders from './hooks/useOrders';
 import { HomePage, OrdersPage, DeliveryPage, MenuPage, SettingsPage } from './pages';
 
@@ -18,6 +19,12 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeStaff] = useState(4);
   const { orders, addOrder, setStatus, setPaid } = useOrders();
+  const { customers, saveCustomer, importCustomers } = useCustomers();
+
+  const createOrder = (order) => {
+    addOrder(order);
+    saveCustomer(order.customer);
+  };
 
   const pending = orders.filter((o) => o.status === 'pending');
   const counts = {
@@ -57,7 +64,9 @@ export default function App() {
             orders={orders}
             counts={counts}
             activeStaff={activeStaff}
-            onAddOrder={addOrder}
+            customers={customers}
+            onAddOrder={createOrder}
+            onImportCustomers={importCustomers}
             onSetStatus={setStatus}
             onSetPaid={setPaid}
           />

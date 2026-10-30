@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { Minus, Plus, X } from 'lucide-react';
+import { MapPin, Minus, Phone, Plus, UserRound, X } from 'lucide-react';
+import { searchCustomers } from '../hooks/useCustomers';
 import { MENU } from '../data/menu';
 import { formatMoney } from '../lib/stats';
 
@@ -39,11 +40,18 @@ const inputClass = (error) =>
     error ? 'border-red-400 focus:ring-red-100' : 'border-slate-300 focus:border-blue-500 focus:ring-blue-100'
   }`;
 
-export default function NewOrderSheet({ type, onSubmit, onClose }) {
+export default function NewOrderSheet({ type, customers = [], onSubmit, onClose }) {
   const [form, setForm] = useState({ name: '', phone: '', address: '', date: todayISO(), time: '', note: '' });
   const [qty, setQty] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [showSuggest, setShowSuggest] = useState(false);
   const scrollRef = useRef(null);
+
+  const suggestions = showSuggest ? searchCustomers(customers, form.name) : [];
+  const pickCustomer = (c) => {
+    setForm((f) => ({ ...f, name: c.name, phone: c.phone, address: c.address }));
+    setShowSuggest(false);
+  };
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
   const change = (id, delta) => setQty((q) => ({ ...q, [id]: Math.max(0, (q[id] ?? 0) + delta) }));
@@ -83,7 +91,49 @@ export default function NewOrderSheet({ type, onSubmit, onClose }) {
 
         <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
           <Field label="Tên khách hàng" error={errors.name}>
-            <input value={form.name} onChange={set('name')} autoComplete="off" className={inputClass(errors.name)} />
+            <div className="relative">
+              <input
+                value={form.name}
+                onChange={(e) => {
+                  set('name')(e);
+                  setShowSuggest(true);
+                }}
+                onFocus={() => setShowSuggest(true)}
+                // Trễ một chút để kịp nhận cú chạm vào gợi ý
+                onBlur={() => setTimeout(() => setShowSuggest(false), 150)}
+                placeholder="Gõ tên hoặc SĐT để tìm khách cũ"
+                autoComplete="off"
+                className={inputClass(errors.name)}
+              />
+              {suggestions.length > 0 && (
+                <ul className="absolute inset-x-0 top-full z-10 mt-1 max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                  {suggestions.map((c) => (
+                    <li key={`${c.phone}|${c.name}`}>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => pickCustomer(c)}
+                        className="w-full border-b border-slate-100 px-4 py-2.5 text-left last:border-0 active:bg-blue-50"
+                      >
+                        <p className="flex items-center gap-1.5 font-semibold text-slate-900">
+                          <UserRound size={15} className="text-blue-500" /> {c.name}
+                        </p>
+                        {c.phone && (
+                          <p className="flex items-center gap-1.5 text-sm text-slate-500">
+                            <Phone size={13} /> {c.phone}
+                          </p>
+                        )}
+                        {c.address && (
+                          <p className="flex items-center gap-1.5 truncate text-sm text-slate-500">
+                            <MapPin size={13} className="shrink-0" /> <span className="truncate">{c.address}</span>
+                          </p>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </Field>
 
           <Field label="Số điện thoại" error={errors.phone}>

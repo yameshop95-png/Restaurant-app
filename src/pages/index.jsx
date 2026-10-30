@@ -1,6 +1,7 @@
 import OrdersPage from './OrdersPage';
 
 export { default as HomePage } from './HomePage';
+export { default as SettingsPage } from './SettingsPage';
 export { OrdersPage };
 export const DeliveryPage = (props) => <OrdersPage {...props} type="delivery" />;
 
@@ -17,8 +18,4 @@ function PageCard({ title, children }) {
 
 export function MenuPage() {
   return <PageCard title="Quản lý món ăn">Danh sách món, giá, trạng thái còn/hết món.</PageCard>;
-}
-
-export function SettingsPage() {
-  return <PageCard title="Cài đặt app">Thông tin quán, máy in bếp, âm báo đơn mới, tài khoản nhân viên.</PageCard>;
 }

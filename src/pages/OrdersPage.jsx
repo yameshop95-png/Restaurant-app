@@ -158,7 +158,7 @@ function OrderCard({ order, onSetStatus, onSetPaid }) {
 }
 
 // Dùng chung cho tab "Đơn hàng" (type = dine-in) và "Đơn ship" (type = delivery).
-export default function OrdersPage({ type = 'dine-in', orders, onAddOrder, onSetStatus, onSetPaid }) {
+export default function OrdersPage({ type = 'dine-in', orders, customers, onAddOrder, onSetStatus, onSetPaid }) {
   const [filter, setFilter] = useState('pending');
   const [creating, setCreating] = useState(false);
 
@@ -209,7 +209,7 @@ export default function OrdersPage({ type = 'dine-in', orders, onAddOrder, onSet
         <Plus size={20} /> Tạo đơn
       </button>
 
-      {creating && <NewOrderSheet type={type} onSubmit={onAddOrder} onClose={() => setCreating(false)} />}
+      {creating && <NewOrderSheet type={type} customers={customers} onSubmit={onAddOrder} onClose={() => setCreating(false)} />}
     </div>
   );
 }
