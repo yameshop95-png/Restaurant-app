@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Banknote, Check, Clock, MapPin, Phone, Plus, StickyNote, Truck, X } from 'lucide-react';
+import { Banknote, Check, Clock, MapPin, Pencil, Phone, Plus, StickyNote, Truck, X } from 'lucide-react';
 import NewOrderSheet from '../components/NewOrderSheet';
 import { formatMoney, orderTotal } from '../lib/stats';
 
@@ -29,7 +29,7 @@ function formatTime(iso, withDay = false) {
   return `${time} · ${date}`;
 }
 
-function OrderCard({ order, onSetStatus, onSetPaid }) {
+function OrderCard({ order, onEdit, onSetStatus, onSetPaid }) {
   const status = STATUS[order.status];
   const cancelled = order.status === 'cancelled';
   return (
@@ -45,6 +45,14 @@ function OrderCard({ order, onSetStatus, onSetPaid }) {
           <p className="flex items-center gap-1 text-xs text-slate-400">
             <Clock size={12} /> Tạo lúc {formatTime(order.createdAt)}
           </p>
+          {!cancelled && (
+            <button
+              onClick={() => onEdit(order)}
+              className="mt-1.5 flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600 active:bg-slate-200"
+            >
+              <Pencil size={14} /> Sửa đơn
+            </button>
+          )}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.badge}`}>{status.label}</span>
@@ -158,9 +166,18 @@ function OrderCard({ order, onSetStatus, onSetPaid }) {
 }
 
 // Dùng chung cho tab "Đơn hàng" (type = dine-in) và "Đơn ship" (type = delivery).
-export default function OrdersPage({ type = 'dine-in', orders, customers, onAddOrder, onSetStatus, onSetPaid }) {
+export default function OrdersPage({
+  type = 'dine-in',
+  orders,
+  customers,
+  onAddOrder,
+  onUpdateOrder,
+  onSetStatus,
+  onSetPaid,
+}) {
   const [filter, setFilter] = useState('pending');
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState(null);
 
   const ofType = orders.filter((o) => o.type === type);
   const visible = ofType.filter(FILTERS.find((f) => f.id === filter).match);
@@ -197,7 +214,13 @@ export default function OrdersPage({ type = 'dine-in', orders, customers, onAddO
       ) : (
         <ul className="space-y-3">
           {visible.map((order) => (
-            <OrderCard key={order.id} order={order} onSetStatus={onSetStatus} onSetPaid={onSetPaid} />
+            <OrderCard
+              key={order.id}
+              order={order}
+              onEdit={setEditing}
+              onSetStatus={onSetStatus}
+              onSetPaid={onSetPaid}
+            />
           ))}
         </ul>
       )}
@@ -210,6 +233,15 @@ export default function OrdersPage({ type = 'dine-in', orders, customers, onAddO
       </button>
 
       {creating && <NewOrderSheet type={type} customers={customers} onSubmit={onAddOrder} onClose={() => setCreating(false)} />}
+      {editing && (
+        <NewOrderSheet
+          type={type}
+          order={editing}
+          customers={customers}
+          onSubmit={(data) => onUpdateOrder(editing.id, data)}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </div>
   );
 }

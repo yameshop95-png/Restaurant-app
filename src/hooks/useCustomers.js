@@ -7,11 +7,12 @@ const ORDERS_KEY = 'restaurant-app.orders';
 
 // Bỏ dấu + chữ thường để tìm "lan" ra "Lan", "Lân", "LAN"...
 export const normalizeText = (s) =>
-  s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase().trim();
+  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase().trim();
 
 const phoneKey = (phone) => phone.replace(/\D/g, '');
 // Khách được nhận diện theo số điện thoại; không có SĐT thì theo tên.
 const customerKey = (c) => phoneKey(c.phone ?? '') || `name:${normalizeText(c.name)}`;
+const newId = () => crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 
 function mergeInto(list, incoming) {
   const map = new Map(list.map((c) => [customerKey(c), c]));
@@ -20,6 +21,7 @@ function mergeInto(list, incoming) {
     const key = customerKey(c);
     const prev = map.get(key);
     map.set(key, {
+      id: prev?.id ?? newId(),
       name: c.name.trim(),
       phone: (c.phone ?? '').trim(),
       address: (c.address || prev?.address || '').trim(),
@@ -32,7 +34,8 @@ function mergeInto(list, incoming) {
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (Array.isArray(saved)) return saved;
+    // Khách lưu từ bản cũ chưa có id
+    if (Array.isArray(saved)) return saved.map((c) => (c.id ? c : { ...c, id: newId() }));
     // Lần đầu chạy: lấy khách từ các đơn đã có.
     const orders = JSON.parse(localStorage.getItem(ORDERS_KEY)) ?? [];
     return mergeInto(
@@ -68,15 +71,36 @@ export default function useCustomers() {
     return next.length - customers.length;
   };
 
-  return { customers, saveCustomer, importCustomers };
+  const updateCustomer = (id, data) =>
+    setCustomers((prev) =>
+      prev.map((c) =>
+        c.id === id
+          ? { ...c, name: data.name.trim(), phone: data.phone.trim(), address: data.address.trim() }
+          : c
+      )
+    );
+
+  const deleteCustomer = (id) => setCustomers((prev) => prev.filter((c) => c.id !== id));
+
+  return { customers, saveCustomer, importCustomers, updateCustomer, deleteCustomer };
 }
 
-export function searchCustomers(customers, query, limit = 6) {
+export const sameCustomer = (a, b) => customerKey(a) === customerKey(b);
+
+export const matchesCustomer = (c, query) => {
   const q = normalizeText(query);
   const digits = phoneKey(query);
-  if (!q) return [];
+  return (
+    normalizeText(c.name).includes(q) ||
+    normalizeText(c.address ?? '').includes(q) ||
+    (digits.length >= 3 && phoneKey(c.phone).includes(digits))
+  );
+};
+
+export function searchCustomers(customers, query, limit = 6) {
+  if (!normalizeText(query)) return [];
   return customers
-    .filter((c) => normalizeText(c.name).includes(q) || (digits.length >= 3 && phoneKey(c.phone).includes(digits)))
+    .filter((c) => matchesCustomer(c, query))
     .sort((a, b) => (b.lastOrderAt ?? '').localeCompare(a.lastOrderAt ?? ''))
     .slice(0, limit);
 }

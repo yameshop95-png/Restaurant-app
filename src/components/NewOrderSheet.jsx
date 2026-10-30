@@ -6,11 +6,33 @@ import { formatMoney } from '../lib/stats';
 
 const TITLE = { 'dine-in': 'Tạo đơn tại quán', delivery: 'Tạo đơn ship' };
 
-const todayISO = () => {
-  const d = new Date();
+// "YYYY-MM-DDTHH:mm" theo giờ máy, dùng cho ô ngày/giờ
+const localDateTime = (date = new Date()) => {
+  const d = new Date(date);
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-  return d.toISOString().slice(0, 10);
+  return d.toISOString().slice(0, 16);
 };
+
+function initialForm(order) {
+  if (!order) return { name: '', phone: '', address: '', date: localDateTime().slice(0, 10), time: '', note: '' };
+  const due = order.deliverAt ? localDateTime(order.deliverAt) : '';
+  return {
+    name: order.customer?.name ?? '',
+    phone: order.customer?.phone ?? '',
+    address: order.customer?.address ?? '',
+    date: due.slice(0, 10),
+    time: due.slice(11, 16),
+    note: order.note ?? '',
+  };
+}
+
+const initialQty = (order) =>
+  Object.fromEntries(
+    (order?.items ?? []).flatMap((i) => {
+      const m = MENU.find((m) => m.name === i.name);
+      return m ? [[m.id, i.qty]] : [];
+    })
+  );
 
 function validate(form, items) {
   const errors = {};
@@ -40,9 +62,12 @@ const inputClass = (error) =>
     error ? 'border-red-400 focus:ring-red-100' : 'border-slate-300 focus:border-blue-500 focus:ring-blue-100'
   }`;
 
-export default function NewOrderSheet({ type, customers = [], onSubmit, onClose }) {
-  const [form, setForm] = useState({ name: '', phone: '', address: '', date: todayISO(), time: '', note: '' });
-  const [qty, setQty] = useState({});
+// Truyền `order` để sửa đơn đã tạo; không truyền là tạo đơn mới.
+export default function NewOrderSheet({ type, order, customers = [], onSubmit, onClose }) {
+  const [form, setForm] = useState(() => initialForm(order));
+  const [qty, setQty] = useState(() => initialQty(order));
+  // Món không còn trong thực đơn hiện tại: giữ nguyên khi sửa đơn
+  const [extraItems] = useState(() => (order?.items ?? []).filter((i) => !MENU.some((m) => m.name === i.name)));
   const [submitted, setSubmitted] = useState(false);
   const [showSuggest, setShowSuggest] = useState(false);
   const scrollRef = useRef(null);
@@ -56,7 +81,10 @@ export default function NewOrderSheet({ type, customers = [], onSubmit, onClose 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
   const change = (id, delta) => setQty((q) => ({ ...q, [id]: Math.max(0, (q[id] ?? 0) + delta) }));
 
-  const items = MENU.filter((m) => qty[m.id] > 0).map((m) => ({ name: m.name, price: m.price, qty: qty[m.id] }));
+  const items = [
+    ...MENU.filter((m) => qty[m.id] > 0).map((m) => ({ name: m.name, price: m.price, qty: qty[m.id] })),
+    ...extraItems,
+  ];
   const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
   const count = items.reduce((sum, i) => sum + i.qty, 0);
 
@@ -83,7 +111,7 @@ export default function NewOrderSheet({ type, customers = [], onSubmit, onClose 
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 sm:items-center sm:p-4">
       <div className="flex max-h-[95vh] w-full flex-col rounded-t-3xl bg-white sm:max-w-lg sm:rounded-3xl">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <h2 className="text-lg font-bold text-slate-900">{TITLE[type]}</h2>
+          <h2 className="text-lg font-bold text-slate-900">{order ? `Sửa đơn #${order.number}` : TITLE[type]}</h2>
           <button onClick={onClose} className="rounded-full p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Đóng">
             <X size={22} />
           </button>
@@ -215,7 +243,10 @@ export default function NewOrderSheet({ type, customers = [], onSubmit, onClose 
             onClick={submit}
             className="flex w-full items-center justify-between rounded-2xl bg-blue-500 px-5 py-4 text-base font-semibold text-white active:bg-blue-600"
           >
-            <span>Tạo đơn{count ? ` · ${count} món` : ''}</span>
+            <span>
+              {order ? 'Lưu thay đổi' : 'Tạo đơn'}
+              {count ? ` · ${count} món` : ''}
+            </span>
             <span>{formatMoney(total)}</span>
           </button>
         </div>

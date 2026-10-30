@@ -3,13 +3,14 @@ import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import useCustomers from './hooks/useCustomers';
 import useOrders from './hooks/useOrders';
-import { HomePage, OrdersPage, DeliveryPage, MenuPage, SettingsPage } from './pages';
+import { HomePage, OrdersPage, DeliveryPage, CustomersPage, MenuPage, SettingsPage } from './pages';
 
 // Map id tab -> component hiển thị trong Main Content Area.
 const PAGES = {
   home: HomePage,
   orders: OrdersPage,
   delivery: DeliveryPage,
+  customers: CustomersPage,
   menu: MenuPage,
   settings: SettingsPage,
 };
@@ -18,11 +19,16 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeStaff] = useState(4);
-  const { orders, addOrder, setStatus, setPaid } = useOrders();
-  const { customers, saveCustomer, importCustomers } = useCustomers();
+  const { orders, addOrder, updateOrder, setStatus, setPaid } = useOrders();
+  const { customers, saveCustomer, importCustomers, updateCustomer, deleteCustomer } = useCustomers();
 
+  // Tạo hoặc sửa đơn đều cập nhật luôn danh bạ khách hàng
   const createOrder = (order) => {
     addOrder(order);
+    saveCustomer(order.customer);
+  };
+  const editOrder = (id, order) => {
+    updateOrder(id, order);
     saveCustomer(order.customer);
   };
 
@@ -66,6 +72,10 @@ export default function App() {
             activeStaff={activeStaff}
             customers={customers}
             onAddOrder={createOrder}
+            onUpdateOrder={editOrder}
+            onAddCustomer={saveCustomer}
+            onUpdateCustomer={updateCustomer}
+            onDeleteCustomer={deleteCustomer}
             onImportCustomers={importCustomers}
             onSetStatus={setStatus}
             onSetPaid={setPaid}

@@ -51,5 +51,11 @@ export default function useOrders() {
   const setPaid = (id, paid) =>
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, paid } : o)));
 
-  return { orders, addOrder, setStatus, setPaid };
+  // Sửa đơn đã tạo: thông tin khách, giờ giao, ghi chú, món. Giữ nguyên số đơn, trạng thái, thanh toán.
+  const updateOrder = (id, { customer, deliverAt, note, items }) =>
+    setOrders((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, customer, deliverAt, note: note.trim(), items } : o))
+    );
+
+  return { orders, addOrder, updateOrder, setStatus, setPaid };
 }
