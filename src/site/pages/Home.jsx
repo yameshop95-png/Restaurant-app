@@ -6,6 +6,7 @@ import { formatMoney } from '../../lib/stats';
 import { DEFAULT_ZONES } from '../../lib/shippingZones';
 import { TEXT as ORDER_TEXT } from '../../order/i18n';
 import { BLOG_ENABLED, dishText, formatPostDate, orderingRules, path, sortedPosts } from '../lib';
+import SplitText from '../SplitText';
 import { Deco, DishCard, Link, Photo, SectionTitle, useSite } from '../ui';
 
 // Trang chủ theo bố cục mẫu Figma: mở đầu · món đặc biệt · giới thiệu quán · lấy & giao hàng · kêu gọi đặt món
@@ -173,9 +174,19 @@ function Hero({ t, tall, round, name, logo }) {
       <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-4 pb-16 pt-8 sm:px-6 md:grid-cols-[1fr_1.05fr] md:pb-24 md:pt-12">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-500">{t.heroKicker}</p>
-          <h1 className="mt-4 font-serif text-5xl font-bold leading-[1.04] text-ink text-balance sm:text-6xl lg:text-[68px]">
-            {t.heroTitle}
-          </h1>
+          <SplitText
+            key={t.heroTitle}
+            tag="h1"
+            text={t.heroTitle}
+            className="mt-4 font-serif text-5xl font-bold leading-[1.04] text-ink text-balance sm:text-6xl lg:text-[68px]"
+            delay={35}
+            duration={0.7}
+            splitType="chars"
+            from={{ opacity: 0, y: 40 }}
+            to={{ opacity: 1, y: 0 }}
+            threshold={0.1}
+            rootMargin="-100px"
+          />
           <p className="mt-6 max-w-md leading-7 text-slate-500">{t.heroText}</p>
           <div className="mt-9 flex flex-wrap gap-4">
             <Link to={path('/menu')} className="btn btn-dark">
