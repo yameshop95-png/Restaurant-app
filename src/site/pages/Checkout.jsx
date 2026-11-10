@@ -130,7 +130,7 @@ export default function Checkout() {
   const zones = shop.shippingZones ?? DEFAULT_ZONES;
   const closed = web.enabled === false;
 
-  // Mặc định thứ 7 từ 6:00. Không đưa khung trước 6 giờ sáng (kể cả nửa đêm).
+  // Mặc định thứ 7 từ 6:00. Khung đến lấy chỉ từ 6:00 đến 21:00.
   const pickupDefault = useMemo(() => defaultPickup(new Date(), lead), [lead, data]);
   useEffect(() => {
     if (!data) return;
