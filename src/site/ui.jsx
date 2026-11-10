@@ -141,20 +141,21 @@ export function SectionTitle({ title, text, align = 'center', as: H = 'h2' }) {
   );
 }
 
-export function Logo({ size = 'h-11 w-11', text = 'text-lg sm:text-xl' }) {
+export function Logo({ size = 'h-11 w-11', text = 'text-lg sm:text-xl', imgClass = '', textClass = '' }) {
   const { shop, t } = useSite();
   return (
     <Link to={path()} className="flex min-w-0 items-center gap-3">
-      <img
-        src={shop.logo || '/logo-round.svg'}
-        alt=""
-        className={`${size} shrink-0 rounded-full transition-all duration-300`}
-      />
-      <span className={`${text} font-bold leading-tight tracking-tight text-ink transition-all duration-300`}>
-        {shop.shopName || t.defaultName}
-      </span>
+      <img src={shop.logo || '/logo-round.svg'} alt="" className={`${size} shrink-0 rounded-full ${imgClass}`} />
+      <span className={`${text} font-bold leading-tight tracking-tight text-ink ${textClass}`}>{shop.shopName || t.defaultName}</span>
     </Link>
   );
+}
+
+// Thu logo khi đã lướt qua 64px, chỉ nở lại khi gần như về đầu trang.
+// Chiều cao hàng logo giữ nguyên (scale, không đổi width/height/padding) kẻo nội dung
+// nhảy lên làm scrollY tụt xuống dưới ngưỡng rồi lặp.
+export function headerCompact(compact, scrollY) {
+  return compact ? scrollY >= 16 : scrollY > 64;
 }
 
 // Thanh trên cùng: hàng 1 logo to + tên quán đầy đủ, hàng 2 các mục. Lướt xuống thì logo thu về cỡ thường.
@@ -162,10 +163,21 @@ export function Nav() {
   const { t, lang, setLang, route } = useSite();
   const [compact, setCompact] = useState(false);
   useEffect(() => {
-    const onScroll = () => setCompact(window.scrollY > 40);
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      setCompact((on) => headerCompact(on, window.scrollY));
+    };
+    const onScroll = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(read);
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, []);
   const item = (to, label, active) => (
     <Link
@@ -177,16 +189,22 @@ export function Nav() {
       {label}
     </Link>
   );
+  const mark = 'header-mark';
   return (
-    <header className="sticky top-0 z-30 bg-page/95 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(16,26,36,0.06)] backdrop-blur">
-      <div
-        className={`mx-auto flex max-w-6xl items-center gap-3 px-4 transition-all duration-300 sm:px-6 ${
-          compact ? 'py-2' : 'py-3 sm:py-4'
-        }`}
-      >
+    <header
+      data-compact={compact ? 'true' : 'false'}
+      className="sticky top-0 z-30 bg-page/95 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(16,26,36,0.06)] backdrop-blur"
+    >
+      <div className="mx-auto flex h-[5.5rem] max-w-6xl items-center gap-3 px-4 sm:h-32 sm:px-6">
         <Logo
-          size={compact ? 'h-11 w-11' : 'h-16 w-16 sm:h-24 sm:w-24'}
-          text={compact ? 'text-lg sm:text-xl' : 'text-[22px] sm:text-3xl'}
+          size="h-16 w-16 sm:h-24 sm:w-24"
+          text="inline-block text-[22px] sm:text-3xl"
+          imgClass={compact ? `${mark} scale-[0.6875] sm:scale-[0.4583]` : `${mark} scale-100`}
+          textClass={
+            compact
+              ? `${mark} -translate-x-5 scale-[0.8182] sm:-translate-x-[52px] sm:scale-[0.6667]`
+              : `${mark} translate-x-0 scale-100`
+          }
         />
         <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           <button
