@@ -1,5 +1,5 @@
 import { CATEGORIES } from './data/dishes';
-import { formatPhoneTel } from './format';
+import { formatPhoneTel, PICKUP_CLOSE, PICKUP_OPEN } from './format';
 import { dishText, findPost, path, SITE_URL, SOCIAL, sortedPosts } from './lib';
 import { SITE_TEXT } from './text';
 
@@ -28,11 +28,11 @@ export function pageMeta(route, data, dishes) {
       addressRegion: 'VIC',
       addressCountry: 'AU',
     },
-    // Giờ đóng cửa thứ 7 chưa có, nên không ghi closes.
     openingHoursSpecification: {
       '@type': 'OpeningHoursSpecification',
       dayOfWeek: 'Saturday',
-      opens: '06:00',
+      opens: PICKUP_OPEN,
+      closes: PICKUP_CLOSE,
     },
   };
 

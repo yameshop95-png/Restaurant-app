@@ -63,12 +63,15 @@ export function zoneDisplayName(name) {
   return String(name ?? '').replace(/\s[–—-]\s/g, ' & ');
 }
 
-// Giờ đến lấy: thứ 7 từ 6:00. Chưa có giờ đóng cửa, nên không ghi "closes"
-// và không hiện khung đêm (trước 6 giờ sáng). Khung cuối 23:30 chỉ để khách
-// không bị kẹt lúc nửa đêm; giờ đóng cửa thật vẫn chờ Paul.
+// Giờ đến lấy: 6:00–21:00, thứ 7 và cả những ngày khác theo yêu cầu.
 export const PICKUP_OPEN = '06:00';
+export const PICKUP_CLOSE = '21:00';
 const SLOT_MINUTES = 30;
-const LAST_SLOT_MINS = 23 * 60 + 30;
+
+function minsOf(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
 
 const pad = (n) => String(n).padStart(2, '0');
 
@@ -82,7 +85,7 @@ export function timeKey(d) {
 
 export function timeSlots() {
   const out = [];
-  for (let mins = 6 * 60; mins <= LAST_SLOT_MINS; mins += SLOT_MINUTES) {
+  for (let mins = minsOf(PICKUP_OPEN); mins <= minsOf(PICKUP_CLOSE); mins += SLOT_MINUTES) {
     out.push(`${pad(Math.floor(mins / 60))}:${pad(mins % 60)}`);
   }
   return out;

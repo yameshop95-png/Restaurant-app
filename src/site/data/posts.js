@@ -35,7 +35,7 @@ Bánh cuốn is lighter than many fried breakfasts. The filling adds protein, an
 
 ## Where to get bánh cuốn in Albury–Wodonga
 
-You can pre-order [bánh cuốn](/order/menu/banh-cuon) from us online. It comes with nước mắm dipping sauce and fried shallots. Pick up on Saturday from 6 am, or another day by request, or choose Saturday morning delivery around Wodonga, Albury, Lavington and Thurgoona. You pay when you collect or when your order arrives, so there is no card needed online.`,
+You can pre-order [bánh cuốn](/order/menu/banh-cuon) from us online. It comes with nước mắm dipping sauce and fried shallots. Pick up on Saturday, 6 am to 9 pm, or another day by request, or choose Saturday morning delivery around Wodonga, Albury, Lavington and Thurgoona. You pay when you collect or when your order arrives, so there is no card needed online.`,
   },
   {
     slug: 'gio-cha-guide',
@@ -76,13 +76,13 @@ Keep giò chả refrigerated and wrapped. It is ready to eat as it is, or you ca
 
 ## Order giò chả in Albury–Wodonga
 
-All of these rolls are on our [menu](/order/menu). Pre-order online, pick up on Saturday from 6 am or another day by request, or get Saturday morning delivery and pay when it arrives.`,
+All of these rolls are on our [menu](/order/menu). Pre-order online, pick up on Saturday, 6 am to 9 pm, or another day by request, or get Saturday morning delivery and pay when it arrives.`,
   },
   {
     slug: 'order-vietnamese-food-albury-wodonga',
     title: 'How to Pre-Order Vietnamese Food in Albury–Wodonga (Pickup or Saturday Delivery)',
     description:
-      'Pre-order bánh cuốn, giò chả, bánh giò and more in Albury–Wodonga. Pick up on Saturday from 6 am, or another day by request, or get Saturday morning delivery to Wodonga, Albury, Lavington and Thurgoona. Pay on pickup or delivery.',
+      'Pre-order bánh cuốn, giò chả, bánh giò and more in Albury–Wodonga. Pick up on Saturday, 6 am to 9 pm, or another day by request, or get Saturday morning delivery to Wodonga, Albury, Lavington and Thurgoona. Pay on pickup or delivery.',
     date: '2026-10-30',
     cover: '/site/photos/banh-gio.webp',
     coverAlt: 'Bánh giò rice dumpling cut open on a banana leaf, showing the pork filling',
@@ -95,7 +95,7 @@ Browse the [menu](/order/menu) and add what you like. Popular picks are [bánh c
 
 ## 2. Pickup or delivery
 
-- **Pickup:** Saturday from 6 am. Other days by request – add a note when you order. Order at least 3 hours ahead.
+- **Pickup:** Saturday, 6 am to 9 pm. Other days by request – add a note when you order. Order at least 3 hours ahead.
 - **Delivery:** we deliver on **Saturday mornings**, 8 am–12 pm. Order by 8 pm Friday.
 
 We deliver to Wodonga and West Wodonga, Albury, Lavington and Thurgoona. The delivery fee depends on your suburb and is shown at checkout before you place the order.
@@ -271,7 +271,7 @@ Don't let the English name put you off: there's no cheese in it. [Giò thủ](/o
 
 If you're new to these dishes, start with bánh cuốn and a few slices of giò lụa. That's the classic northern breakfast pairing. Add bánh giò or xôi khúc if you want something to eat warm in your hand. For a platter, pick two or three kinds of giò chả, slice them and serve with herbs and nước chấm.
 
-Everything here is on our [menu](/order/menu), and you can [pre-order online](/order/checkout). Pick up on Saturday from 6 am, or another day by request, or get Saturday morning delivery.
+Everything here is on our [menu](/order/menu), and you can [pre-order online](/order/checkout). Pick up on Saturday, 6 am to 9 pm, or another day by request, or get Saturday morning delivery.
 
 ## Frequently asked questions
 
