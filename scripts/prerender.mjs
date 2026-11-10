@@ -45,6 +45,14 @@ for (const url of routes(data)) {
 // /order giờ là order/index.html
 await fs.rm(path.join(DIST, 'order.html'));
 
+// Trang 404 của chính website (Vercel trả file này với mã 404)
+const missing = render('/order/404', data);
+const notFoundPage = template
+  .replace('<!--site-head-->', missing.head)
+  .replace('<div id="order-root"><!--site-html-->', `<div id="order-root" data-path="/order/404">${missing.html}`)
+  .replace('<!--site-data-->', dataScript);
+await fs.writeFile(path.join(DIST, '404.html'), notFoundPage);
+
 const today = new Date().toISOString().slice(0, 10);
 await fs.writeFile(
   path.join(DIST, 'sitemap.xml'),

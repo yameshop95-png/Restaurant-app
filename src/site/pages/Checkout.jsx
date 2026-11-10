@@ -4,23 +4,28 @@ import { DEFAULT_ZONES, matchZone } from '../../lib/shippingZones';
 import { formatMoney } from '../../lib/stats';
 import { TEXT } from '../../order/i18n';
 import { siteClient, store } from '../client';
+import {
+  dateKey,
+  defaultPickup,
+  earliestReady,
+  formatClock,
+  formatLead,
+  formatPhoneDisplay,
+  formatPhoneTel,
+  isSaturdayKey,
+  parseDateKey,
+  slotsForDay,
+  timeKey,
+} from '../format';
+import { checkoutLine, checkoutName } from '../lib';
 import { useSite } from '../ui';
 
 // Trang đặt món: chỉ đặt trước, trả tiền khi nhận. Máy chủ (place_web_order) tự tính lại giá món và phí ship;
 // đơn hiện ngay trong app nhận order với nhãn "Online".
 const SAVED_KEY = 'order-site.customer';
-const DAYS_AHEAD = 7;
+const DAYS_AHEAD = 14;
 
 const pad = (n) => String(n).padStart(2, '0');
-const dateKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const timeKey = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-// Giờ sớm nhất được đặt, làm tròn lên mốc 5 phút
-function earliestTime(leadMinutes) {
-  const d = new Date(Date.now() + leadMinutes * 60000);
-  d.setSeconds(0, 0);
-  d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5);
-  return d;
-}
 
 function Stepper({ qty, name, t, onChange, disabled }) {
   return (
@@ -125,12 +130,12 @@ export default function Checkout() {
   const zones = shop.shippingZones ?? DEFAULT_ZONES;
   const closed = web.enabled === false;
 
-  // Ngày giờ mặc định: giờ sớm nhất được đặt
-  const earliest = useMemo(() => earliestTime(lead), [lead, data]);
+  // Mặc định thứ 7 từ 6:00. Không đưa khung trước 6 giờ sáng (kể cả nửa đêm).
+  const pickupDefault = useMemo(() => defaultPickup(new Date(), lead), [lead, data]);
   useEffect(() => {
     if (!data) return;
-    setForm((f) => (f.date ? f : { ...f, date: dateKey(earliest), time: timeKey(earliest) }));
-  }, [data, earliest]);
+    setForm((f) => (f.date ? f : { ...f, date: dateKey(pickupDefault), time: timeKey(pickupDefault) }));
+  }, [data, pickupDefault]);
 
   // 2 ngày giao gần nhất còn trước hạn chót
   const deliveryDays = useMemo(() => {
@@ -154,23 +159,28 @@ export default function Checkout() {
   }, [deliveryDays, form.deliveryDate]);
 
   const days = useMemo(() => {
+    const earliest = earliestReady(new Date(), lead);
     const out = [];
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     for (let i = 0; i < DAYS_AHEAD; i++) {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
-      const label =
-        i === 0
-          ? t.today
-          : i === 1
-            ? t.tomorrow
-            : d.toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-AU', { weekday: 'short' }) +
-              ` ${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
-      out.push({ key: dateKey(d), label });
+      if (!slotsForDay(d, earliest).length) continue;
+      const when = `${t.weekdays[d.getDay()]} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
+      out.push({ key: dateKey(d), label: d.getDay() === 6 ? when : `${when} · ${t.byRequest}` });
     }
     return out;
-  }, [lang, t]);
+  }, [lang, t, lead, data]);
+
+  const pickupSlots = useMemo(() => {
+    if (!form.date) return [];
+    return slotsForDay(parseDateKey(form.date), earliestReady(new Date(), lead));
+  }, [form.date, lead, data]);
+  useEffect(() => {
+    if (!pickupSlots.length || pickupSlots.includes(form.time)) return;
+    setForm((f) => ({ ...f, time: pickupSlots[0] }));
+  }, [pickupSlots, form.time]);
 
   const items = menu.filter((m) => qty[m.id] > 0).map((m) => ({ ...m, price: Number(m.price), qty: qty[m.id] }));
   const count = items.reduce((s, i) => s + i.qty, 0);
@@ -192,8 +202,11 @@ export default function Checkout() {
   if (form.phone.replace(/\D/g, '').length < 8) errors.phone = t.errPhone;
   if (isDelivery && form.address.trim().length < 5) errors.address = t.errAddress;
   else if (isDelivery && !zone) errors.address = t.zoneUnknown;
-  if (isDelivery ? !due : !due || due.getTime() < Date.now() + lead * 60000 - 60000)
-    errors.time = isDelivery ? t.errors.cutoff : t.errTime(lead);
+  const leadLabel = formatLead(lead, lang);
+  const pickupTooSoon = !isDelivery && (!due || due.getTime() < earliestReady(new Date(), lead).getTime());
+  const pickupBeforeOpen = !isDelivery && due && due.getHours() < 6;
+  if (isDelivery ? !due : pickupTooSoon || pickupBeforeOpen) errors.time = isDelivery ? t.errors.cutoff : t.errTime(leadLabel);
+  if (!isDelivery && due && !isSaturdayKey(form.date) && !form.note.trim()) errors.note = t.errPickupNote;
   if (!count) errors.items = t.errItems;
   const shown = submitted ? errors : {};
 
@@ -262,8 +275,8 @@ export default function Checkout() {
     const dm = `${pad(done.when.getDate())}/${pad(done.when.getMonth() + 1)}`;
     const when =
       done.type === 'delivery'
-        ? `${t.weekdays[done.when.getDay()]} ${dm} (${dStart}–${dEnd})`
-        : `${lang === 'vi' ? 'lúc' : 'at'} ${timeKey(done.when)} ${dm}`;
+        ? `${t.weekdays[done.when.getDay()]} ${dm} (${formatClock(dStart, lang)}–${formatClock(dEnd, lang)})`
+        : `${lang === 'vi' ? 'lúc' : 'at'} ${formatClock(timeKey(done.when), lang)} ${dm}`;
     return (
       <div className={page}>
         <div className="mx-auto max-w-xl space-y-5">
@@ -278,7 +291,7 @@ export default function Checkout() {
               {done.items.map((i) => (
                 <li key={i.id} className="flex justify-between gap-3">
                   <span>
-                    <b>{i.qty} ×</b> {i.name}
+                    <b>{i.qty} ×</b> {checkoutName(i, lang)}
                   </span>
                   <span className="text-slate-500">{formatMoney(i.qty * i.price)}</span>
                 </li>
@@ -320,11 +333,17 @@ export default function Checkout() {
 
         <div className="flex flex-wrap gap-2 text-sm">
           <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-slate-800">
-            <ShoppingBag size={15} className="shrink-0" /> {t.pickupRule(lead)}
+            <ShoppingBag size={15} className="shrink-0" /> {t.pickupRule(leadLabel)}
           </span>
           <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-slate-800">
             <Truck size={15} className="shrink-0" />{' '}
-            {t.deliveryRule(t.weekdays[dDay], dStart, dEnd, t.weekdays[(dDay + 6) % 7], dCut)}
+            {t.deliveryRule(
+              t.weekdays[dDay],
+              formatClock(dStart, lang),
+              formatClock(dEnd, lang),
+              t.weekdays[(dDay + 6) % 7],
+              formatClock(dCut, lang),
+            )}
           </span>
           <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-slate-800">
             <Banknote size={15} /> {t.payOnPickup}
@@ -337,10 +356,10 @@ export default function Checkout() {
             <p className="mt-2 text-slate-600">{t.errors.closed}</p>
             {shop.shopPhone && (
               <a
-                href={`tel:${shop.shopPhone}`}
+                href={`tel:${formatPhoneTel(shop.shopPhone)}`}
                 className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-500 px-5 py-3 font-semibold text-white"
               >
-                <Phone size={18} /> {t.callUs} {shop.shopPhone}
+                <Phone size={18} /> {t.callUs} {formatPhoneDisplay(shop.shopPhone)}
               </a>
             )}
           </section>
@@ -357,14 +376,15 @@ export default function Checkout() {
                 <ul className="divide-y divide-slate-200 overflow-hidden rounded-3xl border border-slate-200 bg-card">
                   {menu.map((m) => {
                     const out = m.available === false;
+                    const label = out ? checkoutName(m, lang) : checkoutLine(m, lang);
                     return (
                       <li key={m.id} className={`flex items-center gap-3 px-4 py-3.5 ${out ? 'opacity-50' : ''}`}>
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-slate-900">{m.name}</p>
-                          <p className="text-sm text-slate-500">{out ? t.soldOut : formatMoney(Number(m.price))}</p>
+                          <p className="font-semibold text-slate-900">{label}</p>
+                          {out && <p className="text-sm text-slate-500">{t.soldOut}</p>}
                         </div>
                         {!out && (
-                          <Stepper qty={qty[m.id] ?? 0} name={m.name} t={t} onChange={(n) => setItem(m.id, n)} />
+                          <Stepper qty={qty[m.id] ?? 0} name={checkoutName(m, lang)} t={t} onChange={(n) => setItem(m.id, n)} />
                         )}
                       </li>
                     );
@@ -400,7 +420,7 @@ export default function Checkout() {
               </div>
 
               {isDelivery ? (
-                <Field label={t.deliveryDay} error={shown.time} hint={t.deliveryWindow(dStart, dEnd)}>
+                <Field label={t.deliveryDay} error={shown.time} hint={t.deliveryWindow(formatClock(dStart, lang), formatClock(dEnd, lang))}>
                   <select
                     id="order-delivery-date"
                     value={form.deliveryDate}
@@ -425,21 +445,14 @@ export default function Checkout() {
                       ))}
                     </select>
                   </Field>
-                  <Field
-                    label={isDelivery ? t.deliveryTime : t.pickupTime}
-                    error={shown.time}
-                    hint={t.earliest(
-                      `${timeKey(earliest)}${dateKey(earliest) !== dateKey(new Date()) ? ` ${pad(earliest.getDate())}/${pad(earliest.getMonth() + 1)}` : ''}`,
-                    )}
-                  >
-                    <input
-                      id="order-time"
-                      type="time"
-                      step="300"
-                      value={form.time}
-                      onChange={set('time')}
-                      className={inputClass(shown.time)}
-                    />
+                  <Field label={t.pickupTime} error={shown.time} hint={t.pickupHint}>
+                    <select id="order-time" value={form.time} onChange={set('time')} className={inputClass(shown.time)}>
+                      {pickupSlots.map((slot) => (
+                        <option key={slot} value={slot} className="bg-card">
+                          {formatClock(slot, lang)}
+                        </option>
+                      ))}
+                    </select>
                   </Field>
                 </div>
               )}
@@ -498,7 +511,7 @@ export default function Checkout() {
                   </ul>
                 </details>
               )}
-              <Field label={t.note}>
+              <Field label={t.note} error={shown.note}>
                 <textarea
                   id="order-note"
                   rows={2}
@@ -506,7 +519,7 @@ export default function Checkout() {
                   value={form.note}
                   onChange={set('note')}
                   placeholder={t.notePlaceholder}
-                  className={inputClass(false)}
+                  className={inputClass(shown.note)}
                 />
               </Field>
               {/* Ô bẫy: ẩn với người dùng */}
@@ -527,7 +540,7 @@ export default function Checkout() {
                   items.map((i) => (
                     <p key={i.id} className="flex justify-between gap-3">
                       <span className="min-w-0">
-                        <b>{i.qty} ×</b> {i.name}
+                        <b>{i.qty} ×</b> {checkoutName(i, lang)}
                       </span>
                       <span className="shrink-0 text-slate-500">{formatMoney(i.qty * i.price)}</span>
                     </p>
