@@ -38,6 +38,12 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .header-mark {
+    transition: none;
+  }
+}
+
 @layer components {
   /* Nút như mẫu: góc trên phải bo nhiều hơn, có bóng */
   .btn {
@@ -50,6 +56,13 @@
   }
   .btn-accent {
     @apply bg-blue-500 shadow-[0_16px_30px_-10px_rgba(234,109,39,0.55)] hover:bg-blue-600;
+  }
+  /* Logo thu nhỏ bằng scale/translate. Không animate width, height hay padding. */
+  .header-mark {
+    transform-origin: left center;
+    transition-property: transform, translate, scale, opacity;
+    transition-duration: 300ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   }
   .deco {
     @apply pointer-events-none absolute select-none;
