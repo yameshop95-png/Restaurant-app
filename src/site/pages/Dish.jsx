@@ -1,6 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import { POSTS } from '../data/posts';
-import { BLOG_ENABLED, dishText, path } from '../lib';
+import { BLOG_ENABLED, dishText, path, photoAlt } from '../lib';
 import { Deco, DishCard, Link, Photo, Price, QtyControl, useSite } from '../ui';
 import { PostCard } from './Home';
 import NotFound from './NotFound';
@@ -25,7 +25,7 @@ export default function Dish({ slug }) {
         <div className="relative mx-auto aspect-square w-full max-w-[480px]">
           <Deco name="basil" className="-right-6 -top-8 w-40 opacity-40" />
           <div className="relative h-full w-full overflow-hidden rounded-full border-[10px] border-mist shadow-[0_40px_80px_-30px_rgba(16,26,36,0.55)]">
-            <Photo src={dish.content?.photo} alt={txt.name} eager />
+            <Photo src={dish.content?.photo} alt={photoAlt(dish, lang)} eager />
           </div>
         </div>
         <div className="space-y-5">
@@ -41,6 +41,8 @@ export default function Dish({ slug }) {
             </p>
           )}
           {txt.description && <p className="text-lg leading-8 text-slate-500">{txt.description}</p>}
+          <p className="text-slate-600">{t.storage}</p>
+          <p className="text-slate-500">{t.allergy}</p>
         </div>
       </article>
 

@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { Facebook, Mail, MapPin, Minus, Phone, Plus, ShoppingBag } from 'lucide-react';
 import { formatMoney } from '../lib/stats';
 import { TEXT as ORDER_TEXT } from '../order/i18n';
-import { BLOG_ENABLED, dishText, orderingRules, path, SOCIAL } from './lib';
+import { formatAddressDisplay, formatClock, formatPhoneDisplay, formatPhoneTel } from './format';
+import { BLOG_ENABLED, dishText, orderingRules, path, photoAlt, SOCIAL } from './lib';
 
 export const SiteContext = createContext(null);
 export const useSite = () => useContext(SiteContext);
@@ -24,12 +25,12 @@ export function Deco({ name, className = '' }) {
 
 // Ảnh món; chưa có ảnh thì hiện khung có logo
 export function Photo({ src, alt, className = '', eager = false }) {
-  const { shop } = useSite();
+  const { shop, t } = useSite();
   if (src) {
     return (
       <img
         src={src}
-        alt={alt}
+        alt={alt || ''}
         loading={eager ? 'eager' : 'lazy'}
         decoding="async"
         className={`h-full w-full object-cover ${className}`}
@@ -39,7 +40,7 @@ export function Photo({ src, alt, className = '', eager = false }) {
   return (
     <div
       role="img"
-      aria-label={alt}
+      aria-label={alt ? `${t.photoSoon}: ${alt}` : t.photoSoon}
       className={`flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_35%_25%,#fff7f1,#fbe2d3_75%)] ${className}`}
     >
       <img src={shop.logo || '/logo-round.svg'} alt="" className="w-2/5 max-w-36 rounded-full drop-shadow-md" />
@@ -104,7 +105,7 @@ export function DishCard({ dish }) {
         aria-label={txt.name}
         className="absolute left-1/2 top-0 z-10 block aspect-square w-48 -translate-x-1/2 overflow-hidden rounded-full shadow-[0_18px_40px_-18px_rgba(16,26,36,0.45)] transition duration-300 group-hover:-translate-y-1"
       >
-        <Photo src={dish.content?.photo} alt={txt.name} />
+        <Photo src={dish.content?.photo} alt={photoAlt(dish, lang)} />
       </Link>
       {dish.price != null && (
         <span
@@ -227,6 +228,7 @@ export function Footer() {
   const { shop, t, lang, dishes } = useSite();
   const rules = orderingRules(shop);
   const days = ORDER_TEXT[lang].weekdays;
+  const clock = (value) => formatClock(value, lang);
   const picks = (dishes.some((d) => d.content?.featured) ? dishes.filter((d) => d.content?.featured) : dishes).slice(
     0,
     4,
@@ -248,13 +250,15 @@ export function Footer() {
             <div>
               <dt>{t.deliveryLabel}</dt>
               <dd>
-                {days[rules.day]} {rules.start}–{rules.end}
+                {days[rules.day]} {clock(rules.start)}–{clock(rules.end)}
               </dd>
             </div>
             <div>
               <dt>{t.orderBy}</dt>
               <dd>
-                {days[(rules.day + 6) % 7]} {rules.cutoff}
+                {lang === 'en'
+                  ? `${clock(rules.cutoff)} ${days[(rules.day + 6) % 7]}`
+                  : `${days[(rules.day + 6) % 7]} ${rules.cutoff}`}
               </dd>
             </div>
           </dl>
@@ -292,8 +296,8 @@ export function Footer() {
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full ring-1 ring-ink text-ink">
                   <Phone size={16} />
                 </span>
-                <a href={`tel:${shop.shopPhone}`} className="hover:text-ink">
-                  {shop.shopPhone}
+                <a href={`tel:${formatPhoneTel(shop.shopPhone)}`} className="hover:text-ink">
+                  {formatPhoneDisplay(shop.shopPhone)}
                 </a>
               </li>
             )}
@@ -302,7 +306,7 @@ export function Footer() {
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full ring-1 ring-ink text-ink">
                   <MapPin size={16} />
                 </span>
-                <span className="pt-1.5">{shop.shopAddress}</span>
+                <span className="pt-1.5">{formatAddressDisplay(shop.shopAddress)}</span>
               </li>
             )}
             {!shop.shopPhone && !shop.shopAddress && (

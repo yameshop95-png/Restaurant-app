@@ -5,7 +5,8 @@ const POINT_ICONS = [Leaf, CalendarCheck, ShieldCheck, ShoppingBag, Truck, Bankn
 import { formatMoney } from '../../lib/stats';
 import { DEFAULT_ZONES } from '../../lib/shippingZones';
 import { TEXT as ORDER_TEXT } from '../../order/i18n';
-import { BLOG_ENABLED, dishText, formatPostDate, orderingRules, path, sortedPosts } from '../lib';
+import { formatClock, formatLead, zoneDisplayName } from '../format';
+import { BLOG_ENABLED, formatPostDate, orderingRules, path, photoAlt, sortedPosts } from '../lib';
 import { Deco, DishCard, Link, Photo, SectionTitle, useSite } from '../ui';
 
 // Trang chủ theo bố cục mẫu Figma: mở đầu · món đặc biệt · giới thiệu quán · lấy & giao hàng · kêu gọi đặt món
@@ -19,9 +20,13 @@ export default function Home() {
   const rules = orderingRules(shop);
   const days = ORDER_TEXT[lang].weekdays;
   const cutDay = days[(rules.day + 6) % 7];
+  const start = formatClock(rules.start, lang);
+  const end = formatClock(rules.end, lang);
+  const cutoff = formatClock(rules.cutoff, lang);
+  const lead = formatLead(rules.lead, lang);
   const name = shop.shopName || t.defaultName;
   const posts = sortedPosts().slice(0, 3);
-  const photoOf = (d) => d && { src: d.content.photo, alt: dishText(d, lang).name };
+  const photoOf = (d) => d && { src: d.content.photo, alt: photoAlt(d, lang) };
 
   return (
     <>
@@ -48,7 +53,7 @@ export default function Home() {
             <div className="relative mx-auto aspect-square w-full max-w-[520px]">
               <Deco name="branch" className="-right-6 -top-12 w-44 opacity-40 sm:w-56" />
               <div className="relative h-full w-full overflow-hidden rounded-full border-[10px] border-white shadow-[0_40px_80px_-30px_rgba(16,26,36,0.55)]">
-                <Photo src={pick(2)?.content.photo} alt={pick(2) ? dishText(pick(2), lang).name : name} />
+                <Photo src={pick(2)?.content.photo} alt={pick(2) ? photoAlt(pick(2), lang) : name} />
               </div>
             </div>
             <div>
@@ -86,14 +91,14 @@ export default function Home() {
           <div>
             <SectionTitle align="left" title={t.deliveryTitle} />
             <div className="mt-6 space-y-2 leading-7 text-slate-500">
-              <p>{t.pickupText(rules.lead)}</p>
-              <p>{t.deliveryText(days[rules.day], rules.start, rules.end, cutDay, rules.cutoff)}</p>
+              <p>{t.pickupText(lead)}</p>
+              <p>{t.deliveryText(days[rules.day], start, end, cutDay, cutoff)}</p>
             </div>
             <h3 className="mt-8 text-xs font-bold uppercase tracking-wide text-ink">{t.feeTitle}</h3>
             <ul className="mt-3 divide-y divide-slate-200 rounded-[20px] bg-mist px-5">
               {zones.map((z) => (
                 <li key={z.id} className="flex items-center justify-between gap-3 py-3.5">
-                  <span className="text-ink">{z.name}</span>
+                  <span className="text-ink">{zoneDisplayName(z.name)}</span>
                   <span className="font-bold text-ink">{formatMoney(Number(z.fee) || 0)}</span>
                 </li>
               ))}
@@ -110,10 +115,10 @@ export default function Home() {
           <div className="relative mx-auto aspect-square w-full max-w-[460px]">
             <div className="absolute inset-0 rounded-full bg-blue-500" />
             <div className="absolute inset-[9%] overflow-hidden rounded-full border-[10px] border-white shadow-[0_30px_60px_-24px_rgba(16,26,36,0.6)]">
-              <Photo src={pick(3)?.content.photo} alt={pick(3) ? dishText(pick(3), lang).name : name} />
+              <Photo src={pick(3)?.content.photo} alt={pick(3) ? photoAlt(pick(3), lang) : name} />
             </div>
             <p className="absolute -bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-white px-5 py-3 font-semibold text-ink shadow-[0_16px_30px_-12px_rgba(16,26,36,0.4)]">
-              <Truck size={18} className="text-blue-500" /> {days[rules.day]} {rules.start}–{rules.end}
+              <Truck size={18} className="text-blue-500" /> {days[rules.day]} {start}–{end}
             </p>
           </div>
         </div>
@@ -140,7 +145,7 @@ export default function Home() {
         <div className="relative overflow-hidden rounded-[28px] bg-ink px-6 py-16 text-center sm:px-12 sm:py-20">
           <img
             src="/site/photos/cta-weekend.webp"
-            alt=""
+            alt="Lạp xưởng sausages and a plate of fried rice on an outdoor table"
             loading="lazy"
             className="absolute inset-0 h-full w-full object-cover"
           />
@@ -150,7 +155,7 @@ export default function Home() {
           </h2>
           <p className="relative mx-auto mt-4 max-w-lg leading-7 text-white/85 text-balance">{t.ctaText}</p>
           <div className="relative mx-auto mt-9 flex max-w-xl flex-col items-stretch gap-3 rounded-[14px] bg-white p-2 text-left sm:flex-row sm:items-center sm:justify-between sm:pl-5">
-            <span className="px-3 pt-2 text-sm text-slate-500 sm:p-0">{t.ctaNote(cutDay, rules.cutoff)}</span>
+            <span className="px-3 pt-2 text-sm text-slate-500 sm:p-0">{t.ctaNote(cutDay, cutoff)}</span>
             <Link to={path('/checkout')} className="btn btn-accent shrink-0 px-6 py-3.5 text-base">
               {t.nav.order}
             </Link>
@@ -230,7 +235,7 @@ export function PostCard({ post, lang, t }) {
   return (
     <article className="flex flex-col overflow-hidden rounded-[28px] bg-card shadow-[0_24px_50px_-30px_rgba(16,26,36,0.35)] ring-1 ring-slate-200/70">
       <Link to={path(`/blog/${post.slug}`)} className="block aspect-[16/9] overflow-hidden">
-        <Photo src={post.cover} alt={post.title} />
+        <Photo src={post.cover} alt={post.coverAlt || post.title} />
       </Link>
       <div className="flex flex-1 flex-col gap-2 p-6">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">

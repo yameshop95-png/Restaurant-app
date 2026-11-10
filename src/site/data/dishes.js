@@ -1,8 +1,16 @@
-// Nội dung từng món trên website (ảnh, mô tả, định lượng). Giá và còn / hết lấy trực tiếp từ thực đơn trong app,
-// ghép theo tên món (không phân biệt hoa thường, dấu). Món có trong app mà chưa có ở đây vẫn hiện, chỉ thiếu ảnh / mô tả.
+// Nội dung từng món trên website (ảnh, mô tả, định lượng). Giá và còn / hết lấy từ thực đơn.
+// Ghép theo id (UUID trong public_shop). Món mới chưa có id thì ghép theo slug / tên ở aliases.
 //
-// photo: đường dẫn ảnh trong public/site/photos (vd '/site/photos/banh-cuon.webp'); null = khung ảnh tạm
-// portion: định lượng, để trống tới khi quán cho số thật (website chỉ hiện khi có)
+// photo: đường dẫn ảnh trong public/site/photos; null = khung ảnh tạm (không dùng ảnh AI)
+// portion: chỉ dùng khi thực đơn chưa có định lượng
+//
+// Bánh chưng / Bánh tét chưa có dòng trong thực đơn. Khi thêm, dùng đúng:
+//   name: "Bánh chưng / Bánh tét"
+//   price: 15
+//   portion: "1 kg"   (hoặc "1kg" — trang tự thêm dấu cách)
+//   available: true
+// Trang ghép slug banh-chung-banh-tet. Cũng nhận tên "Bánh chưng" hoặc "Bánh tét".
+// Chưa có ảnh thật: để trống, đừng thêm ảnh tạo bằng AI.
 export const CATEGORIES = [
   { id: 'rolls', en: 'Rice rolls & dumplings', vi: 'Bánh cuốn & bánh' },
   { id: 'gio-cha', en: 'Giò chả – Vietnamese pork rolls', vi: 'Giò chả' },
@@ -11,28 +19,28 @@ export const CATEGORIES = [
 
 export const DISHES = [
   {
-    match: 'Bánh cuốn',
+    id: '027e9083-77c7-490c-b9f6-0732d1536f2b',
     slug: 'banh-cuon',
     category: 'rolls',
     featured: true,
     photo: '/site/photos/banh-cuon.webp',
     en: {
       name: 'Bánh cuốn – steamed rice rolls',
-      short: 'Silky steamed rice sheets rolled around seasoned pork and wood ear mushroom.',
+      short:
+        'Steamed rice rolls with pork and wood ear mushroom, served with nước mắm (dipping fish sauce) and fried shallots.',
       description:
-        'Bánh cuốn is made by spreading a thin rice batter over cloth stretched across a steaming pot, then rolling the delicate sheet around minced pork and wood ear mushroom. It is traditionally topped with crispy fried shallots and eaten with nước chấm, a light fish sauce dressing, and slices of giò lụa.',
-      portion: '',
+        'Bánh cuốn is made by spreading a thin rice batter over cloth stretched across a steaming pot, then rolling the delicate sheet around minced pork and wood ear mushroom. It is traditionally topped with crispy fried shallots and eaten with nước chấm (a light fish sauce dressing) and slices of giò lụa. Comes with nước mắm dipping sauce and fried shallots (hành phi).',
+      alt: 'Bánh cuốn rice rolls topped with fried shallots and herbs, with slices of pork roll',
     },
     vi: {
       name: 'Bánh cuốn',
       short: 'Bánh tráng mỏng từ bột gạo, cuốn nhân thịt băm và mộc nhĩ.',
       description:
-        'Bột gạo được tráng mỏng trên lớp khăn căng trên nồi hấp, rồi cuốn với nhân thịt heo băm và mộc nhĩ. Theo kiểu truyền thống, bánh cuốn rắc hành phi và ăn kèm nước chấm cùng giò lụa.',
-      portion: '',
+        'Bột gạo được tráng mỏng trên lớp khăn căng trên nồi hấp, rồi cuốn với nhân thịt heo băm và mộc nhĩ. Theo kiểu truyền thống, bánh cuốn rắc hành phi và ăn kèm nước chấm cùng giò lụa. Bánh kèm nước mắm và hành phi.',
     },
   },
   {
-    match: 'Giò Lụa',
+    id: '81b39c8b-ba8b-4b3a-a7f6-fc6b3ebe5caa',
     slug: 'gio-lua',
     category: 'gio-cha',
     featured: true,
@@ -41,19 +49,18 @@ export const DISHES = [
       name: 'Giò lụa – Vietnamese pork roll',
       short: 'Smooth, springy pork roll wrapped in banana leaves.',
       description:
-        'Giò lụa is lean pork pounded into a silky paste with fish sauce, wrapped tightly in banana leaves and boiled. Sliced thin, it is the classic partner for bánh cuốn, sticky rice or a bánh mì, and a must-have on the table at Tết.',
-      portion: '',
+        'Giò lụa is lean pork pounded into a silky paste with fish sauce, wrapped tightly in banana leaves and boiled. Sliced thin, it is the classic partner for bánh cuốn, sticky rice or a bánh mì, and a must-have at Tết (Lunar New Year).',
+      alt: 'Sliced giò lụa pork roll beside whole rolls wrapped in banana leaf',
     },
     vi: {
       name: 'Giò lụa',
       short: 'Giò lụa dai mịn, gói lá chuối.',
       description:
         'Thịt heo nạc giã nhuyễn với nước mắm, gói chặt trong lá chuối rồi luộc chín. Thái mỏng ăn với bánh cuốn, xôi, bánh mì, và không thể thiếu trong mâm cỗ ngày Tết.',
-      portion: '',
     },
   },
   {
-    match: 'Chả Bì',
+    id: 'b936f45b-0da1-49b8-9433-0df45382dc8d',
     slug: 'cha-bi',
     category: 'gio-cha',
     photo: null,
@@ -61,18 +68,16 @@ export const DISHES = [
       name: 'Chả bì – pork roll with pork skin',
       short: 'Pork roll mixed with thin strips of pork skin for a chewy bite.',
       description:
-        'Chả bì combines smooth pork paste with finely shredded pork skin, giving each slice a pleasant chewy texture. Enjoy it with rice rolls, broken rice or in a bánh mì.',
-      portion: '',
+        'Chả bì combines smooth pork paste with finely shredded pork skin, giving each slice a pleasant chewy texture. Enjoy it with bánh cuốn, broken rice (cơm tấm) or in a bánh mì.',
     },
     vi: {
       name: 'Chả bì',
       short: 'Chả trộn bì heo thái sợi, giòn dai.',
       description: 'Giò sống trộn bì heo thái sợi mỏng, mỗi lát giòn dai. Ăn kèm bánh cuốn, cơm tấm hoặc kẹp bánh mì đều ngon.',
-      portion: '',
     },
   },
   {
-    match: 'Chả Chiên',
+    id: '6b451196-1e24-44cb-a8ea-ce8fdf917b77',
     slug: 'cha-chien',
     category: 'gio-cha',
     featured: true,
@@ -82,74 +87,69 @@ export const DISHES = [
       short: 'Pork roll fried until golden on the outside and tender inside.',
       description:
         'Chả chiên starts with the same pork paste as giò lụa, shaped and fried so the outside turns golden and fragrant while the inside stays soft. Great sliced with bánh cuốn, noodles or steamed rice.',
-      portion: '',
     },
     vi: {
       name: 'Chả chiên',
       short: 'Chả chiên vàng thơm bên ngoài, mềm bên trong.',
       description: 'Làm từ giò sống như giò lụa, nặn khuôn rồi chiên vàng thơm, bên trong vẫn mềm. Thái lát ăn với bánh cuốn, bún hoặc cơm.',
-      portion: '',
     },
   },
   {
-    match: 'Chả Bò',
+    id: 'ea92f18d-76e7-42f0-adc6-16edd333870c',
     slug: 'cha-bo',
     category: 'gio-cha',
     photo: '/site/photos/cha-bo.webp',
     en: {
-      name: 'Chả bò – beef roll',
-      short: 'Firm beef roll seasoned with cracked black pepper.',
+      name: 'Chả bò – Vietnamese beef roll',
+      short: 'Firm Vietnamese beef roll seasoned with garlic and black pepper.',
       description:
-        'Chả bò is a beef version of the classic Vietnamese roll, seasoned generously with black pepper for a bold, savoury flavour. Slice and enjoy it on its own, with rice rolls or in a bánh mì.',
-      portion: '',
+        'Chả bò is a Vietnamese beef roll. Beef, garlic and black pepper. Slice and enjoy it on its own, with rice rolls or in a bánh mì.',
+      alt: 'Thick slices of chả bò Vietnamese beef roll on a wooden board',
     },
     vi: {
       name: 'Chả bò',
       short: 'Chả bò chắc thịt, thơm tiêu.',
       description: 'Chả làm từ thịt bò, nêm nhiều tiêu đen nên đậm vị. Thái lát ăn không, ăn với bánh cuốn hoặc kẹp bánh mì.',
-      portion: '',
     },
   },
   {
-    match: 'Giò Thủ',
+    id: '2a3af5c2-582d-4564-8a13-022176a21fd9',
     slug: 'gio-thu',
     category: 'gio-cha',
     photo: null,
     en: {
       name: 'Giò thủ – Vietnamese head cheese',
-      short: 'Pressed pork with ear and wood ear mushroom, crunchy and savoury.',
+      short: 'Pork, pork ear, pork tongue, wood ear mushroom and black pepper.',
       description:
-        'Giò thủ is made from pork ear, pork and wood ear mushroom, seasoned with pepper and fish sauce, then pressed into a firm roll. Sliced cold, it has a satisfying crunch and is a favourite at Tết and family gatherings.',
-      portion: '',
+        'Giò thủ is made from pork, pork ear, pork tongue and wood ear mushroom, seasoned with black pepper and pressed into a firm roll. Sliced cold, it has a satisfying crunch and is a favourite at Tết (Lunar New Year) and family gatherings.',
     },
     vi: {
       name: 'Giò thủ',
       short: 'Giò thủ giòn sần sật với tai heo, mộc nhĩ.',
       description: 'Tai heo, thịt heo và mộc nhĩ nêm tiêu, nước mắm, nén chặt thành cây giò. Thái lát ăn nguội giòn sần sật, món quen trong ngày Tết và đám tiệc.',
-      portion: '',
     },
   },
   {
-    match: 'Mọc, Giò Sống',
+    id: '9aa9f3dc-bc0a-40ab-917c-d4917973bd35',
     slug: 'moc-gio-song',
     category: 'gio-cha',
     photo: null,
     en: {
-      name: 'Mọc & giò sống – fresh pork paste',
-      short: 'Seasoned raw pork paste, ready to cook into meatballs or fillings.',
+      name: 'Giò sống & mọc – raw seasoned pork paste',
+      title: 'Giò sống & mọc (raw pork paste)',
+      short: 'Raw seasoned pork paste – keep chilled and cook before eating. Shape into meatballs (mọc) or use as a filling.',
       description:
-        'Giò sống is the seasoned pork paste behind giò lụa and chả. Shape it into mọc meatballs for bún mọc or noodle soup, use it to stuff tofu, bitter melon or tomatoes, or fry it into your own chả at home. Keep refrigerated and cook thoroughly.',
-      portion: '',
+        'Giò sống is the seasoned pork paste behind giò lụa and chả. Shape it into mọc meatballs for bún mọc or noodle soup, use it to stuff tofu, bitter melon or tomatoes, or fry it into your own chả at home. Sold raw. Keep refrigerated and cook thoroughly before eating.',
     },
     vi: {
       name: 'Mọc, giò sống',
       short: 'Giò sống đã nêm, về nặn mọc hoặc làm nhân.',
-      description: 'Giò sống đã nêm sẵn, về nặn mọc nấu bún mọc, canh, nhồi đậu hũ, khổ qua, cà chua hoặc tự chiên chả. Giữ lạnh và nấu chín kỹ.',
-      portion: '',
+      description:
+        'Giò sống đã nêm sẵn, về nặn mọc nấu bún mọc, canh, nhồi đậu hũ, khổ qua, cà chua hoặc tự chiên chả. Bán sống, giữ lạnh và nấu chín trước khi ăn.',
     },
   },
   {
-    match: 'Bánh Giò',
+    id: 'a4e97534-4e8b-4725-a87a-114b5704a748',
     slug: 'banh-gio',
     category: 'rolls',
     featured: true,
@@ -159,70 +159,89 @@ export const DISHES = [
       short: 'Soft rice dumpling wrapped in banana leaf with a savoury pork filling.',
       description:
         'Bánh giò is a pyramid-shaped dumpling made from rice flour, wrapped in banana leaves and steamed. Inside is a savoury filling of minced pork and wood ear mushroom. It is a popular Hanoi breakfast and makes an easy, filling snack.',
-      portion: '',
+      alt: 'Bánh giò rice dumpling cut open on a banana leaf, showing the pork filling',
     },
     vi: {
       name: 'Bánh giò',
       short: 'Bánh giò mềm, gói lá chuối, nhân thịt mộc nhĩ.',
       description: 'Bánh làm từ bột gạo, gói lá chuối hình chóp rồi hấp chín, nhân thịt băm và mộc nhĩ. Món ăn sáng quen thuộc của người Hà Nội, ăn no và tiện.',
-      portion: '',
     },
   },
   {
-    match: 'Xôi Khúc',
+    id: 'd0fa8b4b-dd29-4faf-9a8a-3ed172fffe15',
     slug: 'xoi-khuc',
     category: 'rolls',
     photo: null,
     en: {
       name: 'Xôi khúc – sticky rice cudweed dumpling',
-      short: 'Green cudweed dumpling with mung bean and pork, rolled in sticky rice.',
+      title: 'Xôi khúc (sticky rice dumpling)',
+      short: 'Sticky rice ball with a mung bean and pork filling. Sold per piece.',
       description:
-        'Xôi khúc is a northern Vietnamese favourite: a soft dough made with rau khúc (cudweed) and rice flour is wrapped around mung bean and pork, then coated in glutinous rice and steamed. Fragrant, filling and best eaten warm.',
-      portion: '',
+        'Xôi khúc is a northern Vietnamese favourite: a soft dough made with rau khúc (cudweed) and rice flour is wrapped around a mung bean and pork filling, then coated in sticky rice and steamed. Sold by the piece. Fragrant and filling, and best eaten warm.',
+      portion: '1 piece',
     },
     vi: {
       name: 'Xôi khúc',
       short: 'Bánh khúc nhân đậu xanh thịt, lăn xôi.',
       description: 'Món quen của miền Bắc: vỏ làm từ rau khúc và bột gạo, bọc nhân đậu xanh, thịt, lăn gạo nếp rồi đồ chín. Thơm, no, ngon nhất khi ăn nóng.',
-      portion: '',
     },
   },
   {
-    match: 'Bò Viên',
+    id: '0299b069-25d8-468d-96c9-34b99ebc9b77',
     slug: 'bo-vien',
     category: 'meats',
     photo: null,
     en: {
       name: 'Bò viên – Vietnamese beef balls',
-      short: 'Springy beef balls for phở, noodle soup or the grill.',
+      short: 'Springy, fully cooked beef balls for phở, noodle soup or the grill.',
       description:
-        'Bò viên are beef balls with the bouncy texture Vietnamese cooks love. Drop them into phở or any noodle soup, add them to hot pot, or grill and serve with hoisin and chilli sauce.',
-      portion: '',
+        'Bò viên are beef balls with the bouncy texture Vietnamese cooks love. Drop them into phở or any noodle soup, add them to hot pot, or grill and serve with hoisin and chilli sauce. Fully cooked and sold chilled – just heat through.',
     },
     vi: {
       name: 'Bò viên',
       short: 'Bò viên dai giòn, nấu phở, hủ tiếu hoặc nướng.',
-      description: 'Bò viên dai giòn đúng kiểu. Thả vào phở, hủ tiếu, lẩu hoặc nướng chấm tương đen, tương ớt.',
-      portion: '',
+      description: 'Bò viên dai giòn đúng kiểu. Thả vào phở, hủ tiếu, lẩu hoặc nướng chấm tương đen, tương ớt. Đã chín, bán lạnh, chỉ cần hâm nóng.',
     },
   },
   {
-    match: 'Lạp Xưởng',
+    id: 'ee20db3b-a5b6-4cca-813e-5d84dc4a80d2',
     slug: 'lap-xuong',
     category: 'meats',
     photo: '/site/photos/lap-xuong.webp',
     en: {
       name: 'Lạp xưởng – sweet pork sausage',
-      short: 'Sweet, savoury dried pork sausage for sticky rice and fried rice.',
+      short: 'Sweet, savoury pork sausage – best pan-fried or grilled. Great with sticky rice or fried rice.',
       description:
-        'Lạp xưởng is a dried pork sausage with a sweet and savoury flavour. Pan-fry or steam it and serve with sticky rice, slice it into fried rice, or add it to a claypot dish.',
-      portion: '',
+        'Lạp xưởng is a sweet and savoury pork sausage. Pork sausage, air-dried for 24 hours. Cooked – best pan-fried or grilled before eating. Serve it with sticky rice, slice it into fried rice, or add it to a claypot dish.',
+      alt: 'Lạp xưởng sausages tied with string, with a small bowl of chilli sauce',
     },
     vi: {
       name: 'Lạp xưởng',
       short: 'Lạp xưởng ngọt thơm, ăn với xôi, cơm chiên.',
-      description: 'Lạp xưởng heo phơi khô, vị ngọt mặn. Chiên hoặc hấp ăn với xôi, thái hạt lựu làm cơm chiên hoặc nấu cơm niêu.',
-      portion: '',
+      description:
+        'Lạp xưởng heo phơi khô, vị ngọt mặn. Đã chín, nên chiên hoặc nướng lại trước khi ăn. Ăn với xôi, thái hạt lựu làm cơm chiên hoặc nấu cơm niêu.',
+    },
+  },
+  {
+    // Chưa có UUID. Hiện khi thực đơn có dòng khớp slug hoặc aliases.
+    id: null,
+    slug: 'banh-chung-banh-tet',
+    aliases: ['Bánh chưng / Bánh tét', 'Bánh chưng', 'Bánh tét'],
+    category: 'rolls',
+    photo: null,
+    en: {
+      name: 'Bánh chưng / Bánh tét – Vietnamese sticky rice cake',
+      title: 'Bánh chưng (sticky rice cake)',
+      short: 'Glutinous rice wrapped around mung bean and pork, then boiled for hours. A must-have for Tết (Lunar New Year).',
+      description:
+        'Glutinous rice wrapped around mung bean and pork, then boiled for hours. A must-have for Tết (Lunar New Year).',
+      portion: '1 kg',
+    },
+    vi: {
+      name: 'Bánh chưng / Bánh tét',
+      short: 'Gạo nếp, đậu xanh và thịt, luộc nhiều giờ. Món Tết.',
+      description: 'Gạo nếp gói nhân đậu xanh và thịt, luộc nhiều giờ. Món không thể thiếu ngày Tết.',
+      portion: '1 kg',
     },
   },
 ];
