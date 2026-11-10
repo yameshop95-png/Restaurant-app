@@ -103,7 +103,7 @@ export const DISHES = [
       name: 'Chả bò – Vietnamese beef roll',
       short: 'Firm Vietnamese beef roll seasoned with garlic and black pepper.',
       description:
-        'Chả bò is a Vietnamese beef roll. Beef, garlic and black pepper. Slice and enjoy it on its own, with rice rolls or in a bánh mì.',
+        'Chả bò is a Vietnamese beef roll made with beef, garlic and black pepper.',
       alt: 'Thick slices of chả bò Vietnamese beef roll on a wooden board',
     },
     vi: {
@@ -142,7 +142,7 @@ export const DISHES = [
         'Giò sống is the seasoned pork paste behind giò lụa and chả. Shape it into mọc meatballs for bún mọc or noodle soup, use it to stuff tofu, bitter melon or tomatoes, or fry it into your own chả at home. Sold raw. Keep refrigerated and cook thoroughly before eating.',
     },
     vi: {
-      name: 'Mọc, giò sống',
+      name: 'Giò sống & mọc',
       short: 'Giò sống đã nêm, về nặn mọc hoặc làm nhân.',
       description:
         'Giò sống đã nêm sẵn, về nặn mọc nấu bún mọc, canh, nhồi đậu hũ, khổ qua, cà chua hoặc tự chiên chả. Bán sống, giữ lạnh và nấu chín trước khi ăn.',
@@ -212,7 +212,7 @@ export const DISHES = [
       name: 'Lạp xưởng – sweet pork sausage',
       short: 'Sweet, savoury pork sausage – best pan-fried or grilled. Great with sticky rice or fried rice.',
       description:
-        'Lạp xưởng is a sweet and savoury pork sausage. Pork sausage, air-dried for 24 hours. Cooked – best pan-fried or grilled before eating. Serve it with sticky rice, slice it into fried rice, or add it to a claypot dish.',
+        "Lạp xưởng is a Vietnamese pork sausage, air-dried for 24 hours. It's already cooked, but tastes best pan-fried or grilled before eating.",
       alt: 'Lạp xưởng sausages tied with string, with a small bowl of chilli sauce',
     },
     vi: {

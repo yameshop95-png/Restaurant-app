@@ -6,7 +6,7 @@ export const POSTS = [
     slug: 'what-is-banh-cuon',
     title: 'What Is Bánh Cuốn? A Guide to Vietnamese Steamed Rice Rolls',
     description:
-      'Bánh cuốn are delicate Vietnamese steamed rice rolls filled with pork and wood ear mushroom. Learn how they are made, how to eat them and where to order them in Albury–Wodonga.',
+      'Bánh cuốn are steamed Vietnamese rice rolls filled with pork and wood ear mushroom, served with nước mắm and fried shallots.',
     date: '2026-10-30',
     cover: '/site/photos/banh-cuon.webp',
     coverAlt: 'Bánh cuốn rice rolls topped with fried shallots and herbs, with slices of pork roll',
@@ -82,7 +82,7 @@ All of these rolls are on our [menu](/order/menu). Pre-order online, pick up on 
     slug: 'order-vietnamese-food-albury-wodonga',
     title: 'How to Pre-Order Vietnamese Food in Albury–Wodonga (Pickup or Saturday Delivery)',
     description:
-      'Pre-order bánh cuốn, giò chả, bánh giò and more in Albury–Wodonga. Pick up on Saturday, 6 am to 9 pm, or another day by request, or get Saturday morning delivery to Wodonga, Albury, Lavington and Thurgoona. Pay on pickup or delivery.',
+      'How to order homemade Vietnamese food online: choose your dishes, pick Saturday pickup or delivery, and pay by cash or bank transfer.',
     date: '2026-10-30',
     cover: '/site/photos/banh-gio.webp',
     coverAlt: 'Bánh giò rice dumpling cut open on a banana leaf, showing the pork filling',

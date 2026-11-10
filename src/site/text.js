@@ -15,7 +15,7 @@ export const SITE_TEXT = {
     heroText:
       'Bánh cuốn, giò chả and homestyle Vietnamese favourites, made every week from fresh ingredients in a clean, food-safe kitchen. Pre-order online, then pick up on Saturday, 6 am to 9 pm, or another day by request, or get Saturday morning delivery.',
     homeDescription:
-      'Bánh cuốn, giò chả and homestyle Vietnamese food, made fresh every week. Pre-order online. Pick up on Saturday, 6 am to 9 pm, or another day by request.',
+      'Homemade Vietnamese food in Wodonga. Pre-order online for Saturday pickup (6 am–9 pm) or delivery. Other days by request.',
     seeMenu: 'See the menu',
     heroKicker: 'Made every week · Albury–Wodonga',
     freshBadge: 'Fresh · Weekly · Food-safe',
@@ -68,7 +68,7 @@ export const SITE_TEXT = {
     menuIntro:
       'Made every week from fresh ingredients. Pick up on Saturday, 6 am to 9 pm, or another day by request, or get it delivered on Saturday morning.',
     menuDescription:
-      'Order bánh cuốn, bánh giò, xôi khúc, giò lụa, chả bì, chả chiên and more. Pick up on Saturday, 6 am to 9 pm, or another day by request.',
+      'Bánh cuốn, giò chả, xôi khúc and more. Pre-order for Saturday pickup (6 am–9 pm) or delivery.',
     portion: 'Size',
     add: 'Add to order',
     inOrder: (n) => `${n} in your order`,

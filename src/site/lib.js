@@ -61,8 +61,8 @@ export function dishList(menu) {
 
 // Slug các trang món: khi có thực đơn thì chỉ món đang bán (kể cả bánh chưng khi đã có dòng).
 export function pageSlugs(menu) {
-  if (menu) return dishList(menu).map((d) => d.slug);
-  return DISHES.filter((d) => d.id).map((d) => d.slug);
+  const slugs = menu ? dishList(menu).map((d) => d.slug) : DISHES.filter((d) => d.id).map((d) => d.slug);
+  return [...new Set(slugs.filter(Boolean))];
 }
 
 // Định lượng: lấy trong app trước, không có thì lấy nội dung website. Thêm dấu cách trước đơn vị.
