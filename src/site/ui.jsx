@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { Facebook, Mail, MapPin, Minus, Phone, Plus, ShoppingBag } from 'lucide-react';
 import { formatMoney } from '../lib/stats';
 import { TEXT as ORDER_TEXT } from '../order/i18n';
-import { BLOG_ENABLED, dishText, orderingRules, path, SOCIAL } from './lib';
+import { formatAddressDisplay, formatClock, formatPhoneDisplay, formatPhoneTel } from './format';
+import { BLOG_ENABLED, dishText, orderingRules, path, photoAlt, SOCIAL } from './lib';
 
 export const SiteContext = createContext(null);
 export const useSite = () => useContext(SiteContext);
@@ -24,12 +25,12 @@ export function Deco({ name, className = '' }) {
 
 // Ảnh món; chưa có ảnh thì hiện khung có logo
 export function Photo({ src, alt, className = '', eager = false }) {
-  const { shop } = useSite();
+  const { shop, t } = useSite();
   if (src) {
     return (
       <img
         src={src}
-        alt={alt}
+        alt={alt || ''}
         loading={eager ? 'eager' : 'lazy'}
         decoding="async"
         className={`h-full w-full object-cover ${className}`}
@@ -39,7 +40,7 @@ export function Photo({ src, alt, className = '', eager = false }) {
   return (
     <div
       role="img"
-      aria-label={alt}
+      aria-label={alt ? `${t.photoSoon}: ${alt}` : t.photoSoon}
       className={`flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_35%_25%,#fff7f1,#fbe2d3_75%)] ${className}`}
     >
       <img src={shop.logo || '/logo-round.svg'} alt="" className="w-2/5 max-w-36 rounded-full drop-shadow-md" />
@@ -104,7 +105,7 @@ export function DishCard({ dish }) {
         aria-label={txt.name}
         className="absolute left-1/2 top-0 z-10 block aspect-square w-48 -translate-x-1/2 overflow-hidden rounded-full shadow-[0_18px_40px_-18px_rgba(16,26,36,0.45)] transition duration-300 group-hover:-translate-y-1"
       >
-        <Photo src={dish.content?.photo} alt={txt.name} />
+        <Photo src={dish.content?.photo} alt={photoAlt(dish, lang)} />
       </Link>
       {dish.price != null && (
         <span
@@ -140,20 +141,21 @@ export function SectionTitle({ title, text, align = 'center', as: H = 'h2' }) {
   );
 }
 
-export function Logo({ size = 'h-11 w-11', text = 'text-lg sm:text-xl' }) {
+export function Logo({ size = 'h-11 w-11', text = 'text-lg sm:text-xl', imgClass = '', textClass = '' }) {
   const { shop, t } = useSite();
   return (
     <Link to={path()} className="flex min-w-0 items-center gap-3">
-      <img
-        src={shop.logo || '/logo-round.svg'}
-        alt=""
-        className={`${size} shrink-0 rounded-full transition-all duration-300`}
-      />
-      <span className={`${text} font-bold leading-tight tracking-tight text-ink transition-all duration-300`}>
-        {shop.shopName || t.defaultName}
-      </span>
+      <img src={shop.logo || '/logo-round.svg'} alt="" className={`${size} shrink-0 rounded-full ${imgClass}`} />
+      <span className={`${text} font-bold leading-tight tracking-tight text-ink ${textClass}`}>{shop.shopName || t.defaultName}</span>
     </Link>
   );
+}
+
+// Thu logo khi đã lướt qua 64px, chỉ nở lại khi gần như về đầu trang.
+// Chiều cao hàng logo giữ nguyên (scale, không đổi width/height/padding) kẻo nội dung
+// nhảy lên làm scrollY tụt xuống dưới ngưỡng rồi lặp.
+export function headerCompact(compact, scrollY) {
+  return compact ? scrollY >= 16 : scrollY > 64;
 }
 
 // Thanh trên cùng: hàng 1 logo to + tên quán đầy đủ, hàng 2 các mục. Lướt xuống thì logo thu về cỡ thường.
@@ -161,10 +163,21 @@ export function Nav() {
   const { t, lang, setLang, route } = useSite();
   const [compact, setCompact] = useState(false);
   useEffect(() => {
-    const onScroll = () => setCompact(window.scrollY > 40);
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      setCompact((on) => headerCompact(on, window.scrollY));
+    };
+    const onScroll = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(read);
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, []);
   const item = (to, label, active) => (
     <Link
@@ -176,16 +189,22 @@ export function Nav() {
       {label}
     </Link>
   );
+  const mark = 'header-mark';
   return (
-    <header className="sticky top-0 z-30 bg-page/95 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(16,26,36,0.06)] backdrop-blur">
-      <div
-        className={`mx-auto flex max-w-6xl items-center gap-3 px-4 transition-all duration-300 sm:px-6 ${
-          compact ? 'py-2' : 'py-3 sm:py-4'
-        }`}
-      >
+    <header
+      data-compact={compact ? 'true' : 'false'}
+      className="sticky top-0 z-30 bg-page/95 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(16,26,36,0.06)] backdrop-blur"
+    >
+      <div className="mx-auto flex h-[5.5rem] max-w-6xl items-center gap-3 px-4 sm:h-32 sm:px-6">
         <Logo
-          size={compact ? 'h-11 w-11' : 'h-16 w-16 sm:h-24 sm:w-24'}
-          text={compact ? 'text-lg sm:text-xl' : 'text-[22px] sm:text-3xl'}
+          size="h-16 w-16 sm:h-24 sm:w-24"
+          text="inline-block text-[22px] sm:text-3xl"
+          imgClass={compact ? `${mark} scale-[0.6875] sm:scale-[0.4583]` : `${mark} scale-100`}
+          textClass={
+            compact
+              ? `${mark} -translate-x-5 scale-[0.8182] sm:-translate-x-[52px] sm:scale-[0.6667]`
+              : `${mark} translate-x-0 scale-100`
+          }
         />
         <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           <button
@@ -227,6 +246,7 @@ export function Footer() {
   const { shop, t, lang, dishes } = useSite();
   const rules = orderingRules(shop);
   const days = ORDER_TEXT[lang].weekdays;
+  const clock = (value) => formatClock(value, lang);
   const picks = (dishes.some((d) => d.content?.featured) ? dishes.filter((d) => d.content?.featured) : dishes).slice(
     0,
     4,
@@ -248,13 +268,15 @@ export function Footer() {
             <div>
               <dt>{t.deliveryLabel}</dt>
               <dd>
-                {days[rules.day]} {rules.start}–{rules.end}
+                {days[rules.day]} {clock(rules.start)}–{clock(rules.end)}
               </dd>
             </div>
             <div>
               <dt>{t.orderBy}</dt>
               <dd>
-                {days[(rules.day + 6) % 7]} {rules.cutoff}
+                {lang === 'en'
+                  ? `${clock(rules.cutoff)} ${days[(rules.day + 6) % 7]}`
+                  : `${days[(rules.day + 6) % 7]} ${rules.cutoff}`}
               </dd>
             </div>
           </dl>
@@ -292,8 +314,8 @@ export function Footer() {
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full ring-1 ring-ink text-ink">
                   <Phone size={16} />
                 </span>
-                <a href={`tel:${shop.shopPhone}`} className="hover:text-ink">
-                  {shop.shopPhone}
+                <a href={`tel:${formatPhoneTel(shop.shopPhone)}`} className="hover:text-ink">
+                  {formatPhoneDisplay(shop.shopPhone)}
                 </a>
               </li>
             )}
@@ -302,7 +324,7 @@ export function Footer() {
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full ring-1 ring-ink text-ink">
                   <MapPin size={16} />
                 </span>
-                <span className="pt-1.5">{shop.shopAddress}</span>
+                <span className="pt-1.5">{formatAddressDisplay(shop.shopAddress)}</span>
               </li>
             )}
             {!shop.shopPhone && !shop.shopAddress && (

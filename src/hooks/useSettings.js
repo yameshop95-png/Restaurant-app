@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import useCloudList from './useCloudList';
 import { supabase } from '../lib/supabase';
+import { DEFAULT_ZONES } from '../lib/shippingZones';
 
 // Thông tin quán (tên, SĐT, địa chỉ, logo) lưu trên máy chủ, mọi máy dùng chung; chỉ chủ quán sửa được.
 // Tuỳ chọn riêng từng máy (âm báo, ứng dụng bản đồ, lần sao lưu gần nhất) lưu trong localStorage của máy đó.
@@ -40,6 +41,8 @@ const fromRow = (row) => ({ ...row.data, id: row.id });
 const write = ({ changed }) =>
   changed.map(([, next]) => {
     const data = Object.fromEntries(SHOP_KEYS.map((k) => [k, next[k] ?? SHOP_DEFAULTS[k]]));
+    // Máy chủ (place_web_order) đọc vùng ship dạng danh sách; null làm mọi đơn giao hàng từ website bị lỗi
+    if (!Array.isArray(data.shippingZones)) data.shippingZones = DEFAULT_ZONES;
     return {
       rowId: next.id,
       run: () => supabase.from('shop_settings').update({ data }).eq('id', next.id),

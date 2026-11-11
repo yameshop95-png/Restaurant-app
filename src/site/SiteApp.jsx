@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { siteClient, store } from './client';
 import { BASE, dishList, parseRoute } from './lib';
-import { pageMeta } from './seo';
+import { applyMeta, pageMeta } from './seo';
 import { SITE_TEXT } from './text';
 import { CartBar, Footer, Nav, SiteContext } from './ui';
 import Blog from './pages/Blog';
@@ -64,8 +64,7 @@ export default function SiteApp({ initialPath, initialData }) {
   useEffect(() => {
     if (!mounted) return;
     const meta = pageMeta(route, data, dishes);
-    document.title = meta.title;
-    document.querySelector('meta[name="description"]')?.setAttribute('content', meta.description ?? '');
+    applyMeta(meta);
     document.documentElement.lang = lang;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, data, mounted, lang]);
