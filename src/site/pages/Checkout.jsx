@@ -19,6 +19,7 @@ import {
 } from '../format';
 import { checkoutLine, checkoutName } from '../lib';
 import { useSite } from '../ui';
+import AddressInput from '../AddressInput';
 
 // Trang đặt món: chỉ đặt trước, trả tiền khi nhận. Máy chủ (place_web_order) tự tính lại giá món và phí ship;
 // đơn hiện ngay trong app nhận order với nhãn "Online".
@@ -488,12 +489,12 @@ export default function Checkout() {
                         : t.zoneTyping
                   }
                 >
-                  <textarea
-                    id="order-address"
-                    rows={2}
-                    autoComplete="street-address"
+                  <AddressInput
                     value={form.address}
-                    onChange={set('address')}
+                    onChange={(address) => setForm((f) => ({ ...f, address }))}
+                    zones={zones}
+                    zone={zone}
+                    t={t}
                     placeholder={t.addressHint}
                     className={inputClass(shown.address)}
                   />
