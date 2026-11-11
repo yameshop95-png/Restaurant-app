@@ -82,9 +82,9 @@ export default function ShippingZonesSettings({ settings, onUpdateSettings }) {
           >
             <Plus size={16} /> Thêm vùng
           </button>
-          {settings.shippingZones && (
+          {JSON.stringify(zones) !== JSON.stringify(DEFAULT_ZONES) && (
             <button
-              onClick={() => save(null)}
+              onClick={() => save(DEFAULT_ZONES)}
               className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-500 active:bg-slate-100"
             >
               Về mặc định
