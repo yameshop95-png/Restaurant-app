@@ -1,10 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { inject } from '@vercel/analytics';
 import SiteApp from './SiteApp.jsx';
 import './site.css';
 
 // Trang đã dựng sẵn HTML lúc build thì "tiếp quản" (hydrate). Vẽ mới khi chạy thử trên máy dev,
 // hoặc khi Vercel trả 404.html cho địa chỉ lạ (nội dung khác đường dẫn nên không ghép được).
+// Đếm lượt xem trang của website khách (chỉ /order, không gắn vào app nhân viên)
+inject();
+
 const root = document.getElementById('order-root');
 const here = window.location.pathname.replace(/\/+$/, '') || '/';
 const app = (
