@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Banknote, Check, Loader2, Minus, Phone, Plus, ShoppingBag, Truck } from 'lucide-react';
-import { DEFAULT_ZONES, matchZone } from '../../lib/shippingZones';
+import { DEFAULT_ZONES } from '../../lib/shippingZones';
 import { formatMoney } from '../../lib/stats';
 import { TEXT } from '../../order/i18n';
 import { siteClient, store } from '../client';
@@ -19,7 +19,7 @@ import {
 } from '../format';
 import { checkoutLine, checkoutName } from '../lib';
 import { useSite } from '../ui';
-import AddressInput from '../AddressInput';
+import { joinAddress, suburbOptions } from '../suburbs';
 
 // Trang đặt món: chỉ đặt trước, trả tiền khi nhận. Máy chủ (place_web_order) tự tính lại giá món và phí ship;
 // đơn hiện ngay trong app nhận order với nhãn "Online".
@@ -87,7 +87,9 @@ export default function Checkout() {
     time: '',
     name: '',
     phone: '',
-    address: '',
+    houseNo: '',
+    street: '',
+    suburb: '',
     note: '',
     deliveryDate: '',
     website: '', // ô bẫy chống máy tự gửi, người thật không thấy
@@ -100,7 +102,9 @@ export default function Checkout() {
       ...f,
       name: f.name || s.name || '',
       phone: f.phone || s.phone || '',
-      address: f.address || s.address || '',
+      houseNo: f.houseNo || s.houseNo || '',
+      street: f.street || s.street || '',
+      suburb: f.suburb || s.suburb || '',
     }));
   }, [mounted]);
   const [submitted, setSubmitted] = useState(false);
@@ -187,7 +191,9 @@ export default function Checkout() {
   const count = items.reduce((s, i) => s + i.qty, 0);
   const subtotal = items.reduce((s, i) => s + i.qty * i.price, 0);
   const isDelivery = form.type === 'delivery';
-  const zone = isDelivery ? matchZone(form.address, zones) : null;
+  const suburbs = useMemo(() => suburbOptions(zones), [zones]);
+  const address = joinAddress(form, suburbs);
+  const zone = isDelivery ? (suburbs.find((o) => o.key === form.suburb)?.zone ?? null) : null;
   const fee = zone ? Number(zone.fee) || 0 : 0;
   const total = subtotal + fee;
   const due = isDelivery
@@ -201,8 +207,9 @@ export default function Checkout() {
   const errors = {};
   if (!form.name.trim()) errors.name = t.errName;
   if (form.phone.replace(/\D/g, '').length < 8) errors.phone = t.errPhone;
-  if (isDelivery && form.address.trim().length < 5) errors.address = t.errAddress;
-  else if (isDelivery && !zone) errors.address = t.zoneUnknown;
+  if (isDelivery && !form.houseNo.trim()) errors.houseNo = t.errHouseNo;
+  if (isDelivery && form.street.trim().length < 2) errors.street = t.errStreet;
+  if (isDelivery && !zone) errors.suburb = t.errSuburb;
   const leadLabel = formatLead(lead, lang);
   const pickupTooSoon = !isDelivery && (!due || due.getTime() < earliestReady(new Date(), lead).getTime());
   const pickupBeforeOpen = !isDelivery && due && due.getHours() < 6;
@@ -227,7 +234,7 @@ export default function Checkout() {
       type: form.type,
       name: form.name.trim(),
       phone: form.phone.trim(),
-      address: isDelivery ? form.address.trim() : '',
+      address: isDelivery ? address : '',
       note: form.note.trim(),
       deliverAt: due.toISOString(),
       items: items.map((i) => ({ id: i.id, qty: i.qty })),
@@ -246,7 +253,13 @@ export default function Checkout() {
       }
       return setServerError(typeof msg === 'string' ? msg : t.errors.other);
     }
-    store.set(SAVED_KEY, { name: payload.name, phone: payload.phone, address: form.address.trim() });
+    store.set(SAVED_KEY, {
+      name: payload.name,
+      phone: payload.phone,
+      houseNo: form.houseNo.trim(),
+      street: form.street.trim(),
+      suburb: form.suburb,
+    });
     setDone({ ...res, type: form.type, items, when: due });
     clearCart();
     window.scrollTo({ top: 0 });
@@ -478,27 +491,50 @@ export default function Checkout() {
                 />
               </Field>
               {isDelivery && (
-                <Field
-                  label={t.address}
-                  error={shown.address}
-                  hint={
-                    zone
-                      ? `${t.zoneFee(zone.name)}: ${t.shipping} ${formatMoney(fee)}`
-                      : form.address.trim().length >= 5
-                        ? t.zoneUnknown
-                        : t.zoneTyping
-                  }
-                >
-                  <AddressInput
-                    value={form.address}
-                    onChange={(address) => setForm((f) => ({ ...f, address }))}
-                    zones={zones}
-                    zone={zone}
-                    t={t}
-                    placeholder={t.addressHint}
-                    className={inputClass(shown.address)}
-                  />
-                </Field>
+                <fieldset className="space-y-3">
+                  <legend className="mb-1 text-sm font-semibold text-slate-700">{t.address}</legend>
+                  <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3">
+                    <Field label={t.houseNo} error={shown.houseNo}>
+                      <input
+                        id="order-house"
+                        autoComplete="address-line1"
+                        value={form.houseNo}
+                        onChange={set('houseNo')}
+                        placeholder="12"
+                        className={inputClass(shown.houseNo)}
+                      />
+                    </Field>
+                    <Field label={t.street} error={shown.street}>
+                      <input
+                        id="order-street"
+                        autoComplete="address-line2"
+                        value={form.street}
+                        onChange={set('street')}
+                        placeholder="Kiewa St"
+                        className={inputClass(shown.street)}
+                      />
+                    </Field>
+                  </div>
+                  <Field
+                    label={t.suburb}
+                    error={shown.suburb}
+                    hint={zone ? `${t.zoneFee(zone.name)}: ${t.shipping} ${formatMoney(fee)}` : t.suburbHint}
+                  >
+                    <select
+                      id="order-suburb"
+                      value={form.suburb}
+                      onChange={set('suburb')}
+                      className={inputClass(shown.suburb)}
+                    >
+                      <option value="">{t.suburbPick}</option>
+                      {suburbs.map((o) => (
+                        <option key={o.key} value={o.key}>
+                          {o.label} · {formatMoney(Number(o.zone.fee) || 0)}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </fieldset>
               )}
               {isDelivery && (
                 <details className="text-xs text-slate-500">
