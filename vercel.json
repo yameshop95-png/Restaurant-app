@@ -2,6 +2,8 @@
   "buildCommand": "npm run build",
   "cleanUrls": true,
   "functions": {
-    "api/analyze.js": { "maxDuration": 120 }
-  }
+    "api/analyze.js": { "maxDuration": 120 },
+    "api/keepalive.js": { "maxDuration": 15 }
+  },
+  "crons": [{ "path": "/api/keepalive", "schedule": "0 3 * * *" }]
 }
