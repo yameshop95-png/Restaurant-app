@@ -146,7 +146,9 @@ export function Logo({ size = 'h-11 w-11', text = 'text-lg sm:text-xl', imgClass
   return (
     <Link to={path()} className="flex min-w-0 items-center gap-3">
       <img src={shop.logo || '/logo-round.svg'} alt="" className={`${size} shrink-0 rounded-full ${imgClass}`} />
-      <span className={`${text} font-bold leading-tight tracking-tight text-ink ${textClass}`}>{shop.shopName || t.defaultName}</span>
+      <span className={`${text} font-bold leading-tight tracking-tight text-ink ${textClass}`}>
+        {shop.shopName || t.defaultName}
+      </span>
     </Link>
   );
 }
@@ -319,15 +321,7 @@ export function Footer() {
                 </a>
               </li>
             )}
-            {shop.shopAddress && (
-              <li className="flex items-start gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full ring-1 ring-ink text-ink">
-                  <MapPin size={16} />
-                </span>
-                <span className="pt-1.5">{formatAddressDisplay(shop.shopAddress)}</span>
-              </li>
-            )}
-            {!shop.shopPhone && !shop.shopAddress && (
+            {!shop.shopPhone && (
               <li className="flex items-center gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full ring-1 ring-ink text-ink">
                   <Mail size={16} />

@@ -26,14 +26,17 @@ function when(order, lang) {
   return `${time} ${weekday} ${d.getDate()}/${d.getMonth() + 1}`;
 }
 
-export function customerMessage(order, kind, lang, shopName) {
+export function customerMessage(order, kind, lang, shopName, shopAddress = '') {
   const shop = shopName?.trim() || DEFAULT_SHOP;
+  const address = shopAddress?.trim() || '';
   const name = order.customer?.name?.trim() || '';
   const delivery = order.type === 'delivery';
   const items = (order.items ?? []).map((i) => `${i.qty}× ${i.name}`).join(', ');
   const total = formatMoney(orderTotal(order));
   const fee = order.shippingFee ? formatMoney(order.shippingFee) : null;
   const at = when(order, lang);
+  // Đơn đến lấy: nhắc địa chỉ quán (đơn giao hàng thì quán tự tới, không cần nhắc)
+  const where = !delivery && address ? (lang === 'en' ? `Pickup at ${address}.` : `Địa chỉ lấy hàng: ${address}.`) : '';
 
   if (lang === 'en') {
     const pay = order.paid ? 'Paid, thank you.' : `Please pay cash on ${delivery ? 'delivery' : 'pickup'}.`;
@@ -41,6 +44,7 @@ export function customerMessage(order, kind, lang, shopName) {
       return [
         `${shop}: Hi ${name}, we have your order #${order.number}.`,
         at && `${delivery ? 'Delivery' : 'Pickup'}: ${at}.`,
+        where,
         items && `${items}.`,
         `Total ${total}${fee ? ` incl. ${fee} delivery` : ''}. ${pay}`,
         'Thank you!',
@@ -58,6 +62,7 @@ export function customerMessage(order, kind, lang, shopName) {
     return [
       `${shop}: Chào ${name}, quán đã nhận đơn #${order.number}.`,
       at && `${delivery ? 'Giao' : 'Đến lấy'} lúc ${at}.`,
+      where,
       items && `Món: ${items}.`,
       `Tổng ${total}${fee ? ` (gồm ship ${fee})` : ''}. ${pay}`,
       'Cảm ơn bạn!',
@@ -67,7 +72,7 @@ export function customerMessage(order, kind, lang, shopName) {
   }
   return delivery
     ? `${shop}: Chào ${name}, đơn #${order.number} đang được giao tới bạn. Tổng ${total}. ${pay} Cảm ơn bạn!`
-    : `${shop}: Chào ${name}, đơn #${order.number} đã sẵn sàng, mời bạn ghé lấy. Tổng ${total}. ${pay} Cảm ơn bạn!`;
+    : `${shop}: Chào ${name}, đơn #${order.number} đã sẵn sàng, mời bạn ghé lấy. ${where ? where + ' ' : ''}Tổng ${total}. ${pay} Cảm ơn bạn!`;
 }
 
 // Link mở app Tin nhắn với số và nội dung soạn sẵn. iPhone dùng "&body=", Android dùng "?body=".

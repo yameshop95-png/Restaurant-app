@@ -8,12 +8,12 @@ const LANGS = [
 ];
 
 // Soạn tin cho khách rồi mở app Tin nhắn của điện thoại (nhân viên bấm Gửi). Không tốn phí, gửi từ số của quán.
-export default function MessageCustomerSheet({ order, shopName, onClose }) {
+export default function MessageCustomerSheet({ order, shopName, shopAddress, onClose }) {
   const [kind, setKind] = useState(() => defaultKind(order));
   const [lang, setLang] = useState(() => defaultLang(order));
   const [edited, setEdited] = useState(null);
   const [copied, setCopied] = useState(false);
-  const text = edited ?? customerMessage(order, kind, lang, shopName);
+  const text = edited ?? customerMessage(order, kind, lang, shopName, shopAddress);
   const phone = order.customer?.phone ?? '';
 
   const choose = (setter) => (value) => {
