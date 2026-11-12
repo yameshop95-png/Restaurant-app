@@ -29,6 +29,12 @@ export function formatPortion(raw, lang = 'en') {
   const s = String(raw ?? '').trim();
   if (!s) return '';
   if (lang === 'en' && /^1\s*cái$/i.test(s)) return '1 piece';
+  if (lang === 'en') {
+    const box = s.match(/^(\d+)\s*hộp$/i);
+    if (box) return `${box[1]} ${Number(box[1]) === 1 ? 'box' : 'boxes'}`;
+    const pair = s.match(/^(\d+)\s*cặp$/i);
+    if (pair) return `${pair[1]} ${Number(pair[1]) === 1 ? 'pair' : 'pairs'} (${Number(pair[1]) * 2} slices)`;
+  }
   const m = s.match(/^(\d+(?:[.,]\d+)?)\s*(kg|g|ml|l)$/i);
   if (m) return `${m[1]} ${m[2].toLowerCase()}`;
   return s;

@@ -15,6 +15,7 @@ export const CATEGORIES = [
   { id: 'rolls', en: 'Rice rolls & dumplings', vi: 'Bánh cuốn & bánh' },
   { id: 'gio-cha', en: 'Giò chả – Vietnamese pork rolls', vi: 'Giò chả' },
   { id: 'meats', en: 'Beef balls & sausages', vi: 'Bò viên & lạp xưởng' },
+  { id: 'desserts', en: 'Desserts', vi: 'Tráng miệng' },
 ];
 
 export const DISHES = [
@@ -117,8 +118,9 @@ export const DISHES = [
     id: '2a3af5c2-582d-4564-8a13-022176a21fd9',
     slug: 'gio-thu',
     category: 'gio-cha',
-    photo: null,
+    photo: '/site/photos/gio-thu.webp',
     en: {
+      alt: 'Giò thủ Vietnamese head cheese, whole rolls tied with string and sliced on a banana leaf with fresh cilantro and chilli',
       name: 'Giò thủ – Vietnamese head cheese',
       short: 'Pork, pork ear, pork tongue, wood ear mushroom and black pepper.',
       description:
@@ -134,8 +136,9 @@ export const DISHES = [
     id: '9aa9f3dc-bc0a-40ab-917c-d4917973bd35',
     slug: 'moc-gio-song',
     category: 'gio-cha',
-    photo: null,
+    photo: '/site/photos/gio-song.webp',
     en: {
+      alt: 'Freshly mixed giò sống, pink seasoned raw pork paste in a mixing bowl',
       name: 'Giò sống & mọc – raw seasoned pork paste',
       title: 'Giò sống & mọc (raw pork paste)',
       short: 'Raw seasoned pork paste – keep chilled and cook before eating. Shape into meatballs (mọc) or use as a filling.',
@@ -172,8 +175,9 @@ export const DISHES = [
     id: 'd0fa8b4b-dd29-4faf-9a8a-3ed172fffe15',
     slug: 'xoi-khuc',
     category: 'rolls',
-    photo: null,
+    photo: '/site/photos/xoi-khuc.webp',
     en: {
+      alt: 'Xôi khúc cut in half, showing the green cudweed dough, mung bean and pork filling inside a sticky rice coating topped with fried shallots',
       name: 'Xôi khúc – sticky rice cudweed dumpling',
       title: 'Xôi khúc (sticky rice dumpling)',
       short: 'Sticky rice ball with a mung bean and pork filling. Sold per piece.',
@@ -270,6 +274,68 @@ export const DISHES = [
       short: 'Gạo nếp, đậu xanh và thịt, luộc nhiều giờ. Món Tết.',
       description: 'Gạo nếp gói nhân đậu xanh và thịt, luộc nhiều giờ. Món không thể thiếu ngày Tết.',
       portion: '1 kg',
+    },
+  },
+  {
+    id: '8b03d2fb-7751-4c4f-a43a-3b709516d542',
+    slug: 'tau-hu-singapore',
+    category: 'desserts',
+    photo: null,
+    en: {
+      name: 'Tàu hũ Singapore – silky tofu pudding in sweet soy milk',
+      title: 'Tàu hũ Singapore (tofu pudding)',
+      short: 'Silky tofu pudding in lightly sweet, refreshing soy milk. Sold per box.',
+      description:
+        'Tàu hũ Singapore is soft, silky tofu pudding served in a lightly sweet soy milk. Gentle and refreshing, it makes an easy dessert or a light treat after a meal. Sold per box.',
+      portion: '1 box',
+    },
+    vi: {
+      name: 'Tàu hũ Singapore',
+      short: 'Tàu hũ mềm mịn trong nước sữa ngọt dịu, thanh mát.',
+      description: 'Tàu hũ mềm mịn ăn cùng nước sữa vị ngọt dịu, thanh mát. Món tráng miệng nhẹ nhàng, dễ ăn sau bữa cơm. Bán theo hộp.',
+      portion: '1 hộp',
+    },
+  },
+  {
+    id: '35b0a2cd-3493-45a8-8c9b-60a5a9cacca6',
+    slug: 'banh-day',
+    category: 'rolls',
+    photo: null,
+    en: {
+      name: 'Bánh dày – Vietnamese round glutinous rice cake',
+      title: 'Bánh dày (glutinous rice cake)',
+      short: 'Soft, chewy round rice cake to eat with chả bì or giò lụa. Sold plain, pork roll not included.',
+      description:
+        'Bánh dày is a soft, chewy round cake made from glutinous rice, with a mild, clean flavour. It is traditionally sliced and eaten with chả bì or giò lụa. Each order is 2 pairs (4 slices) and is sold on its own, without the pork roll. Add chả bì or giò lụa from the menu if you would like them together.',
+      portion: '2 pairs (4 slices)',
+    },
+    vi: {
+      name: 'Bánh dày',
+      short: 'Bánh dày dẻo mềm, ăn kèm chả bì hoặc giò lụa. Bán riêng, không kèm chả.',
+      description:
+        'Bánh dày làm từ gạo nếp, dẻo mềm, vị thanh nhẹ, theo truyền thống ăn kèm chả bì hoặc giò lụa. Mỗi phần 2 cặp (4 lát), bán riêng, không kèm chả. Muốn ăn cùng thì chọn thêm chả bì hoặc giò lụa trong thực đơn.',
+      portion: '2 cặp (4 lát)',
+    },
+  },
+  {
+    id: '6e401527-124e-4ec4-be37-6e2d520b91c4',
+    slug: 'banh-tet-chuoi',
+    aliases: ['Bánh tét chuối', 'Bánh Tét Chuối'],
+    category: 'rolls',
+    photo: '/site/photos/banh-tet-chuoi.webp',
+    en: {
+      alt: 'Bánh tét chuối cut open, showing sticky rice around a sweet banana filling, wrapped in banana leaf',
+      name: 'Bánh tét chuối – sweet banana sticky rice log',
+      title: 'Bánh tét chuối (banana rice cake)',
+      short: 'The sweet bánh tét: sticky rice around ripe banana, wrapped in banana leaf and boiled for hours.',
+      description:
+        'Bánh tét chuối is the sweet version of bánh tét. Glutinous rice is rolled around ripe banana, wrapped in banana leaf and boiled for hours until soft and fragrant, then sliced into rounds to serve. Enjoy it as a sweet snack or dessert, with a cup of tea. Not to be confused with the savoury bánh tét filled with mung bean and pork.',
+    },
+    vi: {
+      name: 'Bánh tét chuối',
+      short: 'Bánh tét ngọt: gạo nếp cuốn chuối chín, gói lá chuối, luộc nhiều giờ.',
+      description:
+        'Bánh tét chuối là loại bánh tét ngọt. Gạo nếp cuốn quanh chuối chín, gói lá chuối rồi luộc nhiều giờ cho dẻo thơm, cắt thành khoanh tròn khi ăn. Dùng làm món ăn vặt hoặc tráng miệng, ngon với tách trà. Khác với bánh tét mặn nhân đậu xanh thịt.',
     },
   },
 ];
