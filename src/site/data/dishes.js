@@ -227,6 +227,33 @@ export const DISHES = [
     id: null,
     slug: 'banh-chung-banh-tet',
     aliases: ['Bánh chưng / Bánh tét', 'Bánh chưng', 'Bánh tét'],
+    // Thực đơn có 2 dòng riêng (Bánh Chưng, Bánh Tét) dùng chung nội dung này: mỗi món lấy mô tả riêng ở đây (khoá = slug của tên món)
+    variants: {
+      'banh-chung': {
+        en: {
+          short: 'The square one: glutinous rice, mung bean and pork in a tight square parcel, boiled for hours. A Northern-style Tết classic.',
+          description:
+            'Bánh chưng is the square sticky rice cake. Glutinous rice, creamy mung bean and seasoned pork are wrapped into a firm square parcel, traditionally in green leaves, and boiled for many hours. It is the classic Tết cake of Northern Vietnam. Not sure which to pick? Bánh chưng is square and is cut into wedges; bánh tét is a long round log cut into rounds.',
+        },
+        vi: {
+          short: 'Bánh hình vuông: gạo nếp, đậu xanh và thịt, luộc nhiều giờ. Bánh Tết kiểu miền Bắc.',
+          description:
+            'Bánh chưng có hình vuông. Gạo nếp, đậu xanh và thịt được gói chặt thành khối vuông, theo truyền thống gói bằng lá, luộc nhiều giờ. Đây là bánh Tết quen thuộc của miền Bắc. Cách phân biệt: bánh chưng hình vuông, cắt thành miếng; bánh tét hình trụ dài, cắt thành khoanh tròn.',
+        },
+      },
+      'banh-tet': {
+        en: {
+          short: 'The long round log: glutinous rice, mung bean and pork, boiled for hours and sliced into rounds. A Southern-style Tết classic.',
+          description:
+            'Bánh tét is the long cylindrical sticky rice cake. Glutinous rice, mung bean and seasoned pork are rolled into a log, traditionally in banana leaves, and boiled for many hours, then sliced into neat rounds to serve. It is the classic Tết cake of Southern and Central Vietnam. Not sure which to pick? Bánh tét is a long round log cut into rounds; bánh chưng is square and is cut into wedges.',
+        },
+        vi: {
+          short: 'Bánh hình trụ dài: gạo nếp, đậu xanh và thịt, luộc nhiều giờ, cắt thành khoanh tròn. Bánh Tết kiểu miền Nam.',
+          description:
+            'Bánh tét có hình trụ dài. Gạo nếp, đậu xanh và thịt được cuốn thành khúc, theo truyền thống gói bằng lá chuối, luộc nhiều giờ rồi cắt thành khoanh tròn khi ăn. Đây là bánh Tết quen thuộc của miền Nam và miền Trung. Cách phân biệt: bánh tét hình trụ dài, cắt thành khoanh tròn; bánh chưng hình vuông, cắt thành miếng.',
+        },
+      },
+    },
     category: 'rolls',
     photo: null,
     en: {
