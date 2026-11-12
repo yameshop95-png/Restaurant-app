@@ -88,7 +88,9 @@ export function photoAlt(dish, lang) {
 export function checkoutName(menuItem, lang = 'en') {
   const content = findDishContent(menuItem);
   const text = dishText({ ...menuItem, content, portion: menuItem?.portion ?? '' }, lang);
-  const name = (text.name || menuItem?.name || '').split(' – ')[0];
+  let name = (text.name || menuItem?.name || '').split(' – ')[0];
+  // Nhiều dòng thực đơn dùng chung một trang nội dung (vd Bánh chưng và Bánh tét): giữ tên riêng của từng dòng để khách không nhầm
+  if (name.includes(' / ') && menuItem?.name && !menuItem.name.includes('/')) name = menuItem.name;
   return [name, text.portion].filter(Boolean).join(' · ');
 }
 

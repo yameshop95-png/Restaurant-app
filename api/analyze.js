@@ -5,6 +5,22 @@ import Anthropic from '@anthropic-ai/sdk';
 
 const MAX_BODY_CHARS = 200_000;
 
+// Model rẻ hơn đủ tốt cho báo cáo của quán; đổi bằng biến AI_MODEL trên Vercel nếu muốn.
+const MODEL = process.env.AI_MODEL || 'claude-sonnet-5-5';
+
+// Giới hạn lượt gọi (tính theo từng máy chủ Vercel đang chạy, nên chỉ là lớp chặn thô; chặn chắc nhất là hạn mức chi tiêu ở console.anthropic.com).
+const MAX_PER_MINUTE = 3;
+const MAX_PER_DAY = Number(process.env.AI_MAX_PER_DAY) || 20;
+const calls = [];
+function overLimit() {
+  const now = Date.now();
+  while (calls.length && now - calls[0] > 86_400_000) calls.shift();
+  if (calls.length >= MAX_PER_DAY) return 'Đã dùng hết lượt phân tích AI hôm nay, thử lại vào ngày mai.';
+  if (calls.filter((t) => now - t < 60_000).length >= MAX_PER_MINUTE) return 'Bấm hơi nhanh, đợi một phút rồi thử lại.';
+  calls.push(now);
+  return null;
+}
+
 const SYSTEM = `Bạn là chuyên gia phân tích kinh doanh cho một quán ăn Việt nhỏ ở Úc (tiền tệ AUD, ký hiệu A$).
 Bạn nhận số liệu bán hàng đã tổng hợp của một kỳ (tuần, tháng hoặc năm) kèm kỳ trước và dự báo đơn giản.
 Viết cho chủ quán đọc trên điện thoại: tiếng Việt, ngắn gọn, cụ thể, dùng đúng con số trong dữ liệu, không bịa số.
@@ -40,6 +56,9 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Sai mã truy cập AI', needsCode: true });
   }
 
+  const limited = overLimit();
+  if (limited) return res.status(429).json({ error: limited });
+
   const report = req.body?.report;
   const payload = JSON.stringify(report ?? null);
   if (!report || typeof report !== 'object') return res.status(400).json({ error: 'Thiếu số liệu báo cáo' });
@@ -48,8 +67,8 @@ export default async function handler(req, res) {
   try {
     const message = await client.beta.messages
       .stream({
-        model: 'claude-opus-5-5',
-        max_tokens: 16000,
+        model: MODEL,
+        max_tokens: 6000,
         // Nếu bị từ chối vì bộ lọc an toàn, API tự chạy lại trên model dự phòng phù hợp.
         betas: ['server-side-fallback-2026-07-01'],
         fallbacks: 'default',
