@@ -172,8 +172,9 @@ export const DISHES = [
     id: 'd0fa8b4b-dd29-4faf-9a8a-3ed172fffe15',
     slug: 'xoi-khuc',
     category: 'rolls',
-    photo: null,
+    photo: '/site/photos/xoi-khuc.webp',
     en: {
+      alt: 'Xôi khúc cut in half, showing the green cudweed dough, mung bean and pork filling inside a sticky rice coating topped with fried shallots',
       name: 'Xôi khúc – sticky rice cudweed dumpling',
       title: 'Xôi khúc (sticky rice dumpling)',
       short: 'Sticky rice ball with a mung bean and pork filling. Sold per piece.',
