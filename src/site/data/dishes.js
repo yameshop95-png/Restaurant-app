@@ -63,8 +63,9 @@ export const DISHES = [
     id: 'b936f45b-0da1-49b8-9433-0df45382dc8d',
     slug: 'cha-bi',
     category: 'gio-cha',
-    photo: null,
+    photo: '/site/photos/cha-bi.webp',
     en: {
+      alt: 'Chả bì pork roll with pork skin, whole and sliced on a plate with fresh cilantro and a small bowl of chilli fish sauce',
       name: 'Chả bì – pork roll with pork skin',
       short: 'Pork roll mixed with thin strips of pork skin for a chewy bite.',
       description:
