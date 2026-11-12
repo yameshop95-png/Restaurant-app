@@ -199,6 +199,18 @@ function ShopInfo({ settings, onUpdateSettings }) {
           />
         </label>
         <p className="text-xs text-slate-400">Tự lưu khi gõ, mọi máy trong quán đều thấy. Tên quán hiện ở menu và trong tin nhắn gửi shipper.</p>
+        <label className="block">
+          <span className="mb-1 block text-sm font-semibold text-slate-700">Địa chỉ lấy hàng (gửi cho khách)</span>
+          <input
+            value={settings.pickupAddress}
+            onChange={(e) => onUpdateSettings({ pickupAddress: e.target.value })}
+            placeholder="VD: 12 Tên đường, West Wodonga VIC 3690"
+            className={inputClass}
+          />
+        </label>
+        <p className="text-xs text-slate-400">
+          Chỉ nằm trong tin "Nhắn khách" cho đơn đến lấy, không hiện trên website. Lưu riêng trên máy này: máy nào dùng nút Nhắn khách thì nhập một lần ở máy đó.
+        </p>
       </div>
     </section>
   );

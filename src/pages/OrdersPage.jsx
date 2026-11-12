@@ -77,7 +77,7 @@ const backLabel = (order) =>
     ? 'Khách chưa lấy – chuyển về Hoàn thành'
     : BACK_LABEL[order.status];
 
-function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPaid }) {
+function OrderCard({ order, now, shopName, shopPhone, pickupAddress, mapsApp, onEdit, onSetStatus, onSetPaid }) {
   const status = STATUS[order.status];
   const cancelled = order.status === 'cancelled';
   const due = dueInfo(order, now);
@@ -359,7 +359,11 @@ function OrderCard({ order, now, shopName, mapsApp, onEdit, onSetStatus, onSetPa
           <RotateCcw size={13} /> {backLabel(order)}
         </button>
       )}
-      {messaging && <MessageCustomerSheet order={order} shopName={shopName} onClose={() => setMessaging(false)} />}
+      {messaging && <MessageCustomerSheet
+          order={order}
+          shop={{ name: shopName, address: pickupAddress, phone: shopPhone }}
+          onClose={() => setMessaging(false)}
+        />}
     </li>
   );
 }
@@ -620,6 +624,8 @@ export default function OrdersPage({
                       order={order}
                       now={now}
                       shopName={settings.shopName}
+                      shopPhone={settings.shopPhone}
+                      pickupAddress={settings.pickupAddress}
                       mapsApp={settings.mapsApp}
                       onEdit={setEditing}
                       onSetStatus={onSetStatus}

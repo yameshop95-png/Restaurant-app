@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { Facebook, Mail, MapPin, Minus, Phone, Plus, ShoppingBag } from 'lucide-react';
+import { Facebook, Mail, Minus, Phone, Plus, ShoppingBag } from 'lucide-react';
 import { formatMoney } from '../lib/stats';
 import { TEXT as ORDER_TEXT } from '../order/i18n';
-import { formatAddressDisplay, formatClock, formatPhoneDisplay, formatPhoneTel } from './format';
+import { formatClock, formatPhoneDisplay, formatPhoneTel } from './format';
 import { BLOG_ENABLED, dishText, orderingRules, path, photoAlt, SOCIAL } from './lib';
 
 export const SiteContext = createContext(null);
@@ -319,15 +319,7 @@ export function Footer() {
                 </a>
               </li>
             )}
-            {shop.shopAddress && (
-              <li className="flex items-start gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full ring-1 ring-ink text-ink">
-                  <MapPin size={16} />
-                </span>
-                <span className="pt-1.5">{formatAddressDisplay(shop.shopAddress)}</span>
-              </li>
-            )}
-            {!shop.shopPhone && !shop.shopAddress && (
+            {!shop.shopPhone && (
               <li className="flex items-center gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full ring-1 ring-ink text-ink">
                   <Mail size={16} />
