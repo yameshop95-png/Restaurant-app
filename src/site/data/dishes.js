@@ -117,8 +117,9 @@ export const DISHES = [
     id: '2a3af5c2-582d-4564-8a13-022176a21fd9',
     slug: 'gio-thu',
     category: 'gio-cha',
-    photo: null,
+    photo: '/site/photos/gio-thu.webp',
     en: {
+      alt: 'Giò thủ Vietnamese head cheese, whole rolls tied with string and sliced on a banana leaf with fresh cilantro and chilli',
       name: 'Giò thủ – Vietnamese head cheese',
       short: 'Pork, pork ear, pork tongue, wood ear mushroom and black pepper.',
       description:
