@@ -4,9 +4,17 @@
 // Cách chạy (xem print-bridge/README.md):
 //   SUPABASE_URL=... SUPABASE_KEY=... STAFF_PIN=xxxx PRINTER_IP=192.168.1.100 node bridge.mjs
 import net from 'node:net';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { writeFile, unlink } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const run = promisify(execFile);
+const here = dirname(fileURLToPath(import.meta.url));
 import { createClient } from '@supabase/supabase-js';
 
-const { SUPABASE_URL, SUPABASE_KEY, STAFF_PIN, PRINTER_IP = '192.168.1.100', PRINTER_PORT = 9100 } = process.env;
+const { SUPABASE_URL, SUPABASE_KEY, STAFF_PIN, PRINTER_NAME, PRINTER_IP = '192.168.1.100', PRINTER_PORT = 9100 } = process.env;
 if (!SUPABASE_URL || !SUPABASE_KEY || !STAFF_PIN) {
   console.error('Thiếu SUPABASE_URL, SUPABASE_KEY hoặc STAFF_PIN');
   process.exit(1);
@@ -16,7 +24,18 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSessi
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const stamp = () => new Date().toLocaleTimeString('vi-VN');
 
-// Gửi dữ liệu xuống máy in; xong khi máy in nhận hết và đóng kết nối
+// Máy in USB đã cài trong Windows (PRINTER_NAME, ví dụ "Uniwell"): gửi dữ liệu thô qua raw-print.ps1
+async function sendToWindowsPrinter(bytes) {
+  const file = join(tmpdir(), `bill-${Date.now()}.bin`);
+  await writeFile(file, bytes);
+  try {
+    await run('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', join(here, 'raw-print.ps1'), '-Printer', PRINTER_NAME, '-File', file]);
+  } finally {
+    await unlink(file).catch(() => {});
+  }
+}
+
+// Gửi dữ liệu xuống máy in qua mạng (IP:9100); xong khi máy in nhận hết và đóng kết nối
 function sendToPrinter(bytes) {
   return new Promise((resolve, reject) => {
     const socket = net.connect({ host: PRINTER_IP, port: Number(PRINTER_PORT) });
@@ -51,7 +70,9 @@ async function printPending() {
 
   for (const job of jobs ?? []) {
     try {
-      await sendToPrinter(Buffer.from(job.payload, 'base64'));
+      const bytes = Buffer.from(job.payload, 'base64');
+      if (PRINTER_NAME) await sendToWindowsPrinter(bytes);
+      else await sendToPrinter(bytes);
       await supabase.from('print_jobs').update({ status: 'printed', printed_at: new Date().toISOString() }).eq('id', job.id);
       console.log(`[${stamp()}] In xong: ${job.note ?? job.id}`);
     } catch (err) {
@@ -66,7 +87,7 @@ async function main() {
   for (;;) {
     try {
       await login();
-      console.log(`[${stamp()}] Đang chờ lệnh in từ điện thoại (máy in ${PRINTER_IP}:${PRINTER_PORT})`);
+      console.log(`[${stamp()}] Đang chờ lệnh in từ điện thoại (${PRINTER_NAME ? 'máy in Windows ' + PRINTER_NAME : `máy in ${PRINTER_IP}:${PRINTER_PORT}`})`);
       for (;;) {
         await printPending();
         await sleep(2000);

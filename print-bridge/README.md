@@ -9,6 +9,10 @@ App nhân viên bấm **In ở quán** → bill được xếp vào bảng `prin
 3. **Máy tính ở quán:** cài Node.js (bản LTS, nodejs.org) và copy thư mục `print-bridge/` vào máy.
 4. Trong thư mục `print-bridge/`, chạy `npm install` một lần.
 
+## Máy in USB (không có mạng)
+
+Nếu máy in chỉ kết nối USB, cài máy trong Windows trước (tên **Uniwell**, driver Generic / Text Only, cổng USB001). Khi chạy cầu nối, đặt thêm `PRINTER_NAME=Uniwell` và bỏ `PRINTER_IP`.
+
 ## Chạy
 
 Windows (PowerShell):
