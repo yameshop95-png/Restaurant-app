@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { siteClient, store } from './client';
 import { startTracking, trackView } from './tracker';
-import { BASE, dishList, parseRoute } from './lib';
+import { BASE, dishList, parseRoute, publicData } from './lib';
 import { applyMeta, pageMeta } from './seo';
 import { SITE_TEXT } from './text';
 import { CartBar, Footer, Nav, SiteContext } from './ui';
@@ -24,7 +24,7 @@ export default function SiteApp({ initialPath, initialData }) {
   const route = parseRoute(pathname);
   const [lang, setLangState] = useState('en');
   const [mounted, setMounted] = useState(false);
-  const [data, setData] = useState(initialData ?? null);
+  const [data, setData] = useState(publicData(initialData) ?? null);
   const [loadError, setLoadError] = useState(false);
   const [cart, setCart] = useState({});
 
@@ -35,7 +35,7 @@ export default function SiteApp({ initialPath, initialData }) {
       return;
     }
     setLoadError(false);
-    setData(res);
+    setData(publicData(res));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

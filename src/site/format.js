@@ -54,17 +54,6 @@ export function formatPhoneTel(phone) {
   return d ? `+${d}` : '';
 }
 
-export function formatAddressDisplay(address) {
-  const raw = String(address ?? '').trim();
-  const plain = raw
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/đ/gi, 'd')
-    .toLowerCase();
-  if (plain === 'west wodonga') return 'West Wodonga';
-  return raw;
-}
-
 export function zoneDisplayName(name) {
   return String(name ?? '').replace(/\s[–—-]\s/g, ' & ');
 }
