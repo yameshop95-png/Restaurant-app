@@ -136,8 +136,9 @@ export const DISHES = [
     id: '9aa9f3dc-bc0a-40ab-917c-d4917973bd35',
     slug: 'moc-gio-song',
     category: 'gio-cha',
-    photo: null,
+    photo: '/site/photos/gio-song.webp',
     en: {
+      alt: 'Freshly mixed giò sống, pink seasoned raw pork paste in a mixing bowl',
       name: 'Giò sống & mọc – raw seasoned pork paste',
       title: 'Giò sống & mọc (raw pork paste)',
       short: 'Raw seasoned pork paste – keep chilled and cook before eating. Shape into meatballs (mọc) or use as a filling.',
@@ -314,6 +315,27 @@ export const DISHES = [
       description:
         'Bánh dày làm từ gạo nếp, dẻo mềm, vị thanh nhẹ, theo truyền thống ăn kèm chả bì hoặc giò lụa. Mỗi phần 2 cặp (4 lát), bán riêng, không kèm chả. Muốn ăn cùng thì chọn thêm chả bì hoặc giò lụa trong thực đơn.',
       portion: '2 cặp (4 lát)',
+    },
+  },
+  {
+    id: '6e401527-124e-4ec4-be37-6e2d520b91c4',
+    slug: 'banh-tet-chuoi',
+    aliases: ['Bánh tét chuối', 'Bánh Tét Chuối'],
+    category: 'rolls',
+    photo: '/site/photos/banh-tet-chuoi.webp',
+    en: {
+      alt: 'Bánh tét chuối cut open, showing sticky rice around a sweet banana filling, wrapped in banana leaf',
+      name: 'Bánh tét chuối – sweet banana sticky rice log',
+      title: 'Bánh tét chuối (banana rice cake)',
+      short: 'The sweet bánh tét: sticky rice around ripe banana, wrapped in banana leaf and boiled for hours.',
+      description:
+        'Bánh tét chuối is the sweet version of bánh tét. Glutinous rice is rolled around ripe banana, wrapped in banana leaf and boiled for hours until soft and fragrant, then sliced into rounds to serve. Enjoy it as a sweet snack or dessert, with a cup of tea. Not to be confused with the savoury bánh tét filled with mung bean and pork.',
+    },
+    vi: {
+      name: 'Bánh tét chuối',
+      short: 'Bánh tét ngọt: gạo nếp cuốn chuối chín, gói lá chuối, luộc nhiều giờ.',
+      description:
+        'Bánh tét chuối là loại bánh tét ngọt. Gạo nếp cuốn quanh chuối chín, gói lá chuối rồi luộc nhiều giờ cho dẻo thơm, cắt thành khoanh tròn khi ăn. Dùng làm món ăn vặt hoặc tráng miệng, ngon với tách trà. Khác với bánh tét mặn nhân đậu xanh thịt.',
     },
   },
 ];
