@@ -30,6 +30,7 @@ import { dueInfo, formatDue } from '../lib/due';
 import { exportOrderList } from '../lib/orderListExcel';
 import { ORDER_TYPES, PAYMENT_METHODS, paymentLabel, PREVIOUS_STATUS, statusLabel } from '../lib/orderStatus';
 import { printBill } from '../lib/printBill';
+import { sendToShopPrinter } from '../lib/printQueue';
 import { DEFAULT_ZONES } from '../lib/shippingZones';
 import { mapsUrl, shareOrder } from '../lib/shareOrder';
 import { formatMoney, itemsTotal, orderTotal } from '../lib/stats';
@@ -131,6 +132,20 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
                 className="flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600 active:bg-slate-200"
               >
                 <Printer size={14} /> In bill
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await sendToShopPrinter(order, shopName);
+                    setShareMsg('Đã gửi lệnh in ra máy ở quán');
+                  } catch {
+                    setShareMsg('Chưa gửi được lệnh in, kiểm tra mạng rồi thử lại');
+                  }
+                  setTimeout(() => setShareMsg(null), 4000);
+                }}
+                className="flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600 active:bg-slate-200"
+              >
+                <Printer size={14} /> In ở quán
               </button>
               {order.customer?.phone && (
                 <button
