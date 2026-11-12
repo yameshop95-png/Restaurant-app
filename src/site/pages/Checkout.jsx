@@ -4,6 +4,7 @@ import { DEFAULT_ZONES } from '../../lib/shippingZones';
 import { formatMoney } from '../../lib/stats';
 import { TEXT } from '../../order/i18n';
 import { siteClient, store } from '../client';
+import { trackContact, trackOrdered } from '../tracker';
 import {
   dateKey,
   defaultPickup,
@@ -87,6 +88,7 @@ export default function Checkout() {
     time: '',
     name: '',
     phone: '',
+    email: '',
     houseNo: '',
     street: '',
     suburb: '',
@@ -102,6 +104,7 @@ export default function Checkout() {
       ...f,
       name: f.name || s.name || '',
       phone: f.phone || s.phone || '',
+      email: f.email || s.email || '',
       houseNo: f.houseNo || s.houseNo || '',
       street: f.street || s.street || '',
       suburb: f.suburb || s.suburb || '',
@@ -207,18 +210,24 @@ export default function Checkout() {
   const errors = {};
   if (!form.name.trim()) errors.name = t.errName;
   if (form.phone.replace(/\D/g, '').length < 8) errors.phone = t.errPhone;
+  if (form.email.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim())) errors.email = t.errEmail;
   if (isDelivery && !form.houseNo.trim()) errors.houseNo = t.errHouseNo;
   if (isDelivery && form.street.trim().length < 2) errors.street = t.errStreet;
   if (isDelivery && !zone) errors.suburb = t.errSuburb;
   const leadLabel = formatLead(lead, lang);
   const pickupTooSoon = !isDelivery && (!due || due.getTime() < earliestReady(new Date(), lead).getTime());
   const pickupBeforeOpen = !isDelivery && due && due.getHours() < 6;
-  if (isDelivery ? !due : pickupTooSoon || pickupBeforeOpen) errors.time = isDelivery ? t.errors.cutoff : t.errTime(leadLabel);
+  if (isDelivery ? !due : pickupTooSoon || pickupBeforeOpen)
+    errors.time = isDelivery ? t.errors.cutoff : t.errTime(leadLabel);
   if (!isDelivery && due && !isSaturdayKey(form.date) && !form.note.trim()) errors.note = t.errPickupNote;
   if (!count) errors.items = t.errItems;
   const shown = submitted ? errors : {};
 
-  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const set = (key) => (e) => {
+    const value = e.target.value;
+    setForm((f) => ({ ...f, [key]: value }));
+    if (key === 'name' || key === 'phone' || key === 'email') trackContact({ ...form, [key]: value });
+  };
   const setItem = (id, n) => setCartQty(id, n);
 
   const submit = async () => {
@@ -256,10 +265,12 @@ export default function Checkout() {
     store.set(SAVED_KEY, {
       name: payload.name,
       phone: payload.phone,
+      email: form.email.trim(),
       houseNo: form.houseNo.trim(),
       street: form.street.trim(),
       suburb: form.suburb,
     });
+    trackOrdered(res.number);
     setDone({ ...res, type: form.type, items, when: due });
     clearCart();
     window.scrollTo({ top: 0 });
@@ -398,7 +409,12 @@ export default function Checkout() {
                           {out && <p className="text-sm text-slate-500">{t.soldOut}</p>}
                         </div>
                         {!out && (
-                          <Stepper qty={qty[m.id] ?? 0} name={checkoutName(m, lang)} t={t} onChange={(n) => setItem(m.id, n)} />
+                          <Stepper
+                            qty={qty[m.id] ?? 0}
+                            name={checkoutName(m, lang)}
+                            t={t}
+                            onChange={(n) => setItem(m.id, n)}
+                          />
                         )}
                       </li>
                     );
@@ -434,7 +450,11 @@ export default function Checkout() {
               </div>
 
               {isDelivery ? (
-                <Field label={t.deliveryDay} error={shown.time} hint={t.deliveryWindow(formatClock(dStart, lang), formatClock(dEnd, lang))}>
+                <Field
+                  label={t.deliveryDay}
+                  error={shown.time}
+                  hint={t.deliveryWindow(formatClock(dStart, lang), formatClock(dEnd, lang))}
+                >
                   <select
                     id="order-delivery-date"
                     value={form.deliveryDate}
@@ -490,6 +510,17 @@ export default function Checkout() {
                   className={inputClass(shown.phone)}
                 />
               </Field>
+              <Field label={t.email} error={shown.email}>
+                <input
+                  id="order-email"
+                  type="email"
+                  autoComplete="email"
+                  value={form.email}
+                  onChange={set('email')}
+                  className={inputClass(shown.email)}
+                />
+              </Field>
+              <p className="-mt-1 text-xs text-slate-500">{t.privacyNote}</p>
               {isDelivery && (
                 <fieldset className="space-y-3">
                   <legend className="mb-1 text-sm font-semibold text-slate-700">{t.address}</legend>

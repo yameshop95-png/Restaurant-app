@@ -1,4 +1,13 @@
-import { LayoutDashboard, ClipboardList, Bike, ChartColumn, Users, UtensilsCrossed, Settings } from 'lucide-react';
+import {
+  Activity,
+  LayoutDashboard,
+  ClipboardList,
+  Bike,
+  ChartColumn,
+  Users,
+  UtensilsCrossed,
+  Settings,
+} from 'lucide-react';
 
 // Danh sách tab điều hướng. `badgeKey` trỏ tới bộ đếm hiển thị badge trên menu; `ownerOnly`: nhân viên không thấy.
 export const NAV_ITEMS = [
@@ -6,6 +15,7 @@ export const NAV_ITEMS = [
   // Đơn hàng: 2 tab con Đến lấy / Giao hàng, nên đếm tất cả đơn chờ
   { id: 'orders', label: 'Đơn hàng', icon: ClipboardList, badgeKey: 'pendingAll' },
   { id: 'delivery', label: 'Đơn ship', icon: Bike, badgeKey: 'pendingDelivery' },
+  { id: 'activity', label: 'Customer Active', icon: Activity },
   { id: 'customers', label: 'Khách hàng', icon: Users },
   { id: 'menu', label: 'Quản lý món ăn', icon: UtensilsCrossed },
   { id: 'report', label: 'Báo cáo', icon: ChartColumn, ownerOnly: true },

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { siteClient, store } from './client';
+import { startTracking, trackView } from './tracker';
 import { BASE, dishList, parseRoute } from './lib';
 import { applyMeta, pageMeta } from './seo';
 import { SITE_TEXT } from './text';
@@ -61,6 +62,24 @@ export default function SiteApp({ initialPath, initialData }) {
 
   const dishes = useMemo(() => dishList(data?.menu ?? null), [data]);
 
+  // Báo cho quán biết khách đang ở bước nào (xem menu / có món trong giỏ / đang đặt / đã đặt)
+  useEffect(() => {
+    if (mounted) startTracking();
+  }, [mounted]);
+  useEffect(() => {
+    if (!mounted) return;
+    const inCart = dishes.filter((d) => d.id && cart[d.id] > 0);
+    trackView({
+      routeName: route.name,
+      count: inCart.reduce((n, d) => n + cart[d.id], 0),
+      total: inCart.reduce((sum, d) => sum + cart[d.id] * (d.price ?? 0), 0),
+      items: inCart.map((d) => `${cart[d.id]}× ${d.name}`).join(', '),
+      lang,
+      path: pathname,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, route.name, cart, dishes, lang, pathname]);
+
   // Đổi tiêu đề / mô tả trang khi chuyển trang
   useEffect(() => {
     if (!mounted) return;
@@ -89,7 +108,7 @@ export default function SiteApp({ initialPath, initialData }) {
         else delete next[id];
         return next;
       }),
-    []
+    [],
   );
 
   const value = {

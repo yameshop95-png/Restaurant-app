@@ -63,3 +63,15 @@ Cài trên Vercel → Project → Settings → Environment Variables:
 - `AI_ACCESS_CODE` (nên có): mã tuỳ chọn; nếu đặt, app sẽ hỏi mã này trước khi phân tích, để người lạ có link không dùng được AI bằng tiền của bạn
 
 Đổi biến xong cần deploy lại.
+
+## Theo dõi khách trên website (tab "Customer Active")
+
+App nhân viên có tab **Customer Active**: số khách đang online, đang xem menu, đã chọn món, đang ở trang đặt món,
+số khách bỏ dở, bảng tỉ lệ đặt món (hôm nay / 7 ngày / 30 ngày) và danh sách khách đã để lại số điện thoại hoặc email nhưng chưa đặt.
+
+- Website (`src/site/tracker.js`) gửi tình trạng mỗi phiên qua hàm `track_session` (không đăng nhập); bỏ qua êm nếu lỗi.
+  Chỉ lưu số điện thoại đủ 8 số và email đúng dạng. Trang đặt món có câu báo cho khách biết quán có thể lưu thông tin đã nhập.
+- Máy chủ: chạy **một lần** `sql/customer_activity.sql` trong SQL Editor (tạo bảng `web_sessions`, hàm `track_session`,
+  `customer_activity`, `handle_web_session`). Chưa chạy thì tab hiện hướng dẫn, website vẫn đặt món bình thường.
+- Chỉ phiên đã đăng nhập bằng PIN đọc được số liệu. Dữ liệu giữ 90 ngày.
+- "Bỏ dở" = đã chọn món, im lặng quá 10 phút mà không đặt. "Online" = có tín hiệu trong 90 giây gần nhất.

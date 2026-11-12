@@ -14,7 +14,16 @@ import useSettings from './hooks/useSettings';
 import { exportAll } from './lib/backup';
 import { alertBeep, dueInfo, upcomingOrders } from './lib/due';
 import { paymentLabel, statusLabel } from './lib/orderStatus';
-import { HomePage, OrdersPage, DeliveryPage, ReportPage, CustomersPage, MenuPage, SettingsPage } from './pages';
+import {
+  HomePage,
+  OrdersPage,
+  DeliveryPage,
+  ReportPage,
+  CustomersPage,
+  CustomerActivityPage,
+  MenuPage,
+  SettingsPage,
+} from './pages';
 
 // Map id tab -> component hiển thị trong Main Content Area.
 const PAGES = {
@@ -23,6 +32,7 @@ const PAGES = {
   delivery: DeliveryPage,
   report: ReportPage,
   customers: CustomersPage,
+  activity: CustomerActivityPage,
   menu: MenuPage,
   settings: SettingsPage,
 };
@@ -34,7 +44,13 @@ export default function App() {
     return <div className="flex min-h-screen items-center justify-center bg-page text-slate-500">Đang mở…</div>;
   }
   if (auth.status !== 'signedIn') {
-    return <PinLogin onLogin={auth.login} offlineError={auth.status === 'offline' ? auth.error : null} onRetry={auth.retry} />;
+    return (
+      <PinLogin
+        onLogin={auth.login}
+        offlineError={auth.status === 'offline' ? auth.error : null}
+        onRetry={auth.retry}
+      />
+    );
   }
   // key: đổi người đăng nhập thì tải lại từ đầu
   return <Shop key={auth.account.id} account={auth.account} onLogout={auth.logout} />;
@@ -44,8 +60,16 @@ function Shop({ account, onLogout }) {
   const isOwner = account.role === 'owner';
   const [activeTab, setActiveTab] = useState('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { orders, ready: ordersReady, loadError, addOrder, updateOrder, setStatus, setPaid, importOrders } =
-    useOrders(account);
+  const {
+    orders,
+    ready: ordersReady,
+    loadError,
+    addOrder,
+    updateOrder,
+    setStatus,
+    setPaid,
+    importOrders,
+  } = useOrders(account);
   const { customers, saveCustomer, importCustomers, updateCustomer, deleteCustomer } = useCustomers();
   const { menu, addItem, updateItem, deleteItem, moveItem, importMenu } = useMenu();
 
@@ -102,7 +126,7 @@ function Shop({ account, onLogout }) {
       (o) =>
         !seenOrders.current.has(o.id) &&
         o.source === 'web' &&
-        Date.now() - new Date(o.createdAt).getTime() < 30 * 60000
+        Date.now() - new Date(o.createdAt).getTime() < 30 * 60000,
     );
     orders.forEach((o) => seenOrders.current.add(o.id));
     if (!fresh.length) return;
