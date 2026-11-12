@@ -54,9 +54,17 @@ const dishRow = (menuItem, index, content) => ({
 // Ghép thực đơn trong app (giá, còn / hết) với nội dung website (ảnh, mô tả, định lượng)
 export function dishList(menu) {
   if (!menu) return DISHES.filter((c) => c.id).map((c, i) => dishRow(null, i, c));
-  return menu
-    .map((m, i) => dishRow(m, i, findDishContent(m)))
-    .sort((a, b) => categoryOrder(a.content?.category) - categoryOrder(b.content?.category) || a.index - b.index);
+  const rows = menu.map((m, i) => dishRow(m, i, findDishContent(m)));
+  // Nhiều dòng thực đơn dùng chung một nội dung (Bánh chưng và Bánh tét): tách thành món riêng, mỗi món một tên và một trang
+  const shared = new Map();
+  rows.forEach((r) => r.content && shared.set(r.content, (shared.get(r.content) ?? 0) + 1));
+  rows.forEach((r) => {
+    if (!r.content || shared.get(r.content) < 2 || !r.name) return;
+    const own = (c) => (c ? { ...c, name: [r.name, ...String(c.name ?? '').split(' – ').slice(1)].join(' – ') } : c);
+    r.slug = slugify(r.name);
+    r.content = { ...r.content, slug: r.slug, en: { ...own(r.content.en), title: `${r.name} (sticky rice cake)` }, vi: own(r.content.vi) };
+  });
+  return rows.sort((a, b) => categoryOrder(a.content?.category) - categoryOrder(b.content?.category) || a.index - b.index);
 }
 
 // Slug các trang món: khi có thực đơn thì chỉ món đang bán (kể cả bánh chưng khi đã có dòng).
