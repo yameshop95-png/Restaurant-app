@@ -15,6 +15,7 @@ export const CATEGORIES = [
   { id: 'rolls', en: 'Rice rolls & dumplings', vi: 'Bánh cuốn & bánh' },
   { id: 'gio-cha', en: 'Giò chả – Vietnamese pork rolls', vi: 'Giò chả' },
   { id: 'meats', en: 'Beef balls & sausages', vi: 'Bò viên & lạp xưởng' },
+  { id: 'desserts', en: 'Desserts', vi: 'Tráng miệng' },
 ];
 
 export const DISHES = [
@@ -272,6 +273,47 @@ export const DISHES = [
       short: 'Gạo nếp, đậu xanh và thịt, luộc nhiều giờ. Món Tết.',
       description: 'Gạo nếp gói nhân đậu xanh và thịt, luộc nhiều giờ. Món không thể thiếu ngày Tết.',
       portion: '1 kg',
+    },
+  },
+  {
+    id: '8b03d2fb-7751-4c4f-a43a-3b709516d542',
+    slug: 'tau-hu-singapore',
+    category: 'desserts',
+    photo: null,
+    en: {
+      name: 'Tàu hũ Singapore – silky tofu pudding in sweet soy milk',
+      title: 'Tàu hũ Singapore (tofu pudding)',
+      short: 'Silky tofu pudding in lightly sweet, refreshing soy milk. Sold per box.',
+      description:
+        'Tàu hũ Singapore is soft, silky tofu pudding served in a lightly sweet soy milk. Gentle and refreshing, it makes an easy dessert or a light treat after a meal. Sold per box.',
+      portion: '1 box',
+    },
+    vi: {
+      name: 'Tàu hũ Singapore',
+      short: 'Tàu hũ mềm mịn trong nước sữa ngọt dịu, thanh mát.',
+      description: 'Tàu hũ mềm mịn ăn cùng nước sữa vị ngọt dịu, thanh mát. Món tráng miệng nhẹ nhàng, dễ ăn sau bữa cơm. Bán theo hộp.',
+      portion: '1 hộp',
+    },
+  },
+  {
+    id: '35b0a2cd-3493-45a8-8c9b-60a5a9cacca6',
+    slug: 'banh-day',
+    category: 'rolls',
+    photo: null,
+    en: {
+      name: 'Bánh dày – Vietnamese round glutinous rice cake',
+      title: 'Bánh dày (glutinous rice cake)',
+      short: 'Soft, chewy round rice cake to eat with chả bì or giò lụa. Sold plain, pork roll not included.',
+      description:
+        'Bánh dày is a soft, chewy round cake made from glutinous rice, with a mild, clean flavour. It is traditionally sliced and eaten with chả bì or giò lụa. Each order is 2 pairs (4 slices) and is sold on its own, without the pork roll. Add chả bì or giò lụa from the menu if you would like them together.',
+      portion: '2 pairs (4 slices)',
+    },
+    vi: {
+      name: 'Bánh dày',
+      short: 'Bánh dày dẻo mềm, ăn kèm chả bì hoặc giò lụa. Bán riêng, không kèm chả.',
+      description:
+        'Bánh dày làm từ gạo nếp, dẻo mềm, vị thanh nhẹ, theo truyền thống ăn kèm chả bì hoặc giò lụa. Mỗi phần 2 cặp (4 lát), bán riêng, không kèm chả. Muốn ăn cùng thì chọn thêm chả bì hoặc giò lụa trong thực đơn.',
+      portion: '2 cặp (4 lát)',
     },
   },
 ];
