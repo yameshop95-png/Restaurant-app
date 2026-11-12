@@ -22,12 +22,6 @@ export function pageMeta(route, data, dishes) {
     hasMenu: url(path('/menu')),
     sameAs: Object.values(SOCIAL),
     ...(phone && { telephone: phone }),
-    address: {
-      '@type': 'PostalAddress',
-      addressLocality: 'West Wodonga',
-      addressRegion: 'VIC',
-      addressCountry: 'AU',
-    },
     openingHoursSpecification: {
       '@type': 'OpeningHoursSpecification',
       dayOfWeek: 'Saturday',
