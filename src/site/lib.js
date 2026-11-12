@@ -62,7 +62,13 @@ export function dishList(menu) {
     if (!r.content || shared.get(r.content) < 2 || !r.name) return;
     const own = (c) => (c ? { ...c, name: [r.name, ...String(c.name ?? '').split(' – ').slice(1)].join(' – ') } : c);
     r.slug = slugify(r.name);
-    r.content = { ...r.content, slug: r.slug, en: { ...own(r.content.en), title: `${r.name} (sticky rice cake)` }, vi: own(r.content.vi) };
+    const v = r.content.variants?.[r.slug];
+    r.content = {
+      ...r.content,
+      slug: r.slug,
+      en: { ...own(r.content.en), title: `${r.name} (sticky rice cake)`, ...v?.en },
+      vi: { ...own(r.content.vi), ...v?.vi },
+    };
   });
   return rows.sort((a, b) => categoryOrder(a.content?.category) - categoryOrder(b.content?.category) || a.index - b.index);
 }
