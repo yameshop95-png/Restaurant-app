@@ -41,7 +41,8 @@ export default function SiteApp({ initialPath, initialData }) {
   useEffect(() => {
     setMounted(true);
     const saved = store.get(LANG_KEY, null);
-    setLangState(saved ?? (/^vi/i.test(navigator.language) ? 'vi' : 'en'));
+    // Mặc định tiếng Việt; khách tự đổi sang tiếng Anh bằng nút ở góc trên, lựa chọn được nhớ lại
+    setLangState(saved ?? 'vi');
     setCart(store.get(CART_KEY, {}));
     reload();
     const onPop = () => setPathname(window.location.pathname);
