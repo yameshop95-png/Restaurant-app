@@ -1,5 +1,6 @@
 // Tin nhắn cho khách (nút "Nhắn khách" trên thẻ đơn): soạn sẵn, nhân viên gửi bằng app Tin nhắn của điện thoại quán.
 // Ngôn ngữ: đơn đặt trên website nhớ ngôn ngữ khách dùng (order.lang); đơn tạo trong app mặc định tiếng Việt.
+import { formatPhoneDisplay } from '../site/format';
 import { formatMoney, orderTotal } from './stats';
 
 const DEFAULT_SHOP = 'Bánh Cuốn & Giò Chả';
@@ -26,8 +27,12 @@ function when(order, lang) {
   return `${time} ${weekday} ${d.getDate()}/${d.getMonth() + 1}`;
 }
 
-export function customerMessage(order, kind, lang, shopName) {
-  const shop = shopName?.trim() || DEFAULT_SHOP;
+// shopInfo: tên quán (chuỗi) hoặc { name, address, phone }. Đơn đến lấy thì thêm địa chỉ lấy hàng và SĐT quán vào tin.
+export function customerMessage(order, kind, lang, shopInfo) {
+  const info = typeof shopInfo === 'string' ? { name: shopInfo } : (shopInfo ?? {});
+  const shop = info.name?.trim() || DEFAULT_SHOP;
+  const pickupAddress = order.type === 'delivery' ? '' : (info.address ?? '').trim();
+  const shopPhone = order.type === 'delivery' ? '' : formatPhoneDisplay(info.phone ?? '').trim();
   const name = order.customer?.name?.trim() || '';
   const delivery = order.type === 'delivery';
   const items = (order.items ?? []).map((i) => `${i.qty}× ${i.name}`).join(', ');
@@ -43,6 +48,8 @@ export function customerMessage(order, kind, lang, shopName) {
         at && `${delivery ? 'Delivery' : 'Pickup'}: ${at}.`,
         items && `${items}.`,
         `Total ${total}${fee ? ` incl. ${fee} delivery` : ''}. ${pay}`,
+        pickupAddress && `Pickup address: ${pickupAddress}.`,
+        shopPhone && `Call us: ${shopPhone}.`,
         'Thank you!',
       ]
         .filter(Boolean)
@@ -50,7 +57,14 @@ export function customerMessage(order, kind, lang, shopName) {
     }
     return delivery
       ? `${shop}: Hi ${name}, order #${order.number} is on its way. Total ${total}. ${pay} Thank you!`
-      : `${shop}: Hi ${name}, order #${order.number} is ready for pickup. Total ${total}. ${pay} See you soon!`;
+      : [
+          `${shop}: Hi ${name}, order #${order.number} is ready for pickup${pickupAddress ? ` at ${pickupAddress}` : ''}.`,
+          `Total ${total}. ${pay}`,
+          shopPhone && `Call us: ${shopPhone}.`,
+          'See you soon!',
+        ]
+          .filter(Boolean)
+          .join(' ');
   }
 
   const pay = order.paid ? 'Đã thanh toán, cảm ơn bạn.' : 'Vui lòng trả tiền mặt khi nhận hàng.';
@@ -60,6 +74,8 @@ export function customerMessage(order, kind, lang, shopName) {
       at && `${delivery ? 'Giao' : 'Đến lấy'} lúc ${at}.`,
       items && `Món: ${items}.`,
       `Tổng ${total}${fee ? ` (gồm ship ${fee})` : ''}. ${pay}`,
+      pickupAddress && `Địa chỉ lấy hàng: ${pickupAddress}.`,
+      shopPhone && `Liên hệ quán: ${shopPhone}.`,
       'Cảm ơn bạn!',
     ]
       .filter(Boolean)
@@ -67,7 +83,14 @@ export function customerMessage(order, kind, lang, shopName) {
   }
   return delivery
     ? `${shop}: Chào ${name}, đơn #${order.number} đang được giao tới bạn. Tổng ${total}. ${pay} Cảm ơn bạn!`
-    : `${shop}: Chào ${name}, đơn #${order.number} đã sẵn sàng, mời bạn ghé lấy. Tổng ${total}. ${pay} Cảm ơn bạn!`;
+    : [
+        `${shop}: Chào ${name}, đơn #${order.number} đã sẵn sàng, mời bạn ghé lấy${pickupAddress ? ` tại ${pickupAddress}` : ''}.`,
+        `Tổng ${total}. ${pay}`,
+        shopPhone && `Liên hệ quán: ${shopPhone}.`,
+        'Cảm ơn bạn!',
+      ]
+        .filter(Boolean)
+        .join(' ');
 }
 
 // Link mở app Tin nhắn với số và nội dung soạn sẵn. iPhone dùng "&body=", Android dùng "?body=".

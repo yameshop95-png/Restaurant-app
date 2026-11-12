@@ -8,12 +8,12 @@ const LANGS = [
 ];
 
 // Soạn tin cho khách rồi mở app Tin nhắn của điện thoại (nhân viên bấm Gửi). Không tốn phí, gửi từ số của quán.
-export default function MessageCustomerSheet({ order, shopName, onClose }) {
+export default function MessageCustomerSheet({ order, shop, onClose }) {
   const [kind, setKind] = useState(() => defaultKind(order));
   const [lang, setLang] = useState(() => defaultLang(order));
   const [edited, setEdited] = useState(null);
   const [copied, setCopied] = useState(false);
-  const text = edited ?? customerMessage(order, kind, lang, shopName);
+  const text = edited ?? customerMessage(order, kind, lang, shop);
   const phone = order.customer?.phone ?? '';
 
   const choose = (setter) => (value) => {
@@ -69,6 +69,11 @@ export default function MessageCustomerSheet({ order, shopName, onClose }) {
           {order.source === 'web' && (
             <p className="text-xs text-slate-500">
               Khách đặt trên website bằng {order.lang === 'en' ? 'tiếng Anh' : order.lang === 'vi' ? 'tiếng Việt' : '—'}
+            </p>
+          )}
+          {order.type !== 'delivery' && !shop?.address?.trim() && (
+            <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+              Chưa có địa chỉ lấy hàng trên máy này, tin nhắn chưa có địa chỉ. Vào Cài đặt → Thông tin quán → "Địa chỉ lấy hàng" để thêm.
             </p>
           )}
           <label className="block">

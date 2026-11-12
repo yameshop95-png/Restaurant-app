@@ -19,6 +19,8 @@ const SHOP_DEFAULTS = {
 };
 
 const DEVICE_DEFAULTS = {
+  // Địa chỉ lấy hàng đầy đủ, chỉ gửi cho khách trong tin nhắn xác nhận đơn. Lưu riêng từng máy, không đưa lên website
+  pickupAddress: '',
   dueSound: true, // kêu + rung khi đơn sắp tới giờ giao / trễ giờ
   lastBackupAt: null,
   // Ứng dụng bản đồ khi bấm địa chỉ / mở lộ trình: iPhone, iPad mặc định Apple Maps, máy khác Google Maps
