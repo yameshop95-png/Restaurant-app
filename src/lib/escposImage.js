@@ -2,7 +2,7 @@
 // mà không phụ thuộc bảng mã chữ của máy. Vẽ bằng canvas trong trình duyệt rồi đổi thành ảnh đen trắng.
 import { formatMoney, orderTotal } from './stats';
 
-const WIDTH = 576; // 72mm in được ở 203 dpi
+const WIDTH = 536; // 72mm = 576 chấm, trừ lề trái 32 chấm và 8 chấm an toàn để không bị cắt mép phải
 const PAD = 10;
 const FONT = "'Inter', Arial, 'Segoe UI', sans-serif";
 const BAND = 128; // gửi từng dải 128 dòng cho máy khỏi tràn bộ nhớ

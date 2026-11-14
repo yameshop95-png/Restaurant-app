@@ -45,7 +45,7 @@ export function billBytes(order, shopName = '') {
 
   cmd(ESC, 0x40); // khởi tạo máy
   cmd(GS, 0x4c, 32, 0); // lề trái 32 chấm (4mm): chữ không bị cắt sát mép giấy
-  cmd(GS, 0x57, 0x40, 0x02); // vùng in rộng 576 chấm
+  cmd(GS, 0x57, 0x18, 0x02); // vùng in rộng 536 chấm (576 trừ lề trái 32 và 8 an toàn)
   // Tiêu đề chữ trắng nền đen (GS B), chữ to gấp đôi: 24 ký tự mỗi dòng
   const title = isDelivery ? 'DELIVERY' : 'PICK UP';
   const pad = Math.floor((24 - title.length) / 2);
