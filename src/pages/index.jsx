@@ -6,5 +6,6 @@ export { default as CustomersPage } from './CustomersPage';
 export { default as CustomerActivityPage } from './CustomerActivityPage';
 export { default as MenuPage } from './MenuPage';
 export { default as ReportPage } from './ReportPage';
+export { default as InventoryPage } from './InventoryPage';
 export { OrdersPage };
 export const DeliveryPage = (props) => <OrdersPage {...props} fixedType="delivery" />;

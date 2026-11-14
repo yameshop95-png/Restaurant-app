@@ -23,6 +23,7 @@ import {
   CustomersPage,
   CustomerActivityPage,
   MenuPage,
+  InventoryPage,
   SettingsPage,
 } from './pages';
 
@@ -35,6 +36,7 @@ const PAGES = {
   customers: CustomersPage,
   activity: CustomerActivityPage,
   menu: MenuPage,
+  inventory: InventoryPage,
   settings: SettingsPage,
 };
 
@@ -187,7 +189,7 @@ function Shop({ account, onLogout }) {
   };
 
   // Báo cáo chỉ dành cho chủ quán
-  const ActivePage = PAGES[!isOwner && activeTab === 'report' ? 'home' : activeTab];
+  const ActivePage = PAGES[!isOwner && (activeTab === 'report' || activeTab === 'inventory') ? 'home' : activeTab];
   const pendingTotal = counts.pendingAll;
 
   return (

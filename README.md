@@ -75,3 +75,16 @@ số khách bỏ dở, bảng tỉ lệ đặt món (hôm nay / 7 ngày / 30 ng�
   `customer_activity`, `handle_web_session`). Chưa chạy thì tab hiện hướng dẫn, website vẫn đặt món bình thường.
 - Chỉ phiên đã đăng nhập bằng PIN đọc được số liệu. Dữ liệu giữ 90 ngày.
 - "Bỏ dở" = đã chọn món, im lặng quá 10 phút mà không đặt. "Online" = có tín hiệu trong 90 giây gần nhất.
+
+## Inventory Management (chỉ chủ quán)
+
+Tab **Inventory Management** trong menu: lãi lỗ theo tuần / tháng / năm, kho nguyên liệu, nhập hàng, công thức từng món (giá vốn, lãi mỗi phần) và chi phí khác.
+
+- Cài một lần: chạy file `sql/inventory.sql` trong SQL Editor của project restaurant-app (tạo 5 bảng `inv_*`, chỉ chủ quán đọc / ghi).
+- Giá vốn nguyên liệu = trung bình có trọng số của 5 lần nhập gần nhất. Tồn kho = nhập + điều chỉnh (kiểm kho, hao hụt) − dùng cho đơn bán (theo công thức), tính từ ngày có bút toán đầu tiên của nguyên liệu đó.
+- Lãi = doanh thu (đơn không huỷ, gồm phí ship) − giá vốn món đã bán − chi phí khác. Dòng tiền = bán − tiền mua hàng − chi phí khác.
+- Tính toán nằm ở `src/lib/inventory.js`, giao diện ở `src/pages/InventoryPage.jsx` và `src/components/inventory/`.
+
+## Sao lưu email hằng tuần
+
+`api/backup.js` chạy mỗi sáng chủ nhật (Vercel cron), gửi file Excel + JSON qua Resend. Cần biến môi trường `CRON_SECRET`, `SUPABASE_SERVICE_KEY`, `RESEND_API_KEY`, `BACKUP_EMAIL_TO` (xem đầu file `api/backup.js`).

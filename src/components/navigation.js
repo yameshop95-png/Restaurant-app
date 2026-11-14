@@ -1,5 +1,6 @@
 import {
   Activity,
+  Boxes,
   LayoutDashboard,
   ClipboardList,
   Bike,
@@ -19,5 +20,6 @@ export const NAV_ITEMS = [
   { id: 'customers', label: 'Khách hàng', icon: Users },
   { id: 'menu', label: 'Quản lý món ăn', icon: UtensilsCrossed },
   { id: 'report', label: 'Báo cáo', icon: ChartColumn, ownerOnly: true },
+  { id: 'inventory', label: 'Inventory Management', icon: Boxes, ownerOnly: true },
   { id: 'settings', label: 'Cài đặt app', icon: Settings },
 ];
