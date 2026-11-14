@@ -82,7 +82,7 @@ export function drawBill(order, shopName = '') {
   ctx.fillStyle = '#000';
   y += titleHeight + 10;
 
-  if (shopName) centered(shopName, 24, 500);
+  if (shopName) centered(shopName, 36, 800); // tên quán to và đậm
   centered(`#${order.number}`, 28, 700);
   centered(order.customer?.name ?? order.note ?? '', 34, 700);
   if (isDelivery && order.customer?.address) {

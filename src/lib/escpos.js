@@ -56,7 +56,16 @@ export function billBytes(order, shopName = '') {
   cmd(GS, 0x42, 0);
   cmd(ESC, 0x61, 0); // căn trái
 
-  if (shopName) text(ascii(shopName));
+  if (shopName) {
+    // Tên quán: chữ to gấp đôi, đậm, căn giữa (24 ký tự mỗi dòng)
+    cmd(ESC, 0x61, 1);
+    cmd(ESC, 0x45, 1);
+    cmd(GS, 0x21, 0x11);
+    for (const w of wrap(shopName, 22)) text(w);
+    cmd(GS, 0x21, 0x00);
+    cmd(ESC, 0x45, 0);
+    cmd(ESC, 0x61, 0);
+  }
   text('#' + order.number + '  ' + ascii(order.createdBy ?? ''));
   text('-'.repeat(WIDTH));
 
