@@ -17,6 +17,9 @@ export default function WebOrderingSettings({ settings, onUpdateSettings }) {
     deliveryCutoff: '20:00',
     ...settings.webOrdering,
   };
+  const closedDates = [...(Array.isArray(web.closedDates) ? web.closedDates : [])].sort();
+  const [newClosed, setNewClosed] = useState('');
+  const today = new Date().toISOString().slice(0, 10);
   const link = `${window.location.origin}/order`;
   const [copied, setCopied] = useState(null);
   const save = (patch) => onUpdateSettings({ webOrdering: { ...web, ...patch } });
@@ -127,6 +130,50 @@ export default function WebOrderingSettings({ settings, onUpdateSettings }) {
             Khách chọn {WEEKDAYS[web.deliveryDay].toLowerCase()} nào muốn nhận, đơn ghi giờ {web.deliveryStart}. Đặt sau hạn chót thì
             chỉ chọn được tuần sau.
           </p>
+        </div>
+        <div className="space-y-2 rounded-2xl bg-slate-50 p-3">
+          <p className="text-sm font-semibold text-slate-700">Ngày nghỉ (không nhận đơn)</p>
+          <p className="text-xs text-slate-500">
+            Ngày này khách không chọn được để đến lấy hoặc giao trên website. Dùng cho lễ, Tết, hoặc ngày quán nghỉ.
+          </p>
+          <div className="flex gap-2">
+            <input
+              id="web-closed-date"
+              type="date"
+              min={today}
+              value={newClosed}
+              onChange={(e) => setNewClosed(e.target.value)}
+              className={timeInput}
+            />
+            <button
+              onClick={() => {
+                if (!newClosed || closedDates.includes(newClosed)) return;
+                save({ closedDates: [...closedDates, newClosed] });
+                setNewClosed('');
+              }}
+              className="shrink-0 rounded-xl bg-blue-500 px-4 font-semibold text-white active:bg-blue-600"
+            >
+              Thêm
+            </button>
+          </div>
+          {closedDates.length > 0 && (
+            <ul className="flex flex-wrap gap-2">
+              {closedDates
+                .filter((d) => d >= today)
+                .map((d) => (
+                  <li key={d} className="flex items-center gap-1 rounded-full bg-red-50 py-1 pl-3 pr-1 text-sm font-semibold text-red-600">
+                    {d.split('-').reverse().join('/')}
+                    <button
+                      onClick={() => save({ closedDates: closedDates.filter((x) => x !== d) })}
+                      aria-label={`Bỏ ngày nghỉ ${d}`}
+                      className="rounded-full px-2 py-0.5 text-base leading-none active:bg-red-100"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+            </ul>
+          )}
         </div>
         <div>
           <span className="mb-1 block text-sm font-semibold text-slate-700">Link gửi cho khách</span>

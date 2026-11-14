@@ -131,11 +131,11 @@ export function slotsForDay(day, earliest) {
 }
 
 // Mặc định: thứ 7 từ 6:00 (hoặc muộn hơn trong thứ 7 đó nếu chưa đủ giờ đặt trước).
-export function defaultPickup(now, leadMinutes) {
+export function defaultPickup(now, leadMinutes, closed = []) {
   const earliest = earliestReady(now, leadMinutes);
   for (let i = 0; i < 21; i++) {
     const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
-    if (day.getDay() !== 6) continue;
+    if (day.getDay() !== 6 || closed.includes(dateKey(day))) continue;
     const slots = slotsForDay(day, earliest);
     if (slots.length) return atTime(day, slots[0]);
   }

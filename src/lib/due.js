@@ -28,9 +28,22 @@ export function upcomingOrders(orders, now, withinMinutes = 60) {
 
 // Tiếng "bíp bíp" ngắn bằng Web Audio (không cần file âm thanh) + rung nếu máy hỗ trợ.
 let audioCtx;
+
+// Trình duyệt (nhất là iPhone) chỉ cho phát âm thanh sau khi người dùng đã chạm vào trang ít nhất một lần.
+// Gọi hàm này ở lần chạm đầu tiên để chuông báo đơn mới sau đó kêu được dù không ai bấm gì.
+export function unlockAudio() {
+  try {
+    audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch {
+    // Không hỗ trợ âm thanh: bỏ qua
+  }
+}
+
 export function alertBeep() {
   try {
     audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     const t = audioCtx.currentTime;
     for (const start of [0, 0.25]) {
       const osc = audioCtx.createOscillator();

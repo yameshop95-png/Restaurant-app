@@ -12,7 +12,7 @@ const hhmm = (iso) => {
 export default function OnlineOrderAlert({ alerts, onOpen, onDismiss }) {
   useEffect(() => {
     if (!alerts.length) return undefined;
-    const timer = setTimeout(() => onDismiss(alerts[0].id), 60000);
+    const timer = setTimeout(() => onDismiss(alerts[0].id), 10 * 60000);
     return () => clearTimeout(timer);
   }, [alerts, onDismiss]);
 
@@ -31,7 +31,7 @@ export default function OnlineOrderAlert({ alerts, onOpen, onDismiss }) {
               Đơn online mới #{o.number} · {o.customer?.name}
             </span>
             <span className="block text-xs text-slate-500">
-              {ORDER_TYPES[o.type === 'delivery' ? 'delivery' : 'pickup'].label} {o.deliverAt ? hhmm(o.deliverAt) : ''} · bấm để xem
+              {ORDER_TYPES[o.type === 'delivery' ? 'delivery' : 'pickup'].label} {o.deliverAt ? hhmm(o.deliverAt) : ''} · bấm để xem và tắt chuông
             </span>
           </button>
           <button onClick={() => onDismiss(o.id)} className="shrink-0 rounded-lg p-2 text-slate-500 active:bg-slate-100" aria-label="Đóng thông báo">

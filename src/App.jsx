@@ -12,7 +12,8 @@ import useNow from './hooks/useNow';
 import useOrders from './hooks/useOrders';
 import useSettings from './hooks/useSettings';
 import { exportAll } from './lib/backup';
-import { alertBeep, dueInfo, upcomingOrders } from './lib/due';
+import { alertBeep, dueInfo, unlockAudio, upcomingOrders } from './lib/due';
+import { sendToShopPrinter } from './lib/printQueue';
 import { paymentLabel, statusLabel } from './lib/orderStatus';
 import {
   HomePage,
@@ -132,7 +133,28 @@ function Shop({ account, onLogout }) {
     if (!fresh.length) return;
     alertBeep();
     setOnlineAlerts((list) => [...fresh, ...list]);
-  }, [orders, ordersReady]);
+    // Máy được bật "Tự in bill": đơn website mới tự ra bill ở quán, không ai phải bấm
+    if (settings.autoPrint) {
+      fresh.forEach((o) => sendToShopPrinter(o, settings.shopName).catch(() => {}));
+    }
+  }, [orders, ordersReady, settings.autoPrint, settings.shopName]);
+  // Chuông báo lặp lại mỗi 15 giây cho tới khi có người bấm vào thông báo, kẻo nhân viên bận không nghe thấy
+  useEffect(() => {
+    if (!onlineAlerts.length) return undefined;
+    const timer = setInterval(alertBeep, 15000);
+    return () => clearInterval(timer);
+  }, [onlineAlerts.length]);
+  // Lần chạm đầu tiên vào app mở khoá âm thanh của trình duyệt
+  useEffect(() => {
+    const unlock = () => unlockAudio();
+    window.addEventListener('pointerdown', unlock, { once: true });
+    return () => window.removeEventListener('pointerdown', unlock);
+  }, []);
+  // Tên tab hiện số đơn online chưa xem
+  useEffect(() => {
+    const base = document.title.replace(/^\(\d+\) /, '');
+    document.title = onlineAlerts.length ? `(${onlineAlerts.length}) ${base}` : base;
+  }, [onlineAlerts.length]);
   const dismissOnline = useCallback((id) => setOnlineAlerts((list) => list.filter((o) => o.id !== id)), []);
 
   // Sao lưu tất cả vào một file Excel và ghi lại thời điểm để nhắc sao lưu định kỳ

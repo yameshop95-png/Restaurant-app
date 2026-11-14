@@ -5,6 +5,7 @@ import {
   Download,
   FileSpreadsheet,
   ImagePlus,
+  Printer,
   Smartphone,
   Map as MapIcon,
   Store,
@@ -351,6 +352,35 @@ function AlertSettings({ settings, onUpdateSettings }) {
   );
 }
 
+// Tự in bill đơn website mới: chỉ bật trên 1 máy luôn mở app (ví dụ điện thoại / máy tính ở quán)
+function AutoPrintSettings({ settings, onUpdateSettings }) {
+  return (
+    <section className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-card px-5 py-4 shadow-sm">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
+        <Printer size={22} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <h2 className="font-bold text-slate-900">Tự in bill đơn online</h2>
+        <p className="text-sm text-slate-500">
+          Khi khách đặt trên website, bill tự ra máy in ở quán. Chỉ bật ở <b>1 máy</b> luôn mở app, bật ở nhiều máy
+          thì bill sẽ in trùng.
+        </p>
+      </div>
+      <button
+        role="switch"
+        aria-checked={!!settings.autoPrint}
+        aria-label="Tự in bill đơn online"
+        onClick={() => onUpdateSettings({ autoPrint: !settings.autoPrint })}
+        className={`relative h-8 w-14 shrink-0 rounded-full transition ${settings.autoPrint ? 'bg-blue-500' : 'bg-slate-300'}`}
+      >
+        <span
+          className={`absolute top-1 h-6 w-6 rounded-full bg-card shadow transition-all ${settings.autoPrint ? 'left-7' : 'left-1'}`}
+        />
+      </button>
+    </section>
+  );
+}
+
 function backupStatus(lastBackupAt) {
   const days = daysSinceBackup(lastBackupAt);
   if (days == null) return 'Chưa sao lưu lần nào';
@@ -396,6 +426,7 @@ export default function SettingsPage({
       <InstallApp />
       <MapsSettings settings={settings} onUpdateSettings={onUpdateSettings} />
       <AlertSettings settings={settings} onUpdateSettings={onUpdateSettings} />
+      <AutoPrintSettings settings={settings} onUpdateSettings={onUpdateSettings} />
 
       {isOwner && (
         <>

@@ -137,9 +137,10 @@ export default function Checkout() {
   const dCut = web.deliveryCutoff || '20:00';
   const zones = shop.shippingZones ?? DEFAULT_ZONES;
   const closed = web.enabled === false;
+  const closedDates = useMemo(() => (Array.isArray(web.closedDates) ? web.closedDates : []), [web.closedDates]);
 
   // Mặc định thứ 7 từ 6:00. Khung đến lấy chỉ từ 6:00 đến 21:00.
-  const pickupDefault = useMemo(() => defaultPickup(new Date(), lead), [lead, data]);
+  const pickupDefault = useMemo(() => defaultPickup(new Date(), lead, closedDates), [lead, closedDates, data]);
   useEffect(() => {
     if (!data) return;
     setForm((f) => (f.date ? f : { ...f, date: dateKey(pickupDefault), time: timeKey(pickupDefault) }));
@@ -152,14 +153,14 @@ export default function Checkout() {
     const [ch, cm] = dCut.split(':').map(Number);
     for (let i = 0; i < 22 && out.length < 2; i++) {
       const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
-      if (d.getDay() !== dDay) continue;
+      if (d.getDay() !== dDay || closedDates.includes(dateKey(d))) continue;
       const cutoff = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1, ch, cm);
       if (now < cutoff)
         out.push({ key: dateKey(d), label: `${t.weekdays[d.getDay()]} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}` });
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dDay, dCut, t, data]);
+  }, [dDay, dCut, t, data, closedDates]);
   useEffect(() => {
     if (deliveryDays.length && !deliveryDays.some((d) => d.key === form.deliveryDate)) {
       setForm((f) => ({ ...f, deliveryDate: deliveryDays[0].key }));
@@ -174,12 +175,18 @@ export default function Checkout() {
     for (let i = 0; i < DAYS_AHEAD; i++) {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
-      if (!slotsForDay(d, earliest).length) continue;
+      if (!slotsForDay(d, earliest).length || closedDates.includes(dateKey(d))) continue;
       const when = `${t.weekdays[d.getDay()]} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
       out.push({ key: dateKey(d), label: d.getDay() === 6 ? when : `${when} · ${t.byRequest}` });
     }
     return out;
-  }, [lang, t, lead, data]);
+  }, [lang, t, lead, data, closedDates]);
+  // Ngày đang chọn vừa thành ngày nghỉ: chuyển sang ngày gần nhất còn nhận
+  useEffect(() => {
+    if (days.length && form.date && !days.some((d) => d.key === form.date)) {
+      setForm((f) => ({ ...f, date: days[0].key }));
+    }
+  }, [days, form.date]);
 
   const pickupSlots = useMemo(() => {
     if (!form.date) return [];

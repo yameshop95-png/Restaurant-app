@@ -20,6 +20,7 @@ const SHOP_DEFAULTS = {
 
 const DEVICE_DEFAULTS = {
   dueSound: true, // kêu + rung khi đơn sắp tới giờ giao / trễ giờ
+  autoPrint: false, // tự in bill khi có đơn website mới; chỉ bật trên 1 máy để bill không in trùng
   lastBackupAt: null,
   // Ứng dụng bản đồ khi bấm địa chỉ / mở lộ trình: iPhone, iPad mặc định Apple Maps, máy khác Google Maps
   mapsApp:
