@@ -55,6 +55,11 @@ async function login() {
   if (anonError) throw new Error('Không mở được phiên: ' + anonError.message);
   const { data, error } = await supabase.rpc('pin_login', { pin: STAFF_PIN });
   if (error) throw new Error('Không đăng nhập được bằng PIN: ' + error.message);
+  if (data?.error === 'wrong') {
+    // Thử lại với PIN sai chỉ làm máy bị khoá, nên dừng hẳn để bạn sửa PIN
+    console.error('PIN sai. Kiểm tra mã PIN của tài khoản "Máy in quán" rồi chạy lại (đừng để nguyên chữ PIN_MAY_IN).');
+    process.exit(1);
+  }
   if (data?.error) throw new Error('PIN máy in bị từ chối: ' + data.error);
   console.log(`[${stamp()}] Đã đăng nhập máy in "${data?.name ?? 'máy in'}"`);
 }
