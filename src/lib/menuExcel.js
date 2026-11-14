@@ -1,5 +1,5 @@
 // Thực đơn <-> sheet Excel "Thực đơn"
-import { boldHeader, pickSheet, readSheets, today, writeSheets } from './excelFile';
+import { boldHeader, pickSheet, readSheets, today, writeSheets } from './excelFile.js';
 
 export const MENU_SHEET = 'Thực đơn';
 

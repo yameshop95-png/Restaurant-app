@@ -1,5 +1,5 @@
 // Danh bạ khách hàng <-> sheet Excel "Khách hàng"
-import { boldHeader, pickSheet, readSheets, today, writeSheets } from './excelFile';
+import { boldHeader, pickSheet, readSheets, today, writeSheets } from './excelFile.js';
 
 export const CUSTOMER_SHEET = 'Khách hàng';
 

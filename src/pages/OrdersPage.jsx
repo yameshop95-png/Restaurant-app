@@ -29,7 +29,7 @@ import useSwipe from '../hooks/useSwipe';
 import { dueInfo, formatDue } from '../lib/due';
 import { exportOrderList } from '../lib/orderListExcel';
 import { ORDER_TYPES, PAYMENT_METHODS, paymentLabel, PREVIOUS_STATUS, statusLabel } from '../lib/orderStatus';
-import { sendToShopPrinter } from '../lib/printQueue';
+import { sendManyToShopPrinter, sendToShopPrinter } from '../lib/printQueue';
 import { DEFAULT_ZONES } from '../lib/shippingZones';
 import { mapsUrl, shareOrder } from '../lib/shareOrder';
 import { formatMoney, itemsTotal, orderTotal } from '../lib/stats';
@@ -482,6 +482,24 @@ export default function OrdersPage({
     setTimeout(() => setExportMsg(null), 4000);
   };
 
+  // In lần lượt tất cả bill đang hiện trong danh sách (theo đúng thứ tự trên màn hình)
+  const [printing, setPrinting] = useState(false);
+  const printAll = async () => {
+    const label = searching ? 'kết quả tìm kiếm' : filterLabel(FILTERS.find((f) => f.id === filter));
+    if (!window.confirm(`In ${visible.length} bill (${ORDER_TYPES[type].label} · ${label}) lần lượt ra máy in ở quán?`)) return;
+    setPrinting(true);
+    try {
+      const n = await sendManyToShopPrinter(visible, settings.shopName, (done, total) =>
+        setExportMsg(`Đang gửi lệnh in ${done}/${total}…`),
+      );
+      setExportMsg(`Đã gửi ${n} bill ra máy in ở quán, máy sẽ in lần lượt`);
+    } catch {
+      setExportMsg('Gửi lệnh in bị gián đoạn, kiểm tra mạng rồi thử lại (bill đã gửi vẫn sẽ in)');
+    }
+    setPrinting(false);
+    setTimeout(() => setExportMsg(null), 6000);
+  };
+
   return (
     <div className="mx-auto max-w-2xl pb-24">
       {!fixedType && (
@@ -601,18 +619,27 @@ export default function OrdersPage({
               className={`min-h-[60vh] touch-pan-y ${!searching && slide ? (slide === 'next' ? 'animate-slide-next' : 'animate-slide-prev') : ''}`}
             >
               {visible.length > 0 && (
-                <div className="mb-3 flex items-center justify-between gap-2 px-1">
-                  <span className="text-sm text-slate-500">
+                <div className="mb-3 px-1">
+                  <p className="mb-2 text-sm text-slate-500">
                     {!searching && (filter === 'pending' || filter === 'done')
                       ? `Xếp theo ${ORDER_TYPES[type].timeLabel.toLowerCase()} sớm nhất`
                       : 'Mới nhất lên trước'}
-                  </span>
+                  </p>
+                  <div className="flex gap-2">
+                  <button
+                    onClick={printAll}
+                    disabled={printing}
+                    className="flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-800 active:bg-slate-100 disabled:opacity-50"
+                  >
+                    <Printer size={16} /> In tất cả ({visible.length})
+                  </button>
                   <button
                     onClick={exportExcel}
                     className="flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-800 active:bg-slate-100"
                   >
                     <FileSpreadsheet size={16} /> Xuất Excel
                   </button>
+                  </div>
                 </div>
               )}
               {exportMsg && (

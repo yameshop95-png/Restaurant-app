@@ -1,7 +1,7 @@
 // Đơn hàng <-> sheet Excel "Đơn hàng".
 // Mỗi dòng là một món trong đơn; các dòng cùng "Mã đơn" thuộc cùng một đơn.
-import { boldHeader, pickSheet, readSheets, today, writeSheets } from './excelFile';
-import { PAYMENT_METHODS, paymentLabel, STATUS_LABEL } from './orderStatus';
+import { boldHeader, pickSheet, readSheets, today, writeSheets } from './excelFile.js';
+import { PAYMENT_METHODS, paymentLabel, STATUS_LABEL } from './orderStatus.js';
 
 export const ORDER_SHEET = 'Đơn hàng';
 

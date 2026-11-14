@@ -21,3 +21,15 @@ export async function sendToShopPrinter(order, shopName) {
   if (error) throw error;
   return mode; // 'image' (có dấu) hoặc 'text' (không dấu)
 }
+
+// In lần lượt nhiều bill: gửi từng bill vào hàng đợi theo đúng thứ tự (máy tính ở quán in theo thứ tự gửi).
+// Trả về số bill đã gửi; dừng ngay khi có lỗi.
+export async function sendManyToShopPrinter(orders, shopName, onProgress) {
+  let sent = 0;
+  for (const order of orders) {
+    await sendToShopPrinter(order, shopName);
+    sent += 1;
+    onProgress?.(sent, orders.length);
+  }
+  return sent;
+}
