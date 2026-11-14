@@ -28,6 +28,13 @@ Mac / Linux: đặt các biến tương tự rồi chạy `node bridge.mjs`.
 
 Khi thấy dòng "Đang chờ lệnh in", máy đã sẵn sàng. Để máy tính này luôn bật và cùng mạng với máy in.
 
+## Tự chạy khi bật máy tính (Windows)
+
+1. Mở `start-bridge.bat` bằng Notepad, sửa dòng `set STAFF_PIN=` thành mã PIN của "Máy in quán" (và `PRINTER_NAME` nếu tên máy in trong Windows khác). Lưu lại.
+2. Bấm đúp `start-bridge.bat` để thử. Thấy "Đang chờ lệnh in" là được. Cầu nối tự chạy lại nếu bị lỗi mạng; nếu PIN sai thì dừng hẳn để khỏi bị khoá.
+3. Bấm đúp `install-autostart.bat` một lần: từ nay bật máy tính là cầu nối tự chạy (cửa sổ thu nhỏ ở thanh taskbar, đừng tắt).
+4. Đặt máy tính không tự ngủ: Settings → System → Power → Sleep = Never.
+
 ## Kiểm tra
 
 - In thử bằng cách bấm **In ở quán** trên một đơn. Bill phải ra máy trong vài giây.

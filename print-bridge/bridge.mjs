@@ -17,7 +17,7 @@ import { createClient } from '@supabase/supabase-js';
 const { SUPABASE_URL, SUPABASE_KEY, STAFF_PIN, PRINTER_NAME, PRINTER_IP = '192.168.1.100', PRINTER_PORT = 9100 } = process.env;
 if (!SUPABASE_URL || !SUPABASE_KEY || !STAFF_PIN) {
   console.error('Thiếu SUPABASE_URL, SUPABASE_KEY hoặc STAFF_PIN');
-  process.exit(1);
+  process.exit(2);
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
@@ -58,7 +58,7 @@ async function login() {
   if (data?.error === 'wrong') {
     // Thử lại với PIN sai chỉ làm máy bị khoá, nên dừng hẳn để bạn sửa PIN
     console.error('PIN sai. Kiểm tra mã PIN của tài khoản "Máy in quán" rồi chạy lại (đừng để nguyên chữ PIN_MAY_IN).');
-    process.exit(1);
+    process.exit(2);
   }
   if (data?.error) throw new Error('PIN máy in bị từ chối: ' + data.error);
   console.log(`[${stamp()}] Đã đăng nhập máy in "${data?.name ?? 'máy in'}"`);
