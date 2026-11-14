@@ -3,9 +3,10 @@ chcp 65001 >nul
 title Cau noi in bill - DUNG TAT cua so nay
 cd /d "%~dp0"
 
-rem ===== SUA 2 DONG DUOI DAY (mo file bang Notepad) =====
+rem ===== SUA DONG STAFF_PIN DUOI DAY (mo file bang Notepad) =====
 set STAFF_PIN=DAT_MA_PIN_MAY_IN_O_DAY
-set PRINTER_NAME=Uniwell
+rem May in qua mang (day LAN): dung PRINTER_IP. Neu in bang USB thi xoa dong PRINTER_IP va dat set PRINTER_NAME=Uniwell
+set PRINTER_IP=192.168.1.100
 rem ======================================================
 
 set SUPABASE_URL=https://hgkqcswzggsbpusrhpue.supabase.co
