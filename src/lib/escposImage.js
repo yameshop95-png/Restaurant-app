@@ -77,7 +77,7 @@ export function drawBill(order, shopName = '') {
   ctx.fillRect(0, y, WIDTH, titleHeight);
   ctx.fillStyle = '#fff';
   font(40, 800);
-  const title = isDelivery ? 'GIAO HÀNG' : 'ĐẾN LẤY';
+  const title = isDelivery ? 'DELIVERY' : 'PICK UP';
   ctx.fillText(title, (WIDTH - ctx.measureText(title).width) / 2, y + 10);
   ctx.fillStyle = '#000';
   y += titleHeight + 10;
@@ -134,7 +134,7 @@ export function canvasToEscpos(canvas) {
   const h = canvas.height;
   const px = canvas.getContext('2d').getImageData(0, 0, w, h).data;
   const bytesPerRow = w / 8;
-  const bytes = [ESC, 0x40];
+  const bytes = [ESC, 0x40, GS, 0x4c, 32, 0]; // lề trái 32 chấm (4mm) cho khỏi cắt mép giấy
   for (let top = 0; top < h; top += BAND) {
     const rows = Math.min(BAND, h - top);
     bytes.push(GS, 0x76, 0x30, 0x00, bytesPerRow & 0xff, bytesPerRow >> 8, rows & 0xff, rows >> 8);
@@ -158,6 +158,6 @@ export function canvasToEscpos(canvas) {
 export function billImageBase64(order, shopName) {
   const bytes = canvasToEscpos(drawBill(order, shopName));
   let bin = '';
-  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  for (let i = 0; i < bytes.length; i += 0x1000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x1000));
   return btoa(bin);
 }

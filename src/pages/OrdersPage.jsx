@@ -136,8 +136,10 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
               <button
                 onClick={async () => {
                   try {
-                    await sendToShopPrinter(order, shopName);
-                    setShareMsg('Đã gửi lệnh in ra máy ở quán');
+                    const mode = await sendToShopPrinter(order, shopName);
+                    setShareMsg(
+                      `Đã gửi lệnh in ra máy ở quán (${mode === 'image' ? 'bill ảnh có dấu' : 'bill chữ không dấu'})`,
+                    );
                   } catch {
                     setShareMsg('Chưa gửi được lệnh in, kiểm tra mạng rồi thử lại');
                   }

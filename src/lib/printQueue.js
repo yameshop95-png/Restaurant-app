@@ -6,16 +6,18 @@ import { billImageBase64 } from './escposImage';
 // In dạng hình ảnh (có đủ dấu tiếng Việt); nếu trình duyệt không vẽ được thì in chữ không dấu
 function payloadFor(order, shopName) {
   try {
-    return billImageBase64(order, shopName);
+    return { payload: billImageBase64(order, shopName), mode: 'image' };
   } catch {
-    return billBase64(order, shopName);
+    return { payload: billBase64(order, shopName), mode: 'text' };
   }
 }
 
 export async function sendToShopPrinter(order, shopName) {
+  const { payload, mode } = payloadFor(order, shopName);
   const { error } = await supabase.from('print_jobs').insert({
-    payload: payloadFor(order, shopName),
+    payload,
     note: `#${order.number}${order.customer?.name ? ' · ' + order.customer.name : ''}`,
   });
   if (error) throw error;
+  return mode; // 'image' (có dấu) hoặc 'text' (không dấu)
 }

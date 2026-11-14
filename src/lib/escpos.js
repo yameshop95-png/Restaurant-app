@@ -44,12 +44,16 @@ export function billBytes(order, shopName = '') {
   const cmd = (...b) => bytes.push(...b);
 
   cmd(ESC, 0x40); // khởi tạo máy
-  cmd(ESC, 0x61, 1); // căn giữa
-  cmd(ESC, 0x45, 1); // in đậm
-  cmd(GS, 0x21, 0x11); // chữ to gấp đôi
-  text(isDelivery ? 'GIAO HANG' : 'DEN LAY');
+  cmd(GS, 0x4c, 32, 0); // lề trái 32 chấm (4mm): chữ không bị cắt sát mép giấy
+  cmd(GS, 0x57, 0x40, 0x02); // vùng in rộng 576 chấm
+  // Tiêu đề chữ trắng nền đen (GS B), chữ to gấp đôi: 24 ký tự mỗi dòng
+  const title = isDelivery ? 'DELIVERY' : 'PICK UP';
+  const pad = Math.floor((24 - title.length) / 2);
+  cmd(GS, 0x42, 1);
+  cmd(GS, 0x21, 0x11);
+  text(' '.repeat(pad) + title + ' '.repeat(24 - pad - title.length));
   cmd(GS, 0x21, 0x00);
-  cmd(ESC, 0x45, 0);
+  cmd(GS, 0x42, 0);
   cmd(ESC, 0x61, 0); // căn trái
 
   if (shopName) text(ascii(shopName));
@@ -65,7 +69,7 @@ export function billBytes(order, shopName = '') {
   if (order.deliverAt) {
     const d = new Date(order.deliverAt);
     const when = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}  ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
-    text((isDelivery ? 'Giao ' : 'Lay ') + when);
+    text((isDelivery ? 'Deliver ' : 'Pick up ') + when);
   }
   text('-'.repeat(WIDTH));
 
@@ -75,9 +79,9 @@ export function billBytes(order, shopName = '') {
   }
   text('-'.repeat(WIDTH));
   if (isDelivery || order.shippingFee > 0)
-    text(line('Phi ship', formatMoney(order.shippingFee || 0).replace('A$', '')));
+    text(line('Delivery fee', formatMoney(order.shippingFee || 0).replace('A$', '')));
   cmd(ESC, 0x45, 1);
-  text(line('TONG', formatMoney(orderTotal(order)).replace('A$', '')));
+  text(line('TOTAL', formatMoney(orderTotal(order)).replace('A$', '')));
   cmd(ESC, 0x45, 0);
 
   text('');
