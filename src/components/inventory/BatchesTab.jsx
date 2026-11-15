@@ -16,7 +16,7 @@ function suggestLines(recipe, output, ingById) {
     .filter(Boolean);
 }
 
-function BatchSheet({ menu, ingredients, recipesById, costs, onSave, onClose }) {
+function BatchSheet({ menu, ingredients, recipesById, costsForWeek, onSave, onClose }) {
   const ingById = new Map(ingredients.map((i) => [i.id, i]));
   const [date, setDate] = useState(dateKey());
   const [productId, setProductId] = useState(menu[0]?.id ?? '');
@@ -40,7 +40,11 @@ function BatchSheet({ menu, ingredients, recipesById, costs, onSave, onClose }) 
     .map((l) => ({ ingredientId: l.ingredientId, qty: parseNum(l.qty), unit: l.unit }))
     .filter((l) => l.ingredientId && Number.isFinite(l.qty) && l.qty > 0);
   const extraValue = extraCost.trim() ? parseNum(extraCost) : 0;
-  const preview = batchCost({ lines: clean, extraCost: Number.isFinite(extraValue) ? extraValue : 0 }, costs, ingById);
+  const preview = batchCost(
+    { lines: clean, extraCost: Number.isFinite(extraValue) ? extraValue : 0 },
+    costsForWeek(weekStartKey(date)),
+    ingById,
+  );
   const dish = menu.find((m) => m.id === productId);
 
   const save = () => {
@@ -250,7 +254,7 @@ function ProductSheet({ product, onAdjust, onStop, onClose }) {
 
 // Mẻ sản xuất: món nào làm theo mẻ thì ghi mỗi mẻ (số phần làm ra, nguyên liệu dùng thật). App tính giá vốn thật
 // và thành phẩm còn lại / còn phải làm thêm cho các đơn đặt trước.
-export default function BatchesTab({ menu, inventory, costs, products }) {
+export default function BatchesTab({ menu, inventory, costsForWeek, products }) {
   const [adding, setAdding] = useState(false);
   const [viewing, setViewing] = useState(null);
   const ingredients = inventory.ingredients.list;
@@ -323,7 +327,7 @@ export default function BatchesTab({ menu, inventory, costs, products }) {
         ) : (
           <ul className="divide-y divide-slate-200 overflow-hidden rounded-3xl border border-slate-200 bg-card shadow-sm">
             {inventory.batches.list.slice(0, 100).map((b) => {
-              const c = batchCost(b, costs, ingById);
+              const c = batchCost(b, costsForWeek(weekStartKey(b.date)), ingById);
               return (
                 <li key={b.id} className="flex items-center gap-3 px-4 py-3">
                   <div className="min-w-0 flex-1">
@@ -352,8 +356,8 @@ export default function BatchesTab({ menu, inventory, costs, products }) {
         )}
       </section>
       <p className="px-1 text-xs text-slate-500">
-        Món làm theo mẻ: nguyên liệu bị trừ khi ghi mẻ (số thật), mỗi phần bán trừ vào thành phẩm. Giá vốn mỗi phần = chi phí 3 mẻ gần
-        nhất / số phần, cộng chi phí hộp, túi ghi ở Công thức.
+        Món làm theo mẻ: nguyên liệu bị trừ khi ghi mẻ (số thật), mỗi phần bán trừ vào thành phẩm. Giá vốn mỗi phần = chi phí các mẻ trong
+        tuần / số phần (giá nguyên liệu theo giá nhập trung bình tuần làm mẻ), cộng chi phí hộp, túi ghi ở Công thức.
       </p>
 
       {adding && (
@@ -361,7 +365,7 @@ export default function BatchesTab({ menu, inventory, costs, products }) {
           menu={menu}
           ingredients={ingredients}
           recipesById={recipesById}
-          costs={costs}
+          costsForWeek={costsForWeek}
           onSave={save}
           onClose={() => setAdding(false)}
         />

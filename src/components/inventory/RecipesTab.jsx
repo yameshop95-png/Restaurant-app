@@ -145,7 +145,7 @@ function RecipeSheet({ dish, recipe, ingredients, costs, onSave, onClear, onClos
 
       <div className="rounded-2xl bg-slate-50 p-3 text-sm">
         <p className="flex justify-between text-slate-700">
-          <span>Giá vốn 1 phần{batch ? ' (theo công thức)' : ''}</span>
+          <span>Giá vốn 1 phần (giá chuẩn{batch ? ', theo công thức' : ''})</span>
           <b>{money(preview.cost)}</b>
         </p>
         <p className="flex justify-between text-slate-700">

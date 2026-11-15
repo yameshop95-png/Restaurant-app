@@ -24,7 +24,7 @@ function writer(table) {
   };
 }
 
-function useTable(table, sort) {
+function useTable(table, sort = (list) => list) {
   const { list, setList, ready, loadError } = useCloudList(table, { fromRow, sort, write: writer(table) });
   return {
     list,
@@ -32,10 +32,10 @@ function useTable(table, sort) {
     loadError,
     add: (data) => {
       const id = data.id ?? newId();
-      setList((prev) => [...prev, { ...data, id }]);
+      setList((prev) => sort([...prev, { ...data, id }])); // giữ đúng thứ tự (VD: ngày mới nhất lên đầu)
       return id;
     },
-    update: (id, patch) => setList((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x))),
+    update: (id, patch) => setList((prev) => sort(prev.map((x) => (x.id === id ? { ...x, ...patch } : x)))),
     remove: (id) => setList((prev) => prev.filter((x) => x.id !== id)),
   };
 }

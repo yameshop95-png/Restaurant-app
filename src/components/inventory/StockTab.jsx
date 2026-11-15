@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { AlertTriangle, Plus } from 'lucide-react';
-import { ADJUST_REASONS, UNITS, dateKey } from '../../lib/inventory';
+import { ADJUST_REASONS, UNITS, dateKey, fmtKey } from '../../lib/inventory';
 import { Card, Field, PrimaryButton, Sheet, inputClass, money, parseNum, qtyText } from './ui';
 
-function IngredientSheet({ level, ingredients, adjustments, onSave, onDelete, onClose }) {
+function IngredientSheet({ level, ingredients, adjustments, weeks = [], onSave, onDelete, onClose }) {
   const ing = level?.ingredient;
   const [name, setName] = useState(ing?.name ?? '');
   const [unit, setUnit] = useState(ing?.unit ?? 'kg');
   const [min, setMin] = useState(ing?.minStock ? String(ing.minStock) : '');
+  const [standard, setStandard] = useState(ing?.standardPrice ? String(ing.standardPrice) : '');
   const [count, setCount] = useState('');
   const [waste, setWaste] = useState('');
   const [error, setError] = useState(null);
@@ -18,7 +19,9 @@ function IngredientSheet({ level, ingredients, adjustments, onSave, onDelete, on
     if (ingredients.some((i) => i.id !== ing?.id && i.name.trim().toLowerCase() === name.trim().toLowerCase()))
       return setError('Đã có nguyên liệu này');
     if (!Number.isFinite(minValue) || minValue < 0) return setError('Mức cảnh báo chưa đúng');
-    onSave({ name: name.trim(), unit, minStock: minValue });
+    const stdValue = standard.trim() ? parseNum(standard) : 0;
+    if (!Number.isFinite(stdValue) || stdValue < 0) return setError('Giá chuẩn chưa đúng');
+    onSave({ name: name.trim(), unit, minStock: minValue, standardPrice: Math.round(stdValue * 100) / 100 });
     onClose();
   };
 
@@ -73,6 +76,34 @@ function IngredientSheet({ level, ingredients, adjustments, onSave, onDelete, on
         </Field>
       </div>
 
+      <Field
+        label={`Giá chuẩn (A$ / ${unit})`}
+        hint="Giá mua thường ngày, không tính sale. Dùng để xem lãi mỗi món và ước tính tiền đi chợ. Để trống thì dùng giá nhập gần nhất."
+      >
+        <input inputMode="decimal" value={standard} onChange={(e) => setStandard(e.target.value)} placeholder="VD: 10.50" className={inputClass(false)} />
+      </Field>
+
+      {weeks.length > 0 && (
+        <div>
+          <p className="mb-1 text-sm font-semibold text-slate-700">Giá nhập trung bình theo tuần (có tính sale)</p>
+          <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200 text-sm">
+            {[...weeks]
+              .reverse()
+              .slice(0, 8)
+              .map((w) => (
+                <li key={w.week} className="flex justify-between px-3 py-2">
+                  <span className="text-slate-600">
+                    Tuần {fmtKey(w.week).slice(0, 5)} · {qtyText(w.qty)} {ing?.unit ?? unit}
+                  </span>
+                  <b className="text-slate-900">
+                    {money(w.avg)}/{ing?.unit ?? unit}
+                  </b>
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
+
       {ing && (
         <>
           <div className="rounded-2xl bg-slate-50 p-3 text-sm text-slate-700">
@@ -112,7 +143,7 @@ function IngredientSheet({ level, ingredients, adjustments, onSave, onDelete, on
 }
 
 // Tồn kho từng nguyên liệu, cảnh báo sắp hết, kiểm kho
-export default function StockTab({ levels, inventory }) {
+export default function StockTab({ levels, inventory, weekly = new Map() }) {
   const [editing, setEditing] = useState(null); // null | 'new' | level
   const totalValue = levels.reduce((s, l) => s + l.value, 0);
   const lowCount = levels.filter((l) => l.low || l.negative).length;
@@ -146,7 +177,8 @@ export default function StockTab({ levels, inventory }) {
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-slate-900">{l.ingredient.name}</p>
                   <p className="text-xs text-slate-500">
-                    {l.unitCost != null ? `${money(l.unitCost)} / ${l.ingredient.unit}` : 'Chưa có giá nhập'}
+                    {l.unitCost != null ? `TB tuần ${money(l.unitCost)}/${l.ingredient.unit}` : 'Chưa có giá nhập'}
+                    {l.ingredient.standardPrice > 0 ? ` · chuẩn ${money(l.ingredient.standardPrice)}` : ''}
                     {l.tracked ? '' : ' · chưa nhập kho'}
                   </p>
                 </div>
@@ -172,6 +204,7 @@ export default function StockTab({ levels, inventory }) {
           level={editing === 'new' ? null : editing}
           ingredients={levels.map((l) => l.ingredient)}
           adjustments={inventory.adjustments}
+          weeks={editing === 'new' ? [] : (weekly.get(editing.ingredient.id) ?? [])}
           onSave={(data) =>
             editing === 'new' ? inventory.ingredients.add(data) : inventory.ingredients.update(editing.ingredient.id, data)
           }

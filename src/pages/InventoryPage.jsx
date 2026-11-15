@@ -8,7 +8,16 @@ import ShoppingTab from '../components/inventory/ShoppingTab';
 import StockTab from '../components/inventory/StockTab';
 import { Card, money, qtyText } from '../components/inventory/ui';
 import useInventory from '../hooks/useInventory';
-import { ingredientCosts, productLevels, profitReport, shoppingList, stockLevels } from '../lib/inventory';
+import {
+  costTable,
+  ingredientCosts,
+  productLevels,
+  profitReport,
+  shoppingList,
+  standardCosts,
+  stockLevels,
+  weeklyPrices,
+} from '../lib/inventory';
 import { PERIODS, periodRange, shiftPeriod } from '../lib/report';
 
 const TABS = [
@@ -180,7 +189,8 @@ function Overview({ report, levels, products, onGo }) {
         </Card>
       )}
       <p className="px-1 text-xs text-slate-500">
-        Lãi = doanh thu (đơn không huỷ, gồm phí ship) − giá vốn món đã bán (theo công thức và giá nhập hiện tại) − chi phí khác.
+        Lãi = doanh thu (đơn không huỷ, gồm phí ship) − giá vốn món đã bán − chi phí khác. Giá nguyên liệu tính theo giá nhập
+        trung bình của từng tuần, có tính cả lần mua được sale.
         Dòng tiền tính theo tiền thực chi mua hàng trong kỳ nên có thể khác lãi.
       </p>
     </div>
@@ -206,6 +216,9 @@ function InventoryOwner({ tab, setTab, orders, menu, shopName }) {
   const batches = inventory.batches.list;
 
   const costs = useMemo(() => ingredientCosts(ingredients, purchases), [ingredients, purchases]);
+  const stdCosts = useMemo(() => standardCosts(ingredients, purchases), [ingredients, purchases]);
+  const costsForWeek = useMemo(() => costTable(purchases), [purchases]);
+  const weekly = useMemo(() => weeklyPrices(purchases), [purchases]);
   const data = useMemo(
     () => ({ ingredients, purchases, adjustments, orders, menu, recipes, batches }),
     [ingredients, purchases, adjustments, orders, menu, recipes, batches],
@@ -248,10 +261,10 @@ function InventoryOwner({ tab, setTab, orders, menu, shopName }) {
       )}
       {inventory.ready && tab === 'overview' && <Overview report={report} levels={levels} products={products} onGo={setTab} />}
       {inventory.ready && tab === 'shopping' && <ShoppingTab list={shopping} shopName={shopName} onGo={setTab} />}
-      {inventory.ready && tab === 'batches' && <BatchesTab menu={menu} inventory={inventory} costs={costs} products={products} />}
-      {inventory.ready && tab === 'stock' && <StockTab levels={levels} inventory={inventory} />}
+      {inventory.ready && tab === 'batches' && <BatchesTab menu={menu} inventory={inventory} costsForWeek={costsForWeek} products={products} />}
+      {inventory.ready && tab === 'stock' && <StockTab levels={levels} inventory={inventory} weekly={weekly} />}
       {inventory.ready && tab === 'purchases' && <PurchasesTab inventory={inventory} />}
-      {inventory.ready && tab === 'recipes' && <RecipesTab menu={menu} inventory={inventory} costs={costs} products={products} />}
+      {inventory.ready && tab === 'recipes' && <RecipesTab menu={menu} inventory={inventory} costs={stdCosts} products={products} />}
       {inventory.ready && tab === 'expenses' && <ExpensesTab inventory={inventory} />}
     </div>
   );

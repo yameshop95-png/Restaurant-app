@@ -15,6 +15,8 @@ function PurchaseSheet({ ingredients, onSave, onClose }) {
   const q = parseNum(qty);
   const t = parseNum(total);
   const unitPrice = q > 0 && t >= 0 && total.trim() ? t / q : null;
+  const standard = Number(ing?.standardPrice) || 0;
+  const saved = unitPrice != null && standard > 0 && unitPrice < standard ? (standard - unitPrice) * q : 0;
 
   const save = () => {
     if (!ing) return setError('Chọn nguyên liệu (thêm ở mục Kho nếu chưa có)');
@@ -56,6 +58,11 @@ function PurchaseSheet({ ingredients, onSave, onClose }) {
           <input inputMode="decimal" value={total} onChange={(e) => setTotal(e.target.value)} placeholder="VD: 120" className={inputClass(false)} />
         </Field>
       </div>
+      {saved > 0 && (
+        <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
+          Rẻ hơn giá chuẩn {money(standard)}/{ing.unit}: tiết kiệm {money(saved)}
+        </p>
+      )}
       <Field label="Nơi mua (không bắt buộc)">
         <input value={supplier} onChange={(e) => setSupplier(e.target.value)} placeholder="VD: Chợ, Costco, Woolworths" className={inputClass(false)} />
       </Field>
@@ -72,12 +79,20 @@ export default function PurchasesTab({ inventory }) {
   const purchases = inventory.purchases.list;
   const monthKey = dateKey().slice(0, 7);
   const monthTotal = purchases.filter((p) => String(p.date).startsWith(monthKey)).reduce((s, p) => s + Number(p.total || 0), 0);
+  // Tiền tiết kiệm của 1 lần nhập so với giá chuẩn (mua được sale)
+  const savedOf = (p) => {
+    const std = Number(ingById.get(p.ingredientId)?.standardPrice) || 0;
+    const qty = Number(p.qty) || 0;
+    return std > 0 && qty > 0 ? Math.max(0, std * qty - Number(p.total || 0)) : 0;
+  };
+  const monthSaved = purchases.filter((p) => String(p.date).startsWith(monthKey)).reduce((s, p) => s + savedOf(p), 0);
 
   return (
     <div className="space-y-4">
       <div className="rounded-3xl border border-slate-200 bg-card p-4 shadow-sm">
         <p className="text-sm text-slate-500">Chi mua hàng tháng này</p>
         <p className="mt-1 text-2xl font-extrabold text-slate-900">{money(monthTotal)}</p>
+        {monthSaved > 0 && <p className="mt-1 text-sm font-semibold text-emerald-600">Tiết kiệm nhờ mua sale: {money(monthSaved)}</p>}
       </div>
       <PrimaryButton
         onClick={() => (ingredients.length ? setOpen(true) : window.alert('Thêm nguyên liệu ở mục Kho trước, rồi ghi nhập hàng.'))}
@@ -99,6 +114,7 @@ export default function PurchasesTab({ inventory }) {
                   <p className="text-xs text-slate-500">
                     {fmtKey(p.date)} · {qtyText(Number(p.qty))} {ing?.unit ?? ''}
                     {p.supplier ? ` · ${p.supplier}` : ''}
+                    {savedOf(p) > 0 && <span className="font-semibold text-emerald-600"> · sale, tiết kiệm {money(savedOf(p))}</span>}
                   </p>
                 </div>
                 <p className="font-bold text-slate-900">{money(Number(p.total || 0))}</p>
@@ -115,7 +131,8 @@ export default function PurchasesTab({ inventory }) {
         </ul>
       )}
       <p className="px-1 text-xs text-slate-500">
-        Giá vốn nguyên liệu = trung bình có trọng số của 5 lần nhập gần nhất. Mua nguyên liệu mới thì thêm ở mục Kho trước.
+        Giá vốn nguyên liệu = giá nhập trung bình của từng tuần, có tính cả lần mua sale. Đặt "giá chuẩn" (giá thường) ở mục Kho để
+        app báo tiền tiết kiệm khi mua sale. Mua nguyên liệu mới thì thêm ở mục Kho trước.
       </p>
 
       {open && <PurchaseSheet ingredients={ingredients} onSave={(d) => inventory.purchases.add(d)} onClose={() => setOpen(false)} />}
