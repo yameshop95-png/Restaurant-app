@@ -4,7 +4,7 @@ import { startTracking, trackView } from './tracker';
 import { BASE, dishList, parseRoute, publicData } from './lib';
 import { applyMeta, pageMeta } from './seo';
 import { SITE_TEXT } from './text';
-import { CartBar, Footer, Nav, SiteContext } from './ui';
+import { CartBar, Footer, MessengerButton, Nav, SiteContext } from './ui';
 import Blog from './pages/Blog';
 import Checkout from './pages/Checkout';
 import Dish from './pages/Dish';
@@ -144,6 +144,7 @@ export default function SiteApp({ initialPath, initialData }) {
         <main className="flex-1 pb-24">{page}</main>
         <Footer />
         <CartBar />
+        <MessengerButton />
       </div>
     </SiteContext.Provider>
   );

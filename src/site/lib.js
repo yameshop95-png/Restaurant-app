@@ -11,7 +11,8 @@ export const path = (p = '') => `${BASE}${p}`;
 // Blog bật: trang /order/blog và từng bài được dựng sẵn, có trong sitemap.
 export const BLOG_ENABLED = true;
 // Trang mạng xã hội của quán (chân trang + dữ liệu cho Google)
-export const SOCIAL = { facebook: 'https://www.facebook.com/share/19sRx1kTJc/' };
+// messenger: link m.me/<tên trang hoặc id trang>. Để trống thì nút Messenger mở trang Facebook (khách bấm "Nhắn tin" ở đó).
+export const SOCIAL = { facebook: 'https://www.facebook.com/share/19sRx1kTJc/', messenger: '' };
 
 const key = (s) =>
   normalizeText(s ?? '')

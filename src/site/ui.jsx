@@ -356,6 +356,30 @@ export function Footer() {
   );
 }
 
+// Nút Messenger nổi góc dưới bên phải: khách bấm để nhắn tin cho quán. Có thanh giỏ hàng thì nằm cao lên cho khỏi che.
+export function MessengerButton() {
+  const { cart, dishes, route, lang, mounted } = useSite();
+  const cartShown =
+    mounted && route.name !== 'checkout' && dishes.some((d) => d.id && cart[d.id] > 0);
+  const label = lang === 'vi' ? 'Nhắn tin cho quán qua Messenger' : 'Message us on Messenger';
+  return (
+    <a
+      href={SOCIAL.messenger || SOCIAL.facebook}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      title={label}
+      className={`group fixed right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-[linear-gradient(135deg,#0099ff,#a033ff_60%,#ff5280)] text-white shadow-[0_14px_30px_-10px_rgba(16,26,36,0.6)] transition-[bottom] duration-300 sm:right-6 ${
+        cartShown ? 'bottom-[calc(6rem+env(safe-area-inset-bottom))]' : 'bottom-[calc(1rem+env(safe-area-inset-bottom))] sm:bottom-6'
+      }`}
+    >
+      <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" fill="currentColor">
+        <path d="M12 2C6.36 2 2 6.13 2 11.7c0 2.91 1.19 5.44 3.14 7.17.16.15.26.35.27.57l.05 1.78a.8.8 0 0 0 1.12.71l1.99-.88a.8.8 0 0 1 .53-.04c.91.25 1.88.39 2.9.39 5.64 0 10-4.13 10-9.7S17.64 2 12 2Zm6 7.46-2.93 4.66a1.5 1.5 0 0 1-2.17.4l-2.33-1.75a.6.6 0 0 0-.72 0l-3.15 2.4c-.42.32-.97-.18-.69-.63l2.93-4.66a1.5 1.5 0 0 1 2.17-.4l2.33 1.75a.6.6 0 0 0 .72 0l3.15-2.4c.42-.32.97.18.69.63Z" />
+      </svg>
+    </a>
+  );
+}
+
 // Thanh giỏ hàng dưới đáy (trừ trang đặt món)
 export function CartBar() {
   const { cart, dishes, route, t, mounted } = useSite();
