@@ -159,9 +159,10 @@ export function Logo({ size = 'h-11 w-11', text = 'text-lg sm:text-xl', imgClass
   );
 }
 
-// Header thu nhỏ liên tục theo quãng đã cuộn (0 → 64px): chiều cao hàng logo và cỡ logo cùng giảm theo một tiến độ 0..1,
-// nên không còn khoảng trắng và không có ngưỡng bật/tắt để nháy. Header cố định (fixed) và có một khoảng đệm cao bằng
-// cỡ đầy đủ trong trang, nên header thu nhỏ không làm nội dung nhảy hay đổi scrollY.
+// Header thu nhỏ liên tục theo quãng đã cuộn (0 → 64px). Chỉ dùng transform (dịch lên + co logo), không đổi chiều cao hay
+// bố cục nào, nên mỗi khung hình chỉ tốn việc ghép lớp (nhẹ, mượt cả trên Safari điện thoại) và không có khoảng trắng:
+// cả header dịch lên một đoạn, phần trắng phía trên trượt ra khỏi màn hình, logo và nút hạ xuống giữa phần còn thấy.
+// Header cố định (fixed) có khoảng đệm đủ cỡ trong trang, nên thu nhỏ không làm nội dung nhảy hay đổi scrollY.
 const HEADER_SHRINK_PX = 64;
 export function headerProgress(scrollY) {
   return Math.max(0, Math.min(1, scrollY / HEADER_SHRINK_PX));
@@ -209,7 +210,7 @@ export function Nav() {
       <div aria-hidden="true" className="site-header-spacer" />
       <header
         ref={headerRef}
-        className="site-header fixed inset-x-0 top-0 z-30 bg-page/95 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(16,26,36,0.06)] backdrop-blur"
+        className="site-header fixed inset-x-0 top-0 z-30 bg-page pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(16,26,36,0.06)]"
       >
       <div className="header-row mx-auto flex max-w-6xl items-center gap-3 px-4 sm:px-6">
         <Logo
@@ -232,7 +233,7 @@ export function Nav() {
           </Link>
         </div>
       </div>
-      <nav className="mx-auto flex h-12 max-w-6xl items-center gap-5 overflow-x-auto px-4 sm:gap-10 sm:px-6">
+      <nav className="mx-auto flex h-11 max-w-6xl items-center gap-5 overflow-x-auto px-4 sm:gap-10 sm:px-6">
         {item(path('/menu'), t.nav.menu, route.name === 'menu' || route.name === 'dish')}
         {item(
           path('/#delivery'),

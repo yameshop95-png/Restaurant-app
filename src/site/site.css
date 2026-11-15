@@ -41,15 +41,15 @@
 /* Kích cỡ header: đầy đủ → thu nhỏ. Màn hình lớn (sm) logo to hơn. */
 :root {
   --hdr-row: 5.5rem;
-  --hdr-row-min: 4rem;
+  --hdr-shift: 2rem;
   --hdr-img-min: 0.6875;
-  --hdr-txt-min: 0.72;
+  --hdr-txt-min: 0.68;
   --hdr-txt-shift: -1.25rem;
 }
 @media (min-width: 640px) {
   :root {
     --hdr-row: 8rem;
-    --hdr-row-min: 4.5rem;
+    --hdr-shift: 4rem;
     --hdr-img-min: 0.4583;
     --hdr-txt-min: 0.6667;
     --hdr-txt-shift: -3.25rem;
@@ -69,27 +69,32 @@
   .btn-accent {
     @apply bg-blue-500 shadow-[0_16px_30px_-10px_rgba(234,109,39,0.55)] hover:bg-blue-600;
   }
-  /* Header thu nhỏ theo --p (0..1, đặt bằng JS theo scrollY): chiều cao hàng, cỡ logo và vị trí chữ cùng nội suy */
+  /* Header thu nhỏ theo --p (0..1, đặt bằng JS theo scrollY). Chỉ transform: cả header dịch lên --hdr-shift, logo co lại,
+     logo và nút hạ xuống nửa đoạn đó để nằm giữa phần còn thấy. Không đổi chiều cao hay bố cục. */
+  .site-header {
+    --p: 0;
+    transform: translateY(calc(var(--hdr-shift) * var(--p) * -1));
+    will-change: transform;
+  }
   .header-row {
-    height: calc(var(--hdr-row) - (var(--hdr-row) - var(--hdr-row-min)) * var(--p));
+    height: var(--hdr-row);
+  }
+  .header-row > * {
+    translate: 0 calc(var(--hdr-shift) * var(--p) / 2);
+    will-change: transform;
   }
   .header-img {
     transform-origin: left center;
     scale: calc(1 - (1 - var(--hdr-img-min)) * var(--p));
-    will-change: transform;
   }
   .header-txt {
     transform-origin: left center;
     scale: calc(1 - (1 - var(--hdr-txt-min)) * var(--p));
     translate: calc(var(--hdr-txt-shift) * var(--p)) 0;
-    will-change: transform;
   }
-  .site-header {
-    --p: 0;
-  }
-  /* Khoảng đệm trong trang bằng cỡ đầy đủ của header (hàng logo + hàng mục h-12 + vùng an toàn) */
+  /* Khoảng đệm trong trang bằng cỡ đầy đủ của header (hàng logo + hàng mục h-11 + vùng an toàn) */
   .site-header-spacer {
-    height: calc(var(--hdr-row) + 3rem + env(safe-area-inset-top));
+    height: calc(var(--hdr-row) + 2.75rem + env(safe-area-inset-top));
   }
   .deco {
     @apply pointer-events-none absolute select-none;
