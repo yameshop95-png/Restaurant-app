@@ -1,7 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { createHash } from 'node:crypto';
 import { VitePWA } from 'vite-plugin-pwa';
+import { flattenLayers } from './scripts/flatten-css-layers.mjs';
 
 // Website đặt món của khách không phải app nhận order: bỏ nút "cài app" và service worker của app khỏi trang đó
 const orderPageWithoutPwa = {
@@ -13,6 +15,39 @@ const orderPageWithoutPwa = {
       ctx.path.endsWith('order.html')
         ? html.replace(/<link rel="manifest"[^>]*>/, '').replace(/<script id="vite-plugin-pwa:register-sw"[^>]*><\/script>/, '')
         : html,
+  },
+};
+
+// Safari cũ (iOS / iPadOS trước 15.4) không hiểu @layer nên bỏ qua toàn bộ CSS của Tailwind v4 (app hiện chữ trơn).
+// Bỏ vỏ @layer trong file CSS khi build, rồi đặt lại tên file theo nội dung mới (để máy đã lưu bản cũ phải tải bản mới)
+// và sửa mọi chỗ trỏ tới tên cũ (HTML, JS). Trình duyệt mới hiển thị y như cũ.
+const cssForOldSafari = {
+  name: 'css-for-old-safari',
+  enforce: 'post',
+  generateBundle(_, bundle) {
+    const renames = [];
+    for (const [key, file] of Object.entries(bundle)) {
+      if (file.type !== 'asset' || !key.endsWith('.css')) continue;
+      const css = flattenLayers(String(file.source));
+      const hash = createHash('sha256').update(css).digest('base64url').slice(0, 8);
+      const next = key.replace(/-[\w-]{8}\.css$/, `-${hash}.css`);
+      file.source = css;
+      if (next !== key) {
+        file.fileName = next;
+        delete bundle[key];
+        bundle[next] = file;
+        renames.push([key.split('/').pop(), next.split('/').pop()]);
+      }
+    }
+    if (!renames.length) return;
+    const swap = (text) => renames.reduce((t, [from, to]) => t.split(from).join(to), text);
+    for (const file of Object.values(bundle)) {
+      if (file.type === 'chunk') file.code = swap(file.code);
+      else if (/\.(html|js|json|webmanifest)$/.test(file.fileName)) file.source = swap(String(file.source));
+      if (file.viteMetadata?.importedCss) {
+        file.viteMetadata.importedCss = new Set([...file.viteMetadata.importedCss].map(swap));
+      }
+    }
   },
 };
 
@@ -30,6 +65,7 @@ export default defineConfig(({ isSsrBuild }) => ({
     : [
     react(),
     tailwindcss(),
+    cssForOldSafari,
     // Cài app ra màn hình chính + mở được khi mạng yếu (lưu sẵn giao diện app trên máy)
     VitePWA({
       registerType: 'autoUpdate',
