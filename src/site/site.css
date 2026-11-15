@@ -38,9 +38,21 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .header-mark {
-    transition: none;
+/* Kích cỡ header: đầy đủ → thu nhỏ. Màn hình lớn (sm) logo to hơn. */
+:root {
+  --hdr-row: 5.5rem;
+  --hdr-row-min: 4rem;
+  --hdr-img-min: 0.6875;
+  --hdr-txt-min: 0.72;
+  --hdr-txt-shift: -1.25rem;
+}
+@media (min-width: 640px) {
+  :root {
+    --hdr-row: 8rem;
+    --hdr-row-min: 4.5rem;
+    --hdr-img-min: 0.4583;
+    --hdr-txt-min: 0.6667;
+    --hdr-txt-shift: -3.25rem;
   }
 }
 
@@ -57,12 +69,27 @@
   .btn-accent {
     @apply bg-blue-500 shadow-[0_16px_30px_-10px_rgba(234,109,39,0.55)] hover:bg-blue-600;
   }
-  /* Logo thu nhỏ bằng scale/translate. Không animate width, height hay padding. */
-  .header-mark {
+  /* Header thu nhỏ theo --p (0..1, đặt bằng JS theo scrollY): chiều cao hàng, cỡ logo và vị trí chữ cùng nội suy */
+  .header-row {
+    height: calc(var(--hdr-row) - (var(--hdr-row) - var(--hdr-row-min)) * var(--p));
+  }
+  .header-img {
     transform-origin: left center;
-    transition-property: transform, translate, scale, opacity;
-    transition-duration: 300ms;
-    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    scale: calc(1 - (1 - var(--hdr-img-min)) * var(--p));
+    will-change: transform;
+  }
+  .header-txt {
+    transform-origin: left center;
+    scale: calc(1 - (1 - var(--hdr-txt-min)) * var(--p));
+    translate: calc(var(--hdr-txt-shift) * var(--p)) 0;
+    will-change: transform;
+  }
+  .site-header {
+    --p: 0;
+  }
+  /* Khoảng đệm trong trang bằng cỡ đầy đủ của header (hàng logo + hàng mục h-12 + vùng an toàn) */
+  .site-header-spacer {
+    height: calc(var(--hdr-row) + 3rem + env(safe-area-inset-top));
   }
   .deco {
     @apply pointer-events-none absolute select-none;
