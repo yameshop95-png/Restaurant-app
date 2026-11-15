@@ -1,3 +1,4 @@
+import { TAGLINE } from '../lib/brand';
 import { CATEGORIES } from './data/dishes';
 import { formatPhoneTel, PICKUP_CLOSE, PICKUP_OPEN } from './format';
 import { dishText, findPost, path, SITE_URL, SOCIAL, sortedPosts } from './lib';
@@ -110,7 +111,7 @@ export function pageMeta(route, data, dishes) {
     default:
       return {
         title: `Bánh cuốn & giò chả in Albury–Wodonga | ${name}`,
-        description: t.homeDescription,
+        description: `${TAGLINE}. ${t.homeDescription}`,
         path: path(),
         jsonLd: { '@context': 'https://schema.org', ...business },
       };

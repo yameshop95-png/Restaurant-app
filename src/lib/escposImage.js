@@ -1,5 +1,6 @@
 // Bill in ra máy nhiệt dưới dạng HÌNH ẢNH (ESC/POS raster, khổ 80mm = 576 chấm), nên in được đủ dấu tiếng Việt
 // mà không phụ thuộc bảng mã chữ của máy. Vẽ bằng canvas trong trình duyệt rồi đổi thành ảnh đen trắng.
+import { TAGLINE } from './brand';
 import { formatMoney, orderTotal } from './stats';
 
 const WIDTH = 536; // 72mm = 576 chấm, trừ lề trái 32 chấm và 8 chấm an toàn để không bị cắt mép phải
@@ -82,7 +83,12 @@ export function drawBill(order, shopName = '') {
   ctx.fillStyle = '#000';
   y += titleHeight + 10;
 
-  if (shopName) centered(shopName, 36, 800); // tên quán to và đậm
+  if (shopName) {
+    centered(shopName, 36, 800); // tên quán to và đậm
+    font(22, 400, true); // khẩu hiệu nhỏ, nghiêng, căn giữa
+    ctx.fillText(TAGLINE, (WIDTH - ctx.measureText(TAGLINE).width) / 2, y);
+    y += 32;
+  }
   centered(`#${order.number}`, 28, 700);
   centered(order.customer?.name ?? order.note ?? '', 34, 700);
   if (isDelivery && order.customer?.address) {

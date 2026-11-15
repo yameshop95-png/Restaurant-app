@@ -17,7 +17,7 @@ export const SITE_TEXT = {
     homeDescription:
       'Homemade Vietnamese food in Wodonga. Pre-order online for Saturday pickup (6 am–9 pm) or delivery. Other days by request.',
     seeMenu: 'See the menu',
-    heroKicker: 'Made every week · Albury–Wodonga',
+    heroKicker: 'Old Roots, Fresh Flavour',
     freshBadge: 'Fresh · Weekly · Food-safe',
     specialTitle: 'Popular dishes',
     specialText: 'Made every week from fresh ingredients, the traditional way.',
@@ -109,7 +109,7 @@ export const SITE_TEXT = {
     heroText:
       'Bánh cuốn, giò chả và các món quê nhà, làm mới mỗi tuần từ nguyên liệu tươi, bếp sạch, đảm bảo vệ sinh an toàn thực phẩm. Đặt trước online, nhận hàng thứ 7, 6 giờ sáng đến 9 giờ tối, ngày khác theo yêu cầu, hoặc giao sáng thứ 7.',
     seeMenu: 'Xem thực đơn',
-    heroKicker: 'Làm mới mỗi tuần · Albury–Wodonga',
+    heroKicker: 'Old Roots, Fresh Flavour',
     freshBadge: 'Tươi · Mới mỗi tuần · An toàn',
     specialTitle: 'Món đặc biệt',
     specialText: 'Nguyên liệu tươi, làm mới mỗi tuần theo kiểu truyền thống.',

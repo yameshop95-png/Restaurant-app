@@ -1,5 +1,6 @@
 // Bill cho máy in nhiệt ESC/POS (máy Uniwell UP-A1, khổ 80mm, 48 ký tự / dòng).
 // Máy in nhiệt không có dấu tiếng Việt nên bỏ dấu, giữ nguyên chữ cái và số. Trả về chuỗi base64 để lưu vào hàng đợi in.
+import { TAGLINE } from './brand';
 import { formatMoney, orderTotal } from './stats';
 
 const WIDTH = 48;
@@ -64,6 +65,7 @@ export function billBytes(order, shopName = '') {
     for (const w of wrap(shopName, 22)) text(w);
     cmd(GS, 0x21, 0x00);
     cmd(ESC, 0x45, 0);
+    text(TAGLINE); // khẩu hiệu, chữ thường, căn giữa
     cmd(ESC, 0x61, 0);
   }
   text('#' + order.number + '  ' + ascii(order.createdBy ?? ''));

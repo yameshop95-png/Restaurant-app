@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Facebook, Mail, MapPin, Minus, Phone, Plus, ShoppingBag } from 'lucide-react';
+import { TAGLINE } from '../lib/brand';
 import { formatMoney } from '../lib/stats';
 import { TEXT as ORDER_TEXT } from '../order/i18n';
 import { formatAddressDisplay, formatClock, formatPhoneDisplay, formatPhoneTel } from './format';
@@ -260,7 +261,8 @@ export function Footer() {
       <div className="mx-auto grid max-w-6xl gap-10 px-4 pt-14 sm:px-6 grid-cols-2 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
         <div className="col-span-2 md:col-span-1">
           <Logo size="h-12 w-12" />
-          <p className="mt-5 max-w-sm leading-7 text-slate-500">{t.footerAbout}</p>
+          <p className="mt-3 font-serif text-lg italic text-ink">{TAGLINE}</p>
+          <p className="mt-3 max-w-sm leading-7 text-slate-500">{t.footerAbout}</p>
           <p className={`${head} mt-6`}>{t.ordering}</p>
           <dl className="grid grid-cols-3 gap-4 text-[15px] leading-7 text-slate-500">
             <div>
