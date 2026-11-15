@@ -159,13 +159,11 @@ export function Logo({ size = 'h-11 w-11', text = 'text-lg sm:text-xl', imgClass
   );
 }
 
-// Header thu nhỏ liên tục theo quãng đã cuộn (0 → 64px). Chỉ dùng transform (dịch lên + co logo), không đổi chiều cao hay
-// bố cục nào, nên mỗi khung hình chỉ tốn việc ghép lớp (nhẹ, mượt cả trên Safari điện thoại) và không có khoảng trắng:
-// cả header dịch lên một đoạn, phần trắng phía trên trượt ra khỏi màn hình, logo và nút hạ xuống giữa phần còn thấy.
-// Header cố định (fixed) có khoảng đệm đủ cỡ trong trang, nên thu nhỏ không làm nội dung nhảy hay đổi scrollY.
-const HEADER_SHRINK_PX = 64;
-export function headerProgress(scrollY) {
-  return Math.max(0, Math.min(1, scrollY / HEADER_SHRINK_PX));
+// Header có 2 trạng thái: đầy đủ (ở đầu trang) và thu gọn (đã lướt xuống). JS chỉ bật / tắt data-compact khi vượt ngưỡng,
+// còn chuyển động là CSS transition chạy trên GPU. Không cập nhật theo từng pixel cuộn: trên iPhone, Safari cuộn quán tính
+// ở luồng riêng nên JS chạy theo scrollY luôn trễ một nhịp, làm logo giật. Có khoảng trễ (vào 48px, ra 8px) để không nhấp nháy.
+export function headerCompact(compact, scrollY) {
+  return compact ? scrollY > 8 : scrollY > 48;
 }
 
 // Thanh trên cùng: hàng 1 logo to + tên quán đầy đủ, hàng 2 các mục. Lướt xuống thì logo thu về cỡ thường.
@@ -175,25 +173,16 @@ export function Nav() {
   useEffect(() => {
     const el = headerRef.current;
     if (!el) return undefined;
-    let frame = 0;
-    let last = -1;
-    const read = () => {
-      frame = 0;
-      const p = headerProgress(window.scrollY);
-      if (Math.abs(p - last) < 0.002) return;
-      last = p;
-      el.style.setProperty('--p', p.toFixed(3));
+    let compact = false;
+    const update = () => {
+      const next = headerCompact(compact, window.scrollY);
+      if (next === compact) return;
+      compact = next;
+      el.dataset.compact = next ? 'true' : 'false';
     };
-    const onScroll = () => {
-      if (frame) return;
-      frame = requestAnimationFrame(read);
-    };
-    read();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      if (frame) cancelAnimationFrame(frame);
-    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
   }, []);
   const item = (to, label, active) => (
     <Link
@@ -210,6 +199,7 @@ export function Nav() {
       <div aria-hidden="true" className="site-header-spacer" />
       <header
         ref={headerRef}
+        data-compact="false"
         className="site-header fixed inset-x-0 top-0 z-30 bg-page pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(16,26,36,0.06)]"
       >
       <div className="header-row mx-auto flex max-w-6xl items-center gap-3 px-4 sm:px-6">

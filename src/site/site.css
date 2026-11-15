@@ -69,28 +69,51 @@
   .btn-accent {
     @apply bg-blue-500 shadow-[0_16px_30px_-10px_rgba(234,109,39,0.55)] hover:bg-blue-600;
   }
-  /* Header thu nhỏ theo --p (0..1, đặt bằng JS theo scrollY). Chỉ transform: cả header dịch lên --hdr-shift, logo co lại,
+  /* Header 2 trạng thái (data-compact do JS bật khi lướt qua 48px). Chỉ transform + transition nên chạy trên GPU,
+     mượt cả khi Safari iPhone đang cuộn quán tính: cả header dịch lên --hdr-shift, logo co lại,
      logo và nút hạ xuống nửa đoạn đó để nằm giữa phần còn thấy. Không đổi chiều cao hay bố cục. */
-  .site-header {
-    --p: 0;
-    transform: translateY(calc(var(--hdr-shift) * var(--p) * -1));
+  .site-header,
+  .header-row > *,
+  .header-img,
+  .header-txt {
+    transition-duration: 0.32s;
+    transition-timing-function: cubic-bezier(0.22, 0.8, 0.25, 1);
     will-change: transform;
+  }
+  .site-header {
+    transition-property: transform;
   }
   .header-row {
     height: var(--hdr-row);
   }
   .header-row > * {
-    translate: 0 calc(var(--hdr-shift) * var(--p) / 2);
-    will-change: transform;
+    transition-property: translate;
   }
-  .header-img {
-    transform-origin: left center;
-    scale: calc(1 - (1 - var(--hdr-img-min)) * var(--p));
-  }
+  .header-img,
   .header-txt {
     transform-origin: left center;
-    scale: calc(1 - (1 - var(--hdr-txt-min)) * var(--p));
-    translate: calc(var(--hdr-txt-shift) * var(--p)) 0;
+    transition-property: scale, translate;
+  }
+  .site-header[data-compact='true'] {
+    transform: translateY(calc(var(--hdr-shift) * -1));
+  }
+  .site-header[data-compact='true'] .header-row > * {
+    translate: 0 calc(var(--hdr-shift) / 2);
+  }
+  .site-header[data-compact='true'] .header-img {
+    scale: var(--hdr-img-min);
+  }
+  .site-header[data-compact='true'] .header-txt {
+    scale: var(--hdr-txt-min);
+    translate: var(--hdr-txt-shift) 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .site-header,
+    .header-row > *,
+    .header-img,
+    .header-txt {
+      transition: none;
+    }
   }
   /* Khoảng đệm trong trang bằng cỡ đầy đủ của header (hàng logo + hàng mục h-11 + vùng an toàn) */
   .site-header-spacer {
