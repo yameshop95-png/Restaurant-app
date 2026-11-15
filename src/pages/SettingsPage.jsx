@@ -9,6 +9,7 @@ import {
   Smartphone,
   Map as MapIcon,
   Store,
+  Sun,
   Trash2,
   Upload,
   Users,
@@ -352,6 +353,36 @@ function AlertSettings({ settings, onUpdateSettings }) {
   );
 }
 
+// Máy để ở quán mở app cả ngày (iPad): giữ màn hình luôn sáng
+function KeepAwakeSettings({ settings, onUpdateSettings }) {
+  const supported = typeof navigator !== 'undefined' && 'wakeLock' in navigator;
+  return (
+    <section className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-card px-5 py-4 shadow-sm">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
+        <Sun size={22} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <h2 className="font-bold text-slate-900">Giữ màn hình luôn sáng</h2>
+        <p className="text-sm text-slate-500">
+          Bật trên máy để ở quán (iPad) để màn hình không tự tắt khi đang mở app. Nhớ cắm sạc.
+          {!supported && ' Trình duyệt này chưa hỗ trợ, hãy đặt Tự động khoá = Không bao giờ trong Cài đặt của máy.'}
+        </p>
+      </div>
+      <button
+        role="switch"
+        aria-checked={!!settings.keepAwake}
+        aria-label="Giữ màn hình luôn sáng"
+        onClick={() => onUpdateSettings({ keepAwake: !settings.keepAwake })}
+        className={`relative h-8 w-14 shrink-0 rounded-full transition ${settings.keepAwake ? 'bg-blue-500' : 'bg-slate-300'}`}
+      >
+        <span
+          className={`absolute top-1 h-6 w-6 rounded-full bg-card shadow transition-all ${settings.keepAwake ? 'left-7' : 'left-1'}`}
+        />
+      </button>
+    </section>
+  );
+}
+
 // Tự in bill đơn website mới: chỉ bật trên 1 máy luôn mở app (ví dụ điện thoại / máy tính ở quán)
 function AutoPrintSettings({ settings, onUpdateSettings }) {
   return (
@@ -427,6 +458,7 @@ export default function SettingsPage({
       <MapsSettings settings={settings} onUpdateSettings={onUpdateSettings} />
       <AlertSettings settings={settings} onUpdateSettings={onUpdateSettings} />
       <AutoPrintSettings settings={settings} onUpdateSettings={onUpdateSettings} />
+      <KeepAwakeSettings settings={settings} onUpdateSettings={onUpdateSettings} />
 
       {isOwner && (
         <>

@@ -501,7 +501,7 @@ export default function OrdersPage({
   };
 
   return (
-    <div className="mx-auto max-w-2xl pb-24">
+    <div className="mx-auto max-w-2xl pb-24 md:max-w-5xl">
       {!fixedType && (
         <div className="mb-3 grid grid-cols-2 gap-2">
           {Object.entries(ORDER_TYPES).map(([id, info]) => {
@@ -657,7 +657,8 @@ export default function OrdersPage({
                       : 'Chưa có đơn'}
                 </p>
               ) : (
-                <ul className="space-y-3">
+                // Màn rộng (iPad, máy tính): 2 cột đơn để nhìn được nhiều đơn cùng lúc
+                <ul className="space-y-3 md:grid md:grid-cols-2 md:items-start md:gap-3 md:space-y-0">
                   {visible.map((order) => (
                     <OrderCard
                       key={order.id}

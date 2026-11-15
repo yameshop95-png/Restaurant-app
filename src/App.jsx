@@ -5,6 +5,7 @@ import PinLogin from './components/PinLogin';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import UndoToast from './components/UndoToast';
+import useAlwaysOn from './hooks/useAlwaysOn';
 import useAuth from './hooks/useAuth';
 import useCustomers from './hooks/useCustomers';
 import useMenu from './hooks/useMenu';
@@ -95,6 +96,7 @@ function Shop({ account, onLogout }) {
     setToast({ label: `Đơn #${order.number}: ${what}`, undo: () => setPaid(id, wasPaid, paymentMethod, paidAt) });
   };
   const { settings, updateSettings } = useSettings();
+  useAlwaysOn(settings.keepAwake);
   const now = useNow();
   const upcoming = upcomingOrders(orders, now, 60);
 
