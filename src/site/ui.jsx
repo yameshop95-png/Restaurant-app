@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Facebook, Mail, Minus, Phone, Plus, ShoppingBag } from 'lucide-react';
 import { TAGLINE } from '../lib/brand';
 import { formatMoney } from '../lib/stats';
@@ -159,28 +159,35 @@ export function Logo({ size = 'h-11 w-11', text = 'text-lg sm:text-xl', imgClass
   );
 }
 
-// Thu logo khi đã lướt qua 64px, chỉ nở lại khi gần như về đầu trang.
-// Chiều cao hàng logo giữ nguyên (scale, không đổi width/height/padding) kẻo nội dung
-// nhảy lên làm scrollY tụt xuống dưới ngưỡng rồi lặp.
-export function headerCompact(compact, scrollY) {
-  return compact ? scrollY >= 16 : scrollY > 64;
+// Header thu nhỏ liên tục theo quãng đã cuộn (0 → 64px): chiều cao hàng logo và cỡ logo cùng giảm theo một tiến độ 0..1,
+// nên không còn khoảng trắng và không có ngưỡng bật/tắt để nháy. Header cố định (fixed) và có một khoảng đệm cao bằng
+// cỡ đầy đủ trong trang, nên header thu nhỏ không làm nội dung nhảy hay đổi scrollY.
+const HEADER_SHRINK_PX = 64;
+export function headerProgress(scrollY) {
+  return Math.max(0, Math.min(1, scrollY / HEADER_SHRINK_PX));
 }
 
 // Thanh trên cùng: hàng 1 logo to + tên quán đầy đủ, hàng 2 các mục. Lướt xuống thì logo thu về cỡ thường.
 export function Nav() {
   const { t, lang, setLang, route } = useSite();
-  const [compact, setCompact] = useState(false);
+  const headerRef = useRef(null);
   useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return undefined;
     let frame = 0;
+    let last = -1;
     const read = () => {
       frame = 0;
-      setCompact((on) => headerCompact(on, window.scrollY));
+      const p = headerProgress(window.scrollY);
+      if (Math.abs(p - last) < 0.002) return;
+      last = p;
+      el.style.setProperty('--p', p.toFixed(3));
     };
     const onScroll = () => {
       if (frame) return;
       frame = requestAnimationFrame(read);
     };
-    onScroll();
+    read();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       window.removeEventListener('scroll', onScroll);
@@ -197,23 +204,20 @@ export function Nav() {
       {label}
     </Link>
   );
-  const mark = 'header-mark';
   return (
-    <header
-      data-compact={compact ? 'true' : 'false'}
-      className="sticky top-0 z-30 bg-page/95 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(16,26,36,0.06)] backdrop-blur"
-    >
-      <div className="mx-auto flex h-[5.5rem] max-w-6xl items-center gap-3 px-4 sm:h-32 sm:px-6">
+    <>
+      <div aria-hidden="true" className="site-header-spacer" />
+      <header
+        ref={headerRef}
+        className="site-header fixed inset-x-0 top-0 z-30 bg-page/95 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(16,26,36,0.06)] backdrop-blur"
+      >
+      <div className="header-row mx-auto flex max-w-6xl items-center gap-3 px-4 sm:px-6">
         <Logo
           tagline
           size="h-16 w-16 sm:h-24 sm:w-24"
           text="inline-block text-[22px] sm:text-3xl"
-          imgClass={compact ? `${mark} scale-[0.6875] sm:scale-[0.4583]` : `${mark} scale-100`}
-          textClass={
-            compact
-              ? `${mark} -translate-x-5 scale-[0.8182] sm:-translate-x-[52px] sm:scale-[0.6667]`
-              : `${mark} translate-x-0 scale-100`
-          }
+          imgClass="header-img"
+          textClass="header-txt"
         />
         <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           <button
@@ -228,7 +232,7 @@ export function Nav() {
           </Link>
         </div>
       </div>
-      <nav className="mx-auto flex max-w-6xl items-center gap-5 overflow-x-auto px-4 sm:gap-10 sm:px-6">
+      <nav className="mx-auto flex h-12 max-w-6xl items-center gap-5 overflow-x-auto px-4 sm:gap-10 sm:px-6">
         {item(path('/menu'), t.nav.menu, route.name === 'menu' || route.name === 'dish')}
         {item(
           path('/#delivery'),
@@ -247,7 +251,8 @@ export function Nav() {
           {t.nav.order}
         </Link>
       </nav>
-    </header>
+      </header>
+    </>
   );
 }
 
