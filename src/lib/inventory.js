@@ -4,7 +4,17 @@ import { normalizeText } from './text.js';
 import { orderTotal } from './stats.js';
 
 export const UNITS = ['kg', 'g', 'lít', 'ml', 'cái', 'gói', 'hộp', 'túi', 'chai', 'bó', 'khay'];
-export const EXPENSE_CATEGORIES = ['Bao bì', 'Xăng / vận chuyển', 'Điện nước', 'Thuê chỗ', 'Quảng cáo', 'Lương', 'Dụng cụ', 'Khác'];
+export const EXPENSE_CATEGORIES = [
+  'Bao bì',
+  'Đồ dùng chung',
+  'Xăng / vận chuyển',
+  'Điện nước',
+  'Thuê chỗ',
+  'Quảng cáo',
+  'Lương',
+  'Dụng cụ',
+  'Khác',
+];
 export const ADJUST_REASONS = { count: 'Kiểm kho', waste: 'Hao hụt / hỏng', other: 'Khác' };
 
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);

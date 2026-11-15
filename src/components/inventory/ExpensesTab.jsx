@@ -51,7 +51,7 @@ function ExpenseSheet({ onSave, onClose }) {
         </div>
       </Field>
       <Field label="Ghi chú (không bắt buộc)">
-        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="VD: túi nilon, tiền xăng giao hàng" className={inputClass(false)} />
+        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="VD: găng tay, nước rửa, tiền xăng giao hàng" className={inputClass(false)} />
       </Field>
     </Sheet>
   );
