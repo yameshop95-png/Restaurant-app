@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-import { compatibleUnits, recipeCost } from '../../lib/inventory';
+import { compatibleUnits, dateKey, recipeCost, weekStartKey } from '../../lib/inventory';
 import { Card, Field, PrimaryButton, Sheet, inputClass, money, parseNum } from './ui';
 
 function RecipeSheet({ dish, recipe, ingredients, costs, onSave, onClear, onClose }) {
   const ingById = new Map(ingredients.map((i) => [i.id, i]));
   const [lines, setLines] = useState(() => (recipe?.lines ?? []).map((l) => ({ ...l, qty: String(l.qty) })));
   const [extra, setExtra] = useState(recipe?.extra ? String(recipe.extra) : '');
+  const [batch, setBatch] = useState(Boolean(recipe?.batch));
 
   const clean = lines
     .map((l) => ({ ingredientId: l.ingredientId, qty: parseNum(l.qty), unit: l.unit }))
@@ -43,7 +44,12 @@ function RecipeSheet({ dish, recipe, ingredients, costs, onSave, onClear, onClos
           )}
           <PrimaryButton
             onClick={() => {
-              onSave({ lines: clean, extra: Number.isFinite(extraValue) && extraValue > 0 ? extraValue : 0 });
+              onSave({
+                lines: clean,
+                extra: Number.isFinite(extraValue) && extraValue > 0 ? extraValue : 0,
+                batch,
+                batchSince: batch ? (recipe?.batch && recipe.batchSince) || weekStartKey(dateKey()) : (recipe?.batchSince ?? null),
+              });
               onClose();
             }}
             className="flex-1"
@@ -128,9 +134,18 @@ function RecipeSheet({ dish, recipe, ingredients, costs, onSave, onClear, onClos
         <input inputMode="decimal" value={extra} onChange={(e) => setExtra(e.target.value)} placeholder="0" className={inputClass(false)} />
       </Field>
 
+      <label className="flex items-start gap-3 rounded-2xl border border-slate-200 p-3">
+        <input type="checkbox" checked={batch} onChange={(e) => setBatch(e.target.checked)} className="mt-1 h-5 w-5 shrink-0" />
+        <span className="text-sm text-slate-700">
+          <b className="block text-slate-900">Món này làm theo mẻ</b>
+          Nguyên liệu trừ khi ghi mẻ ở mục Mẻ, giá vốn tính theo mẻ thật. Công thức ở trên vẫn dùng để gợi ý nguyên liệu khi ghi mẻ
+          và lập danh sách đi chợ.
+        </span>
+      </label>
+
       <div className="rounded-2xl bg-slate-50 p-3 text-sm">
         <p className="flex justify-between text-slate-700">
-          <span>Giá vốn 1 phần</span>
+          <span>Giá vốn 1 phần{batch ? ' (theo công thức)' : ''}</span>
           <b>{money(preview.cost)}</b>
         </p>
         <p className="flex justify-between text-slate-700">
@@ -149,11 +164,12 @@ function RecipeSheet({ dish, recipe, ingredients, costs, onSave, onClear, onClos
 }
 
 // Công thức từng món: giá vốn, lãi trên mỗi phần
-export default function RecipesTab({ menu, inventory, costs }) {
+export default function RecipesTab({ menu, inventory, costs, products = [] }) {
   const [editing, setEditing] = useState(null);
   const ingredients = inventory.ingredients.list;
   const ingById = new Map(ingredients.map((i) => [i.id, i]));
   const recipesById = new Map(inventory.recipes.list.map((r) => [r.id, r]));
+  const productById = new Map(products.map((p) => [p.menuItem.id, p]));
 
   return (
     <div className="space-y-4">
@@ -169,7 +185,10 @@ export default function RecipesTab({ menu, inventory, costs }) {
         <ul className="divide-y divide-slate-200 overflow-hidden rounded-3xl border border-slate-200 bg-card shadow-sm">
           {menu.map((m) => {
             const recipe = recipesById.get(m.id);
-            const rc = recipeCost(recipe, costs, ingById);
+            const base = recipeCost(recipe, costs, ingById);
+            const byBatch = productById.get(m.id)?.unitCost;
+            // Món làm theo mẻ đã có mẻ: giá vốn theo mẻ thật
+            const rc = byBatch != null ? { ...base, cost: byBatch, hasRecipe: true, missing: productById.get(m.id).missing } : base;
             const margin = Number(m.price) - rc.cost;
             return (
               <li key={m.id}>
@@ -179,6 +198,7 @@ export default function RecipesTab({ menu, inventory, costs }) {
                     <p className="text-xs text-slate-500">
                       Giá bán {money(Number(m.price))}
                       {rc.hasRecipe ? ` · giá vốn ${money(rc.cost)}` : ''}
+                      {recipe?.batch ? ' · theo mẻ' : ''}
                       {rc.missing.length > 0 && ' · thiếu giá nhập'}
                     </p>
                   </div>

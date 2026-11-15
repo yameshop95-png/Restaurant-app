@@ -50,17 +50,23 @@ export default function useInventory() {
   const adjustments = useTable('inv_adjustments', byDateDesc);
   const expenses = useTable('inv_expenses', byDateDesc);
   const recipes = useTable('inv_recipes', (list) => list);
+  const batches = useTable('inv_batches', byDateDesc);
 
   const all = [ingredients, purchases, adjustments, expenses, recipes];
+  const missing = (t) => /inv_|relation|does not exist|schema cache/i.test(t.loadError ?? '');
   return {
     ingredients,
     purchases,
     adjustments,
     expenses,
     recipes,
+    batches,
+    // Bảng mẻ thêm sau (sql/inventory_batches.sql): chưa có thì các mục khác vẫn chạy, chỉ mục Mẻ báo cần cài
+    batchesMissing: missing(batches),
+    batchesReady: batches.ready,
     ready: all.every((t) => t.ready),
     // Bảng chưa tạo trên máy chủ (chưa chạy sql/inventory.sql)
-    missingTables: all.some((t) => /inv_|relation|does not exist|schema cache/i.test(t.loadError ?? '')),
+    missingTables: all.some(missing),
     loadError: all.map((t) => t.loadError).find(Boolean) ?? null,
   };
 }

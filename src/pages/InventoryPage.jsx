@@ -1,23 +1,27 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import BatchesTab from '../components/inventory/BatchesTab';
 import ExpensesTab from '../components/inventory/ExpensesTab';
 import PurchasesTab from '../components/inventory/PurchasesTab';
 import RecipesTab from '../components/inventory/RecipesTab';
+import ShoppingTab from '../components/inventory/ShoppingTab';
 import StockTab from '../components/inventory/StockTab';
 import { Card, money, qtyText } from '../components/inventory/ui';
 import useInventory from '../hooks/useInventory';
-import { ingredientCosts, profitReport, stockLevels } from '../lib/inventory';
+import { ingredientCosts, productLevels, profitReport, shoppingList, stockLevels } from '../lib/inventory';
 import { PERIODS, periodRange, shiftPeriod } from '../lib/report';
 
 const TABS = [
   ['overview', 'Lãi lỗ'],
+  ['shopping', 'Đi chợ'],
+  ['batches', 'Mẻ'],
   ['stock', 'Kho'],
   ['purchases', 'Nhập hàng'],
   ['recipes', 'Công thức'],
   ['expenses', 'Chi phí'],
 ];
 
-function Overview({ report, levels, onGo }) {
+function Overview({ report, levels, products, onGo }) {
   const [kind, setKind] = useState('month');
   const [anchor, setAnchor] = useState(() => new Date());
   const range = useMemo(() => periodRange(kind, anchor), [kind, anchor]);
@@ -111,6 +115,24 @@ function Overview({ report, levels, onGo }) {
         </div>
       )}
 
+      {products.some((p) => p.toMake > 0) && (
+        <Card title="Cần làm thêm cho đơn đặt trước">
+          <ul className="mt-2 divide-y divide-slate-100 border-t border-slate-200">
+            {products
+              .filter((p) => p.toMake > 0)
+              .map((p) => (
+                <li key={p.menuItem.id} className="flex justify-between px-5 py-2.5">
+                  <span className="font-semibold text-slate-900">{p.menuItem.name}</span>
+                  <span className="font-bold text-red-500">{qtyText(p.toMake)} phần</span>
+                </li>
+              ))}
+          </ul>
+          <button onClick={() => onGo('shopping')} className="px-5 pb-4 pt-1 text-sm font-semibold text-blue-600">
+            Xem danh sách đi chợ
+          </button>
+        </Card>
+      )}
+
       {low.length > 0 && (
         <Card title="Sắp hết hàng">
           <ul className="mt-2 divide-y divide-slate-100 border-t border-slate-200">
@@ -166,31 +188,32 @@ function Overview({ report, levels, onGo }) {
 }
 
 // Inventory Management (chỉ chủ quán): lãi lỗ, kho, nhập hàng, công thức món, chi phí
-export default function InventoryPage({ isOwner, orders, menu }) {
+export default function InventoryPage({ isOwner, orders, menu, settings }) {
   const [tab, setTab] = useState('overview');
   if (!isOwner) {
     return <p className="mx-auto max-w-md rounded-3xl bg-card px-5 py-10 text-center text-slate-500">Chỉ chủ quán xem được mục này</p>;
   }
-  return <InventoryOwner tab={tab} setTab={setTab} orders={orders} menu={menu} />;
+  return <InventoryOwner tab={tab} setTab={setTab} orders={orders} menu={menu} shopName={settings?.shopName} />;
 }
 
-function InventoryOwner({ tab, setTab, orders, menu }) {
+function InventoryOwner({ tab, setTab, orders, menu, shopName }) {
   const inventory = useInventory();
   const ingredients = inventory.ingredients.list;
   const purchases = inventory.purchases.list;
   const adjustments = inventory.adjustments.list;
   const expenses = inventory.expenses.list;
   const recipes = inventory.recipes.list;
+  const batches = inventory.batches.list;
 
   const costs = useMemo(() => ingredientCosts(ingredients, purchases), [ingredients, purchases]);
-  const levels = useMemo(
-    () => stockLevels({ ingredients, purchases, adjustments, orders, menu, recipes }),
-    [ingredients, purchases, adjustments, orders, menu, recipes],
+  const data = useMemo(
+    () => ({ ingredients, purchases, adjustments, orders, menu, recipes, batches }),
+    [ingredients, purchases, adjustments, orders, menu, recipes, batches],
   );
-  const report = useMemo(
-    () => (range) => profitReport({ range, orders, menu, recipes, ingredients, purchases, expenses }),
-    [orders, menu, recipes, ingredients, purchases, expenses],
-  );
+  const levels = useMemo(() => stockLevels(data), [data]);
+  const products = useMemo(() => productLevels(data), [data]);
+  const shopping = useMemo(() => shoppingList(data), [data]);
+  const report = useMemo(() => (range) => profitReport({ ...data, range, expenses }), [data, expenses]);
 
   if (inventory.missingTables) {
     return (
@@ -223,10 +246,12 @@ function InventoryOwner({ tab, setTab, orders, menu }) {
           {inventory.loadError ? `Chưa tải được: ${inventory.loadError}. Đang thử lại…` : 'Đang tải dữ liệu…'}
         </p>
       )}
-      {inventory.ready && tab === 'overview' && <Overview report={report} levels={levels} onGo={setTab} />}
+      {inventory.ready && tab === 'overview' && <Overview report={report} levels={levels} products={products} onGo={setTab} />}
+      {inventory.ready && tab === 'shopping' && <ShoppingTab list={shopping} shopName={shopName} onGo={setTab} />}
+      {inventory.ready && tab === 'batches' && <BatchesTab menu={menu} inventory={inventory} costs={costs} products={products} />}
       {inventory.ready && tab === 'stock' && <StockTab levels={levels} inventory={inventory} />}
       {inventory.ready && tab === 'purchases' && <PurchasesTab inventory={inventory} />}
-      {inventory.ready && tab === 'recipes' && <RecipesTab menu={menu} inventory={inventory} costs={costs} />}
+      {inventory.ready && tab === 'recipes' && <RecipesTab menu={menu} inventory={inventory} costs={costs} products={products} />}
       {inventory.ready && tab === 'expenses' && <ExpensesTab inventory={inventory} />}
     </div>
   );

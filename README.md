@@ -83,6 +83,8 @@ Tab **Inventory Management** trong menu: lãi lỗ theo tuần / tháng / năm, 
 - Cài một lần: chạy file `sql/inventory.sql` trong SQL Editor của project restaurant-app (tạo 5 bảng `inv_*`, chỉ chủ quán đọc / ghi).
 - Giá vốn nguyên liệu = trung bình có trọng số của 5 lần nhập gần nhất. Tồn kho = nhập + điều chỉnh (kiểm kho, hao hụt) − dùng cho đơn bán (theo công thức), tính từ ngày có bút toán đầu tiên của nguyên liệu đó.
 - Lãi = doanh thu (đơn không huỷ, gồm phí ship) − giá vốn món đã bán − chi phí khác. Dòng tiền = bán − tiền mua hàng − chi phí khác.
+- **Đi chợ:** từ các đơn Chờ xử lý + công thức + tồn kho, app tính món cần làm thêm và nguyên liệu cần mua (giữ mức "Báo khi còn ≤").
+- **Mẻ:** ghi mỗi mẻ (món, số phần làm ra, nguyên liệu dùng thật). Món có mẻ tự chuyển sang làm theo mẻ từ đầu tuần của mẻ đó: nguyên liệu trừ khi ghi mẻ, mỗi phần bán trừ vào thành phẩm, giá vốn = chi phí 3 mẻ gần nhất / số phần (+ chi phí hộp, túi trong công thức). Cần chạy thêm `sql/inventory_batches.sql` một lần.
 - Tính toán nằm ở `src/lib/inventory.js`, giao diện ở `src/pages/InventoryPage.jsx` và `src/components/inventory/`.
 
 ## Sao lưu email hằng tuần

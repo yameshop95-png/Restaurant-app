@@ -23,9 +23,14 @@ create table if not exists public.inv_expenses (
   data jsonb not null default '{}'::jsonb,       -- { date, category, amount, note }
   created_at timestamptz not null default now()
 );
+create table if not exists public.inv_batches (
+  id uuid primary key default gen_random_uuid(),
+  data jsonb not null default '{}'::jsonb,       -- { date, productId, output, lines, extraCost, note }
+  created_at timestamptz not null default now()
+);
 create table if not exists public.inv_recipes (
   id uuid primary key,                           -- trùng id món trong thực đơn (mỗi món 1 công thức)
-  data jsonb not null default '{}'::jsonb,       -- { lines: [{ ingredientId, qty, unit }], extra }
+  data jsonb not null default '{}'::jsonb,       -- { lines: [{ ingredientId, qty, unit }], extra, batch, batchSince }
   created_at timestamptz not null default now()
 );
 
@@ -35,7 +40,7 @@ declare
   who text := case when to_regprocedure('public.is_owner()') is not null
                    then 'public.is_owner()' else 'public.is_member()' end;
 begin
-  foreach t in array array['inv_ingredients', 'inv_purchases', 'inv_adjustments', 'inv_expenses', 'inv_recipes'] loop
+  foreach t in array array['inv_ingredients', 'inv_purchases', 'inv_adjustments', 'inv_expenses', 'inv_recipes', 'inv_batches'] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('drop policy if exists %I on public.%I', t || '_all', t);
     execute format(
