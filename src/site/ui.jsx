@@ -142,13 +142,18 @@ export function SectionTitle({ title, text, align = 'center', as: H = 'h2' }) {
   );
 }
 
-export function Logo({ size = 'h-11 w-11', text = 'text-lg sm:text-xl', imgClass = '', textClass = '' }) {
+export function Logo({ size = 'h-11 w-11', text = 'text-lg sm:text-xl', imgClass = '', textClass = '', tagline = false }) {
   const { shop, t } = useSite();
   return (
     <Link to={path()} className="flex min-w-0 items-center gap-3">
       <img src={shop.logo || '/logo-round.svg'} alt="" className={`${size} shrink-0 rounded-full ${imgClass}`} />
       <span className={`${text} font-bold leading-tight tracking-tight text-ink ${textClass}`}>
         {shop.shopName || t.defaultName}
+        {tagline && (
+          <span className="mt-0.5 block text-[12px] font-medium italic leading-tight tracking-normal text-blue-500 sm:text-base">
+            {TAGLINE}
+          </span>
+        )}
       </span>
     </Link>
   );
@@ -200,6 +205,7 @@ export function Nav() {
     >
       <div className="mx-auto flex h-[5.5rem] max-w-6xl items-center gap-3 px-4 sm:h-32 sm:px-6">
         <Logo
+          tagline
           size="h-16 w-16 sm:h-24 sm:w-24"
           text="inline-block text-[22px] sm:text-3xl"
           imgClass={compact ? `${mark} scale-[0.6875] sm:scale-[0.4583]` : `${mark} scale-100`}
