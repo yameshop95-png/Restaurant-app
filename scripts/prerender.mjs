@@ -28,6 +28,8 @@ async function loadData() {
 const { render, routes, SITE } = await import(pathToFileURL(path.resolve('dist-ssr/entry-server.js')).href);
 const template = await fs.readFile(path.join(DIST, 'order.html'), 'utf8');
 const data = await loadData();
+// Địa chỉ quán không đưa lên website (cả trong dữ liệu nhúng vào trang)
+if (data?.shop) delete data.shop.shopAddress;
 const dataScript = `<script>window.__SITE_DATA__=${JSON.stringify(data).replace(/</g, '\\u003c')}</script>`;
 const indexable = [];
 

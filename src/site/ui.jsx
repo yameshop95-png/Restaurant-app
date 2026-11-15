@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { Facebook, Mail, MapPin, Minus, Phone, Plus, ShoppingBag } from 'lucide-react';
+import { Facebook, Mail, Minus, Phone, Plus, ShoppingBag } from 'lucide-react';
 import { TAGLINE } from '../lib/brand';
 import { formatMoney } from '../lib/stats';
 import { TEXT as ORDER_TEXT } from '../order/i18n';
-import { formatAddressDisplay, formatClock, formatPhoneDisplay, formatPhoneTel } from './format';
+import { formatClock, formatPhoneDisplay, formatPhoneTel } from './format';
 import { BLOG_ENABLED, dishText, orderingRules, path, photoAlt, SOCIAL } from './lib';
 
 export const SiteContext = createContext(null);

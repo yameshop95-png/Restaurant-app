@@ -152,3 +152,10 @@ export function orderingRules(shop) {
     cutoff: web.deliveryCutoff || '20:00',
   };
 }
+
+// Địa chỉ quán không đưa lên website: bỏ khỏi dữ liệu lấy từ máy chủ trước khi dùng hoặc nhúng vào trang
+export function publicData(data) {
+  if (!data?.shop) return data;
+  const { shopAddress, ...shop } = data.shop; // eslint-disable-line no-unused-vars
+  return { ...data, shop };
+}
