@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import BatchesTab from '../components/inventory/BatchesTab';
 import ExpensesTab from '../components/inventory/ExpensesTab';
+import MenuEngineeringCard from '../components/inventory/MenuEngineeringCard';
 import PurchasesTab from '../components/inventory/PurchasesTab';
 import RecipesTab from '../components/inventory/RecipesTab';
 import ShoppingTab from '../components/inventory/ShoppingTab';
@@ -175,6 +176,8 @@ function Overview({ report, levels, products, onGo }) {
           </ul>
         </Card>
       )}
+
+      <MenuEngineeringCard dishes={r.dishes} />
 
       {r.byCategory.length > 0 && (
         <Card title="Chi phí khác theo loại">
