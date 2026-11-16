@@ -7,7 +7,7 @@ import { DEFAULT_ZONES } from '../lib/shippingZones';
 // Tuỳ chọn riêng từng máy (âm báo, ứng dụng bản đồ, lần sao lưu gần nhất) lưu trong localStorage của máy đó.
 const STORAGE_KEY = 'restaurant-app.settings';
 
-export const SHOP_KEYS = ['shopName', 'shopPhone', 'shopAddress', 'logo', 'shippingZones', 'webOrdering'];
+export const SHOP_KEYS = ['shopName', 'shopPhone', 'shopAddress', 'logo', 'shippingZones', 'webOrdering', 'weatherLog'];
 
 const SHOP_DEFAULTS = {
   shopName: '',
@@ -16,6 +16,7 @@ const SHOP_DEFAULTS = {
   logo: null, // ảnh dạng data URL, đã thu nhỏ
   shippingZones: null, // null: dùng DEFAULT_ZONES trong lib/shippingZones
   webOrdering: null, // website đặt món: { enabled, leadMinutes }; null = đang nhận đơn, đặt trước 30 phút
+  weatherLog: null, // thời tiết từng tuần do chủ quán chọn { '2026-11-16': 'hot' | 'mild' | 'cold' | 'rain' }, cho ô Dự báo
 };
 
 const DEVICE_DEFAULTS = {

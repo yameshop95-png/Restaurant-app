@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Archive, ChevronRight, Loader2, Send } from 'lucide-react';
 import { NAV_ITEMS } from '../components/navigation';
 import WeeklyProfitChart from '../components/WeeklyProfitChart';
+import ForecastCard from '../components/ForecastCard';
 import { BACKUP_REMINDER_DAYS, daysSinceBackup } from '../lib/backup';
 import { dueInfo, upcomingOrders } from '../lib/due';
 import { shareText } from '../lib/shareOrder';
@@ -311,6 +312,13 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow, 
           onTargetChange={(v) => onUpdateSettings?.({ profitTarget: v })}
         />
       )}
+      <ForecastCard
+        orders={orders}
+        now={now}
+        settings={settings}
+        isOwner={isOwner}
+        onUpdateSettings={onUpdateSettings}
+      />
       <Card title="Món bán trong tuần">
         {stats.weekItems.length === 0 ? (
           <p className="px-5 py-6 text-center text-slate-400">Chưa có đơn nào trong tuần này</p>

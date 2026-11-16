@@ -8,12 +8,13 @@ import { periodRange, shiftPeriod } from '../lib/report';
 // Lợi nhuận từng tuần (doanh thu − giá vốn − chi phí khác), tính giống tab Inventory Management.
 // Màu cột: tím = lãi vượt mục tiêu, xanh = lãi, đỏ = lỗ. Mục tiêu lưu riêng trên máy này (chỉ chủ quán thấy biểu đồ).
 const WEEKS = 12;
+const DEFAULT_TARGET = 500; // lãi trên A$500/tuần mới tô tím, đổi được bằng nút Mục tiêu
 const COLOR = { over: '#8b5cf6', profit: '#10b981', loss: '#ef4444' };
 const ddmm = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
 const dm = (d) => `${d.getDate()}/${d.getMonth() + 1}`; // nhãn ngắn dưới cột
 const whole = (n) => `A$${Math.round(n).toLocaleString('en-AU')}`;
 
-export default function WeeklyProfitChart({ orders, menu, now, target, onTargetChange }) {
+export default function WeeklyProfitChart({ orders, menu, now, target: savedTarget, onTargetChange }) {
   const inventory = useInventory();
   const ingredients = inventory.ingredients.list;
   const purchases = inventory.purchases.list;
@@ -35,8 +36,9 @@ export default function WeeklyProfitChart({ orders, menu, now, target, onTargetC
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
-  const hasTarget = Number.isFinite(target) && target > 0;
-  const tone = (p) => (hasTarget && p >= target ? 'over' : p >= 0 ? 'profit' : 'loss');
+  const target = Number.isFinite(savedTarget) && savedTarget > 0 ? savedTarget : DEFAULT_TARGET;
+  const hasTarget = true;
+  const tone = (p) => (p > target ? 'over' : p >= 0 ? 'profit' : 'loss');
 
   // Thang đo: luôn có số 0, và mục tiêu nếu đã đặt
   const values = weeks.map((w) => w.profit);
@@ -145,7 +147,7 @@ export default function WeeklyProfitChart({ orders, menu, now, target, onTargetC
           </div>
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
             <span className="flex items-center gap-1.5">
-              <i className="h-2.5 w-2.5 rounded-sm" style={{ background: COLOR.over }} /> Vượt mục tiêu
+              <i className="h-2.5 w-2.5 rounded-sm" style={{ background: COLOR.over }} /> Trên {whole(target)}
             </span>
             <span className="flex items-center gap-1.5">
               <i className="h-2.5 w-2.5 rounded-sm" style={{ background: COLOR.profit }} /> Lãi
@@ -153,7 +155,7 @@ export default function WeeklyProfitChart({ orders, menu, now, target, onTargetC
             <span className="flex items-center gap-1.5">
               <i className="h-2.5 w-2.5 rounded-sm" style={{ background: COLOR.loss }} /> Lỗ
             </span>
-            {hasTarget && <span>{overCount} tuần vượt mục tiêu</span>}
+            <span>{overCount} tuần trên {whole(target)}</span>
           </div>
           {missingRecipes.length > 0 && (
             <p className="mt-2 text-xs text-amber-500">
