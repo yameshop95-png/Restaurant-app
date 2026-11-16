@@ -136,7 +136,9 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow }
   const maxQty = stats.weekItems[0]?.qty ?? 0;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
+    // Điện thoại / máy tính thường: một cột. Màn hình rộng (xl): hai cột, trái là tổng tiền, phải là món bán trong tuần.
+    <div className="mx-auto max-w-2xl space-y-4 xl:grid xl:max-w-6xl xl:grid-cols-2 xl:items-start xl:gap-6 xl:space-y-0">
+      <div className="space-y-4">
       {isOwner && needsBackup(orders, settings.lastBackupAt, now) && (
         <BackupReminder lastBackupAt={settings.lastBackupAt} onBackupNow={onBackupNow} />
       )}
@@ -219,6 +221,8 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow }
           </div>
         </Card>
       )}
+
+      </div>
 
       <Card title="Món bán trong tuần">
         {stats.weekItems.length === 0 ? (

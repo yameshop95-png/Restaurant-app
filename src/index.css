@@ -209,6 +209,14 @@
   .max-w-7xl {
     max-width: 96rem;
   }
+  /* Các trang một cột (thực đơn, khách hàng, báo cáo, cài đặt, kho) rộng hơn */
+  .max-w-2xl {
+    max-width: 56rem;
+  }
+  /* Màn hình chính hai cột: giữ bề rộng riêng (quy tắc trên nằm ngoài layer nên phải nhắc lại) */
+  .xl\:max-w-6xl {
+    max-width: 72rem;
+  }
 }
 @media screen and (min-width: 2300px) {
   html {
