@@ -7,7 +7,7 @@ import { DEFAULT_ZONES } from '../lib/shippingZones';
 // Tuỳ chọn riêng từng máy (âm báo, ứng dụng bản đồ, lần sao lưu gần nhất) lưu trong localStorage của máy đó.
 const STORAGE_KEY = 'restaurant-app.settings';
 
-export const SHOP_KEYS = ['shopName', 'shopPhone', 'shopAddress', 'logo', 'shippingZones', 'webOrdering'];
+export const SHOP_KEYS = ['shopName', 'shopPhone', 'shopAddress', 'logo', 'shippingZones', 'webOrdering', 'weatherLog'];
 
 const SHOP_DEFAULTS = {
   shopName: '',
@@ -16,6 +16,7 @@ const SHOP_DEFAULTS = {
   logo: null, // ảnh dạng data URL, đã thu nhỏ
   shippingZones: null, // null: dùng DEFAULT_ZONES trong lib/shippingZones
   webOrdering: null, // website đặt món: { enabled, leadMinutes }; null = đang nhận đơn, đặt trước 30 phút
+  weatherLog: null, // thời tiết từng tuần do chủ quán chọn { '2026-11-16': 'hot' | 'mild' | 'cold' | 'rain' }, cho ô Dự báo
 };
 
 const DEVICE_DEFAULTS = {
@@ -23,6 +24,7 @@ const DEVICE_DEFAULTS = {
   keepAwake: false, // giữ màn hình luôn sáng khi mở app (máy để ở quán cả ngày)
   autoPrint: false, // tự in bill khi có đơn website mới; chỉ bật trên 1 máy để bill không in trùng
   lastBackupAt: null,
+  profitTarget: null, // mục tiêu lợi nhuận mỗi tuần (A$) cho biểu đồ ở Màn hình chính; lưu riêng máy này
   // Ứng dụng bản đồ khi bấm địa chỉ / mở lộ trình: iPhone, iPad mặc định Apple Maps, máy khác Google Maps
   mapsApp:
     /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent))

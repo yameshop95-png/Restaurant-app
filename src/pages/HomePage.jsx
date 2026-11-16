@@ -1,6 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Archive, Loader2, Send } from 'lucide-react';
+import { Archive, ChevronRight, Loader2, Send } from 'lucide-react';
+import { NAV_ITEMS } from '../components/navigation';
+import WeeklyProfitChart from '../components/WeeklyProfitChart';
+import ForecastCard from '../components/ForecastCard';
 import { BACKUP_REMINDER_DAYS, daysSinceBackup } from '../lib/backup';
+import { dueInfo, upcomingOrders } from '../lib/due';
 import { shareText } from '../lib/shareOrder';
 import { dailyCollection, formatDate, formatDay, formatMoney, summarize } from '../lib/stats';
 
@@ -91,52 +95,113 @@ function ShiftClose({ orders, now, shopName }) {
 
   return (
     <Card title="Chốt ca hôm nay">
-      <ul className="mt-2 divide-y divide-slate-100 border-t border-slate-200">
-        {rows.map(([key, label, hint]) => (
-          <li key={key} className="flex items-center justify-between gap-3 px-5 py-2.5">
-            <span>
-              <span className="font-semibold text-slate-900">{label}</span>
-              {hint && <span className="block text-xs text-slate-400">{hint}</span>}
+      <div className="px-5 pb-4 pt-1">
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="text-2xl font-bold tracking-tight text-emerald-600">{formatMoney(day.total)}</p>
+          <span className="text-sm text-slate-500">đã thu hôm nay</span>
+        </div>
+        <ul className="mt-3 grid gap-2" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))` }}>
+          {rows.map(([key, label, hint]) => (
+            <li key={key} title={hint ?? undefined} className="min-w-0 rounded-2xl bg-slate-100 px-3 py-2">
+              <span className="block text-xs leading-tight text-slate-500">{label}</span>
+              <span className="block truncate font-bold text-slate-900">{formatMoney(day[key].total)}</span>
+              <span className="block text-[11px] text-slate-500">{day[key].count} đơn</span>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          {day.unpaid.count > 0 ? (
+            <span className="text-sm font-semibold text-red-600">
+              Còn phải thu {formatMoney(day.unpaid.total)} ({day.unpaid.count} đơn)
             </span>
-            <span className="text-right">
-              <span className="block font-bold text-slate-900">{formatMoney(day[key].total)}</span>
-              <span className="text-xs text-slate-500">{day[key].count} đơn</span>
-            </span>
-          </li>
-        ))}
-        <li className="flex items-center justify-between px-5 py-2.5 font-bold">
-          <span className="text-slate-700">Tổng đã thu</span>
-          <span className="text-emerald-600">{formatMoney(day.total)}</span>
-        </li>
-        {day.unpaid.count > 0 && (
-          <li className="flex items-center justify-between px-5 py-2.5 font-bold text-red-600">
-            <span>Còn phải thu hôm nay</span>
-            <span>
-              {formatMoney(day.unpaid.total)} <span className="text-xs font-semibold">({day.unpaid.count} đơn)</span>
-            </span>
-          </li>
-        )}
-      </ul>
-      <div className="px-5 pb-4">
-        <button
-          onClick={share}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-100 py-2.5 text-sm font-semibold text-slate-700 active:bg-slate-200"
-        >
-          <Send size={16} /> Gửi báo cáo chốt ca
-        </button>
+          ) : (
+            <span className="text-sm text-slate-500">Đã thu đủ hôm nay</span>
+          )}
+          <button
+            type="button"
+            onClick={share}
+            className="flex shrink-0 items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 active:bg-slate-200"
+          >
+            <Send size={15} aria-hidden="true" /> Gửi chốt ca
+          </button>
+        </div>
         {msg && <p className="mt-2 text-center text-sm font-semibold text-blue-700">{msg}</p>}
       </div>
     </Card>
   );
 }
 
+// Ô bảng điều khiển: mỗi ô là một mục trong menu (cùng tên, cùng biểu tượng), bấm vào là chuyển sang tab đó.
+function DashTile({ item, value, note, tone = 'normal', onOpen }) {
+  const Icon = item.icon;
+  const valueColor = tone === 'alert' ? 'text-red-600' : tone === 'warn' ? 'text-amber-500' : tone === 'good' ? 'text-emerald-600' : 'text-slate-900';
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(item.id)}
+      className="group flex min-h-24 flex-col justify-between gap-2 rounded-3xl border border-slate-200 bg-card p-4 text-left shadow-sm transition hover:border-blue-500/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:scale-[0.98]"
+    >
+      <span className="flex items-center gap-2 text-sm font-semibold text-slate-500">
+        <Icon size={18} className="shrink-0 text-blue-500" aria-hidden="true" />
+        <span className="min-w-0 flex-1 leading-tight">{item.label}</span>
+        <ChevronRight size={16} className="shrink-0 opacity-40 transition group-hover:translate-x-0.5 group-hover:opacity-100" aria-hidden="true" />
+      </span>
+      <span className="block">
+        {value != null && <span className={`block text-lg font-bold leading-tight tracking-tight sm:text-xl ${valueColor}`}>{value}</span>}
+        {note && <span className="mt-0.5 block text-xs text-slate-500">{note}</span>}
+      </span>
+    </button>
+  );
+}
+
+function DashTiles({ orders, counts, customers, menu, settings, now, isOwner, weekRevenue, onNavigate }) {
+  if (!onNavigate) return null;
+  const pending = counts ?? { pendingAll: 0, pendingDelivery: 0, pendingPickup: 0 };
+  const dueSoon = upcomingOrders(orders, now, 60);
+  const overdue = dueSoon.filter((o) => dueInfo(o, now)?.level === 'overdue').length;
+  const menuList = menu ?? [];
+  const soldOut = menuList.filter((m) => m.available === false).length;
+  const webOn = settings.webOrdering?.enabled !== false;
+
+  const info = {
+    orders: {
+      value: `${pending.pendingAll} đơn chờ`,
+      note: overdue ? `${overdue} đơn đã trễ giờ` : dueSoon.length ? `${dueSoon.length} đơn tới giờ trong 1 giờ` : `${pending.pendingPickup} đến lấy · ${pending.pendingDelivery} giao`,
+      tone: overdue ? 'alert' : dueSoon.length ? 'warn' : 'normal',
+    },
+    delivery: { value: `${pending.pendingDelivery} đơn chờ giao`, note: 'Lộ trình và đơn ship' },
+    activity: { value: null, note: 'Khách đang xem website' },
+    customers: { value: `${(customers ?? []).length} khách`, note: 'Danh bạ khách hàng' },
+    menu: {
+      value: `${menuList.length} món`,
+      note: soldOut ? `${soldOut} món đang hết` : 'Tất cả đang còn',
+      tone: soldOut ? 'warn' : 'normal',
+    },
+    report: { value: formatMoney(weekRevenue), note: 'Doanh thu tuần này', tone: 'good' },
+    inventory: { value: null, note: 'Kho, nhập hàng, chi phí' },
+    settings: { value: webOn ? 'Web đang mở' : 'Web tạm tắt', note: 'Giờ nhận đơn, nhân viên, máy in', tone: webOn ? 'good' : 'warn' },
+  };
+
+  const items = NAV_ITEMS.filter((it) => it.id !== 'home' && (isOwner || !it.ownerOnly));
+  return (
+    <nav aria-label="Các mục chính" className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+      {items.map((it) => (
+        <DashTile key={it.id} item={it} {...(info[it.id] ?? {})} onOpen={onNavigate} />
+      ))}
+    </nav>
+  );
+}
+
 // Nhân viên không thấy doanh thu: chỉ số đơn và số phần từng món
-export default function HomePage({ orders, now, settings, isOwner, onBackupNow }) {
+export default function HomePage({ orders, now, settings, isOwner, onBackupNow, counts, customers, menu, onNavigate, onUpdateSettings }) {
   const stats = useMemo(() => summarize(orders, now), [orders, now]);
   const maxQty = stats.weekItems[0]?.qty ?? 0;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
+    // Điện thoại / máy tính thường: một cột. Màn hình rộng (xl): hai cột, trái là tổng tiền, phải là món bán trong tuần.
+    <div className="mx-auto max-w-2xl space-y-4 xl:grid xl:max-w-6xl xl:grid-cols-2 xl:items-start xl:gap-6 xl:space-y-0">
+      {/* Hàng trên cùng (trải hết bề ngang): nhắc sao lưu, tên quán, các ô bảng điều khiển */}
+      <div className="space-y-4 xl:col-span-2">
       {isOwner && needsBackup(orders, settings.lastBackupAt, now) && (
         <BackupReminder lastBackupAt={settings.lastBackupAt} onBackupNow={onBackupNow} />
       )}
@@ -156,6 +221,20 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow }
         </div>
       </div>
 
+      <DashTiles
+        orders={orders}
+        counts={counts}
+        customers={customers}
+        menu={menu}
+        settings={settings}
+        now={now}
+        isOwner={isOwner}
+        weekRevenue={stats.weekRevenue}
+        onNavigate={onNavigate}
+      />
+      </div>
+
+      <div className="space-y-4">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Tổng tuần này</h1>
         <p className="mt-1 text-sm text-slate-500">Từ thứ Hai {formatDate(stats.weekStart)}</p>
@@ -220,6 +299,26 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow }
         </Card>
       )}
 
+      </div>
+
+      {/* Cột phải: lợi nhuận theo tuần (chủ quán) và món bán trong tuần */}
+      <div className="space-y-4">
+      {isOwner && (
+        <WeeklyProfitChart
+          orders={orders}
+          menu={menu}
+          now={now}
+          target={settings.profitTarget}
+          onTargetChange={(v) => onUpdateSettings?.({ profitTarget: v })}
+        />
+      )}
+      <ForecastCard
+        orders={orders}
+        now={now}
+        settings={settings}
+        isOwner={isOwner}
+        onUpdateSettings={onUpdateSettings}
+      />
       <Card title="Món bán trong tuần">
         {stats.weekItems.length === 0 ? (
           <p className="px-5 py-6 text-center text-slate-400">Chưa có đơn nào trong tuần này</p>
@@ -245,6 +344,7 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow }
           </ul>
         )}
       </Card>
+      </div>
     </div>
   );
 }

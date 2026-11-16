@@ -250,6 +250,7 @@ function Shop({ account, onLogout }) {
             onImportCustomers={importCustomers}
             onSetStatus={changeStatus}
             onSetPaid={changePaid}
+            onNavigate={handleTabChange}
           />
         </main>
         <BottomNav
