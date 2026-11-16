@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Archive, Loader2, Send } from 'lucide-react';
+import { Archive, ChevronRight, Loader2, Send } from 'lucide-react';
+import { NAV_ITEMS } from '../components/navigation';
 import { BACKUP_REMINDER_DAYS, daysSinceBackup } from '../lib/backup';
+import { dueInfo, upcomingOrders } from '../lib/due';
 import { shareText } from '../lib/shareOrder';
 import { dailyCollection, formatDate, formatDay, formatMoney, summarize } from '../lib/stats';
 
@@ -130,15 +132,77 @@ function ShiftClose({ orders, now, shopName }) {
   );
 }
 
+// Ô bảng điều khiển: mỗi ô là một mục trong menu (cùng tên, cùng biểu tượng), bấm vào là chuyển sang tab đó.
+function DashTile({ item, value, note, tone = 'normal', onOpen }) {
+  const Icon = item.icon;
+  const valueColor = tone === 'alert' ? 'text-red-600' : tone === 'warn' ? 'text-amber-500' : tone === 'good' ? 'text-emerald-600' : 'text-slate-900';
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(item.id)}
+      className="group flex min-h-24 flex-col justify-between gap-2 rounded-3xl border border-slate-200 bg-card p-4 text-left shadow-sm transition hover:border-blue-500/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:scale-[0.98]"
+    >
+      <span className="flex items-center gap-2 text-sm font-semibold text-slate-500">
+        <Icon size={18} className="shrink-0 text-blue-500" aria-hidden="true" />
+        <span className="min-w-0 flex-1 leading-tight">{item.label}</span>
+        <ChevronRight size={16} className="shrink-0 opacity-40 transition group-hover:translate-x-0.5 group-hover:opacity-100" aria-hidden="true" />
+      </span>
+      <span className="block">
+        {value != null && <span className={`block text-lg font-bold leading-tight tracking-tight sm:text-xl ${valueColor}`}>{value}</span>}
+        {note && <span className="mt-0.5 block text-xs text-slate-500">{note}</span>}
+      </span>
+    </button>
+  );
+}
+
+function DashTiles({ orders, counts, customers, menu, settings, now, isOwner, weekRevenue, onNavigate }) {
+  if (!onNavigate) return null;
+  const pending = counts ?? { pendingAll: 0, pendingDelivery: 0, pendingPickup: 0 };
+  const dueSoon = upcomingOrders(orders, now, 60);
+  const overdue = dueSoon.filter((o) => dueInfo(o, now)?.level === 'overdue').length;
+  const menuList = menu ?? [];
+  const soldOut = menuList.filter((m) => m.available === false).length;
+  const webOn = settings.webOrdering?.enabled !== false;
+
+  const info = {
+    orders: {
+      value: `${pending.pendingAll} đơn chờ`,
+      note: overdue ? `${overdue} đơn đã trễ giờ` : dueSoon.length ? `${dueSoon.length} đơn tới giờ trong 1 giờ` : `${pending.pendingPickup} đến lấy · ${pending.pendingDelivery} giao`,
+      tone: overdue ? 'alert' : dueSoon.length ? 'warn' : 'normal',
+    },
+    delivery: { value: `${pending.pendingDelivery} đơn chờ giao`, note: 'Lộ trình và đơn ship' },
+    activity: { value: null, note: 'Khách đang xem website' },
+    customers: { value: `${(customers ?? []).length} khách`, note: 'Danh bạ khách hàng' },
+    menu: {
+      value: `${menuList.length} món`,
+      note: soldOut ? `${soldOut} món đang hết` : 'Tất cả đang còn',
+      tone: soldOut ? 'warn' : 'normal',
+    },
+    report: { value: formatMoney(weekRevenue), note: 'Doanh thu tuần này', tone: 'good' },
+    inventory: { value: null, note: 'Kho, nhập hàng, chi phí' },
+    settings: { value: webOn ? 'Web đang mở' : 'Web tạm tắt', note: 'Giờ nhận đơn, nhân viên, máy in', tone: webOn ? 'good' : 'warn' },
+  };
+
+  const items = NAV_ITEMS.filter((it) => it.id !== 'home' && (isOwner || !it.ownerOnly));
+  return (
+    <nav aria-label="Các mục chính" className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+      {items.map((it) => (
+        <DashTile key={it.id} item={it} {...(info[it.id] ?? {})} onOpen={onNavigate} />
+      ))}
+    </nav>
+  );
+}
+
 // Nhân viên không thấy doanh thu: chỉ số đơn và số phần từng món
-export default function HomePage({ orders, now, settings, isOwner, onBackupNow }) {
+export default function HomePage({ orders, now, settings, isOwner, onBackupNow, counts, customers, menu, onNavigate }) {
   const stats = useMemo(() => summarize(orders, now), [orders, now]);
   const maxQty = stats.weekItems[0]?.qty ?? 0;
 
   return (
     // Điện thoại / máy tính thường: một cột. Màn hình rộng (xl): hai cột, trái là tổng tiền, phải là món bán trong tuần.
     <div className="mx-auto max-w-2xl space-y-4 xl:grid xl:max-w-6xl xl:grid-cols-2 xl:items-start xl:gap-6 xl:space-y-0">
-      <div className="space-y-4">
+      {/* Hàng trên cùng (trải hết bề ngang): nhắc sao lưu, tên quán, các ô bảng điều khiển */}
+      <div className="space-y-4 xl:col-span-2">
       {isOwner && needsBackup(orders, settings.lastBackupAt, now) && (
         <BackupReminder lastBackupAt={settings.lastBackupAt} onBackupNow={onBackupNow} />
       )}
@@ -158,6 +222,20 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow }
         </div>
       </div>
 
+      <DashTiles
+        orders={orders}
+        counts={counts}
+        customers={customers}
+        menu={menu}
+        settings={settings}
+        now={now}
+        isOwner={isOwner}
+        weekRevenue={stats.weekRevenue}
+        onNavigate={onNavigate}
+      />
+      </div>
+
+      <div className="space-y-4">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Tổng tuần này</h1>
         <p className="mt-1 text-sm text-slate-500">Từ thứ Hai {formatDate(stats.weekStart)}</p>
