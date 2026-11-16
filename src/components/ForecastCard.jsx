@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CloudRain, Snowflake, Sparkles, Sun, TrendingDown, TrendingUp, Wind } from 'lucide-react';
-import { WEATHER, weekKey, weeklyForecast } from '../lib/forecast';
+import { FAMILY_LABEL, WEATHER, weekKey, weeklyForecast } from '../lib/forecast';
+import { saveForecastOnce } from '../lib/forecastLog';
 
 const WEATHER_ICON = { hot: Sun, mild: Wind, cold: Snowflake, rain: CloudRain };
 const SHOW = 6;
@@ -19,6 +20,8 @@ export default function ForecastCard({ orders, now, settings, isOwner, onUpdateS
   );
   const [open, setOpen] = useState(null);
   const chosen = weatherLog[thisKey] ?? null;
+  // Ghi lại dự báo đầu tiên của tuần trên máy này, để sau so với số bán thật (xem docs/du-bao.md)
+  useEffect(() => saveForecastOnce(f), [f]);
 
   const setWeather = (id) => {
     if (!isOwner || !onUpdateSettings) return;
@@ -117,11 +120,21 @@ export default function ForecastCard({ orders, now, settings, isOwner, onUpdateS
       ))}
 
       {f.ready && (
-        <p className="mt-3 text-xs leading-relaxed text-slate-400">
-          Dựa trên {f.weeksUsed} tuần bán hàng của quán, tuần {f.weekOfMonth} trong tháng, {f.season}
-          {f.weather ? `, ${f.weatherWeeks} tuần từng có thời tiết này` : ''}. Bấm vào món để xem lý do. Càng nhiều tuần dữ
-          liệu và càng chọn thời tiết đều đặn, dự báo càng sát.
-        </p>
+        <div className="mt-3 space-y-1 text-xs leading-relaxed text-slate-400">
+          {f.accuracy ? (
+            <p>
+              <span className="font-semibold text-slate-500">Độ chính xác:</span> thử dự báo lại {f.accuracy.weeks} tuần đã qua,
+              trung bình lệch khoảng <span className="font-semibold text-slate-500">{Math.round(f.accuracy.wape * 100)}%</span>.
+            </p>
+          ) : (
+            <p>Chưa đủ tuần để đo độ chính xác.</p>
+          )}
+          <p>
+            Đang dùng: mức bán gần đây
+            {f.families.length ? ` + ${f.families.map((x) => FAMILY_LABEL[x]).join(', ')}` : ''} (app tự chọn yếu tố nào làm dự báo
+            chính xác hơn). Dựa trên {f.weeksUsed} tuần bán hàng. Bấm vào món để xem lý do; chọn thời tiết đều đặn để app học.
+          </p>
+        </div>
       )}
     </section>
   );
