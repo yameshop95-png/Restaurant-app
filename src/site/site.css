@@ -140,3 +140,19 @@
 .split-parent .split-word {
   white-space: nowrap;
 }
+
+/* Màn hình lớn (27 inch): phóng to cả trang bằng cỡ chữ gốc (mọi kích thước của trang tính theo rem nên to theo),
+   và cho nội dung rộng hơn. Không dùng CSS zoom (làm lệch vị trí con trỏ). Dưới 1800 px không đổi gì. */
+@media (min-width: 1800px) {
+  html {
+    font-size: 18px;
+  }
+  .max-w-6xl {
+    max-width: 84rem;
+  }
+}
+@media (min-width: 2300px) {
+  html {
+    font-size: 22px;
+  }
+}
