@@ -199,3 +199,19 @@
     padding-top: 5px;
   }
 }
+
+/* Màn hình lớn (27 inch): phóng to cả app bằng cỡ chữ gốc (kích thước tính theo rem nên to theo, kể cả thanh menu)
+   và cho vùng nội dung rộng hơn. Chỉ trên màn hình (không ảnh hưởng in bill). Dưới 1800 px không đổi gì. */
+@media screen and (min-width: 1800px) {
+  html {
+    font-size: 18px;
+  }
+  .max-w-7xl {
+    max-width: 96rem;
+  }
+}
+@media screen and (min-width: 2300px) {
+  html {
+    font-size: 22px;
+  }
+}
