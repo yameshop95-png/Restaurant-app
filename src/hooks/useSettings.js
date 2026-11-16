@@ -23,6 +23,7 @@ const DEVICE_DEFAULTS = {
   keepAwake: false, // giữ màn hình luôn sáng khi mở app (máy để ở quán cả ngày)
   autoPrint: false, // tự in bill khi có đơn website mới; chỉ bật trên 1 máy để bill không in trùng
   lastBackupAt: null,
+  profitTarget: null, // mục tiêu lợi nhuận mỗi tuần (A$) cho biểu đồ ở Màn hình chính; lưu riêng máy này
   // Ứng dụng bản đồ khi bấm địa chỉ / mở lộ trình: iPhone, iPad mặc định Apple Maps, máy khác Google Maps
   mapsApp:
     /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent))

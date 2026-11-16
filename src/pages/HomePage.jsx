@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Archive, ChevronRight, Loader2, Send } from 'lucide-react';
 import { NAV_ITEMS } from '../components/navigation';
+import WeeklyProfitChart from '../components/WeeklyProfitChart';
 import { BACKUP_REMINDER_DAYS, daysSinceBackup } from '../lib/backup';
 import { dueInfo, upcomingOrders } from '../lib/due';
 import { shareText } from '../lib/shareOrder';
@@ -93,39 +94,36 @@ function ShiftClose({ orders, now, shopName }) {
 
   return (
     <Card title="Chốt ca hôm nay">
-      <ul className="mt-2 divide-y divide-slate-100 border-t border-slate-200">
-        {rows.map(([key, label, hint]) => (
-          <li key={key} className="flex items-center justify-between gap-3 px-5 py-2.5">
-            <span>
-              <span className="font-semibold text-slate-900">{label}</span>
-              {hint && <span className="block text-xs text-slate-400">{hint}</span>}
+      <div className="px-5 pb-4 pt-1">
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="text-2xl font-bold tracking-tight text-emerald-600">{formatMoney(day.total)}</p>
+          <span className="text-sm text-slate-500">đã thu hôm nay</span>
+        </div>
+        <ul className="mt-3 grid gap-2" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))` }}>
+          {rows.map(([key, label, hint]) => (
+            <li key={key} title={hint ?? undefined} className="min-w-0 rounded-2xl bg-slate-100 px-3 py-2">
+              <span className="block text-xs leading-tight text-slate-500">{label}</span>
+              <span className="block truncate font-bold text-slate-900">{formatMoney(day[key].total)}</span>
+              <span className="block text-[11px] text-slate-500">{day[key].count} đơn</span>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          {day.unpaid.count > 0 ? (
+            <span className="text-sm font-semibold text-red-600">
+              Còn phải thu {formatMoney(day.unpaid.total)} ({day.unpaid.count} đơn)
             </span>
-            <span className="text-right">
-              <span className="block font-bold text-slate-900">{formatMoney(day[key].total)}</span>
-              <span className="text-xs text-slate-500">{day[key].count} đơn</span>
-            </span>
-          </li>
-        ))}
-        <li className="flex items-center justify-between px-5 py-2.5 font-bold">
-          <span className="text-slate-700">Tổng đã thu</span>
-          <span className="text-emerald-600">{formatMoney(day.total)}</span>
-        </li>
-        {day.unpaid.count > 0 && (
-          <li className="flex items-center justify-between px-5 py-2.5 font-bold text-red-600">
-            <span>Còn phải thu hôm nay</span>
-            <span>
-              {formatMoney(day.unpaid.total)} <span className="text-xs font-semibold">({day.unpaid.count} đơn)</span>
-            </span>
-          </li>
-        )}
-      </ul>
-      <div className="px-5 pb-4">
-        <button
-          onClick={share}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-100 py-2.5 text-sm font-semibold text-slate-700 active:bg-slate-200"
-        >
-          <Send size={16} /> Gửi báo cáo chốt ca
-        </button>
+          ) : (
+            <span className="text-sm text-slate-500">Đã thu đủ hôm nay</span>
+          )}
+          <button
+            type="button"
+            onClick={share}
+            className="flex shrink-0 items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 active:bg-slate-200"
+          >
+            <Send size={15} aria-hidden="true" /> Gửi chốt ca
+          </button>
+        </div>
         {msg && <p className="mt-2 text-center text-sm font-semibold text-blue-700">{msg}</p>}
       </div>
     </Card>
@@ -194,7 +192,7 @@ function DashTiles({ orders, counts, customers, menu, settings, now, isOwner, we
 }
 
 // Nhân viên không thấy doanh thu: chỉ số đơn và số phần từng món
-export default function HomePage({ orders, now, settings, isOwner, onBackupNow, counts, customers, menu, onNavigate }) {
+export default function HomePage({ orders, now, settings, isOwner, onBackupNow, counts, customers, menu, onNavigate, onUpdateSettings }) {
   const stats = useMemo(() => summarize(orders, now), [orders, now]);
   const maxQty = stats.weekItems[0]?.qty ?? 0;
 
@@ -302,6 +300,17 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow, 
 
       </div>
 
+      {/* Cột phải: lợi nhuận theo tuần (chủ quán) và món bán trong tuần */}
+      <div className="space-y-4">
+      {isOwner && (
+        <WeeklyProfitChart
+          orders={orders}
+          menu={menu}
+          now={now}
+          target={settings.profitTarget}
+          onTargetChange={(v) => onUpdateSettings?.({ profitTarget: v })}
+        />
+      )}
       <Card title="Món bán trong tuần">
         {stats.weekItems.length === 0 ? (
           <p className="px-5 py-6 text-center text-slate-400">Chưa có đơn nào trong tuần này</p>
@@ -327,6 +336,7 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow, 
           </ul>
         )}
       </Card>
+      </div>
     </div>
   );
 }
