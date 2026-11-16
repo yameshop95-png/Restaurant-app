@@ -35,6 +35,15 @@ Khi thấy dòng "Đang chờ lệnh in", máy đã sẵn sàng. Để máy tín
 3. Bấm đúp `install-autostart.bat` một lần: từ nay bật máy tính là cầu nối tự chạy (cửa sổ thu nhỏ ở thanh taskbar, đừng tắt).
 4. Đặt máy tính không tự ngủ: Settings → System → Power → Sleep = Never.
 
+## Tự sao lưu dữ liệu vào máy tính
+
+Mỗi ngày (từ 2 giờ sáng, hoặc ngay khi bật cầu nối nếu hôm đó chưa lưu), cầu nối lưu 2 file vào thư mục `sao-luu` cạnh `bridge.mjs`:
+`sao-luu-YYYY-MM-DD.xlsx` (mở bằng Excel, khôi phục được trong app: Cài đặt → khôi phục từ file) và `sao-luu-YYYY-MM-DD.json` (bản đầy đủ).
+Giữ 30 ngày gần nhất, bản cũ hơn tự xoá. Muốn lưu chỗ khác (ví dụ thư mục OneDrive / Google Drive để có thêm bản trên mạng) thì thêm dòng
+`set BACKUP_DIR=D:\OneDrive\SaoLuuQuan` vào `start-bridge.bat`.
+
+Cần 2 file `bridge.mjs` và `backup-lib.mjs` (file thư viện Excel đã gói sẵn, không cần `npm install` thêm). Sửa `print-bridge/src/backup-entry.js` hoặc các file Excel trong `src/lib` thì dựng lại `backup-lib.mjs` bằng `npm run build:bridge`.
+
 ## Kiểm tra
 
 - In thử bằng cách bấm **In ở quán** trên một đơn. Bill phải ra máy trong vài giây.

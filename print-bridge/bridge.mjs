@@ -1,20 +1,31 @@
 // Cầu nối in bill: chạy trên một máy tính ở quán (cùng mạng với máy in Uniwell).
 // Đọc bảng print_jobs (do app nhân viên thêm vào), gửi lệnh ESC/POS xuống máy in qua cổng 9100, rồi đánh dấu đã in.
+// Mỗi ngày (từ 2 giờ sáng) còn tự lưu một bản sao dữ liệu quán vào thư mục sao-luu cạnh file này, giữ 30 ngày.
 //
 // Cách chạy (xem print-bridge/README.md):
 //   SUPABASE_URL=... SUPABASE_KEY=... STAFF_PIN=xxxx PRINTER_IP=192.168.1.100 node bridge.mjs
 import net from 'node:net';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { writeFile, unlink } from 'node:fs/promises';
+import { mkdir, readdir, unlink, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const run = promisify(execFile);
 const here = dirname(fileURLToPath(import.meta.url));
 import { createClient } from '@supabase/supabase-js';
+import { backupXlsx } from './backup-lib.mjs';
 
-const { SUPABASE_URL, SUPABASE_KEY, STAFF_PIN, PRINTER_NAME, PRINTER_IP = '192.168.1.100', PRINTER_PORT = 9100 } = process.env;
+const {
+  SUPABASE_URL,
+  SUPABASE_KEY,
+  STAFF_PIN,
+  PRINTER_NAME,
+  PRINTER_IP = '192.168.1.100',
+  PRINTER_PORT = 9100,
+  BACKUP_DIR = join(here, 'sao-luu'),
+} = process.env;
 if (!SUPABASE_URL || !SUPABASE_KEY || !STAFF_PIN) {
   console.error('Thiếu SUPABASE_URL, SUPABASE_KEY hoặc STAFF_PIN');
   process.exit(2);
@@ -87,6 +98,72 @@ async function printPending() {
   }
 }
 
+// ---------- Sao lưu hằng ngày vào máy tính ----------
+const BACKUP_KEEP_DAYS = 30;
+const BACKUP_FROM_HOUR = 2; // sau 2 giờ sáng mới lưu bản của ngày đó (bật máy muộn hơn thì lưu ngay khi chạy)
+const dayKey = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+// PostgREST trả tối đa 1000 dòng mỗi lần: đọc nối tiếp cho tới hết
+async function fetchAll(table, order) {
+  const rows = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase.from(table).select('*').order(order).range(from, from + 999);
+    if (error) throw new Error(`đọc bảng ${table}: ${error.message}`);
+    rows.push(...data);
+    if (data.length < 1000) return rows;
+  }
+}
+
+// Bảng của Inventory: tài khoản máy in có thể không được đọc (chỉ chủ quán) thì bỏ qua
+async function fetchOptional(table) {
+  try {
+    return await fetchAll(table, 'id');
+  } catch {
+    return null;
+  }
+}
+
+let lastBackupCheck = 0;
+async function backupIfDue() {
+  if (Date.now() - lastBackupCheck < 10 * 60 * 1000) return; // xét 10 phút một lần
+  lastBackupCheck = Date.now();
+  if (new Date().getHours() < BACKUP_FROM_HOUR) return;
+  const day = dayKey();
+  const xlsxFile = join(BACKUP_DIR, `sao-luu-${day}.xlsx`);
+  if (existsSync(xlsxFile)) return;
+  try {
+    await mkdir(BACKUP_DIR, { recursive: true });
+    const [orderRows, customerRows, menuRows] = await Promise.all([
+      fetchAll('orders', 'number'),
+      fetchAll('customers', 'id'),
+      fetchAll('menu_items', 'position'),
+    ]);
+    const inventory = {};
+    for (const t of ['inv_ingredients', 'inv_purchases', 'inv_adjustments', 'inv_expenses', 'inv_recipes', 'inv_batches']) {
+      const rows = await fetchOptional(t);
+      if (rows?.length) inventory[t] = rows;
+    }
+    const json = { exportedAt: new Date().toISOString(), orders: orderRows, customers: customerRows, menu_items: menuRows, ...inventory };
+    await writeFile(join(BACKUP_DIR, `sao-luu-${day}.json`), JSON.stringify(json));
+    await writeFile(xlsxFile, await backupXlsx({ orderRows, customerRows, menuRows }));
+    console.log(
+      `[${stamp()}] Đã sao lưu vào ${BACKUP_DIR}: ${orderRows.length} đơn, ${customerRows.length} khách, ${menuRows.length} món` +
+        (Object.keys(inventory).length ? ', kèm dữ liệu kho' : ''),
+    );
+    // Xoá bản cũ hơn 30 ngày
+    const oldest = new Date();
+    oldest.setDate(oldest.getDate() - BACKUP_KEEP_DAYS);
+    for (const name of await readdir(BACKUP_DIR)) {
+      const m = name.match(/^sao-luu-(\d{4}-\d{2}-\d{2})\.(xlsx|json)$/);
+      if (m && m[1] < dayKey(oldest)) await unlink(join(BACKUP_DIR, name)).catch(() => {});
+    }
+  } catch (err) {
+    // Lỗi sao lưu không được làm ngừng việc in: ghi lại rồi thử lại sau 10 phút
+    console.log(`[${stamp()}] Chưa sao lưu được: ${err.message}. Thử lại sau 10 phút`);
+  }
+}
+
 async function main() {
   let delay = 2000;
   for (;;) {
@@ -95,6 +172,7 @@ async function main() {
       console.log(`[${stamp()}] Đang chờ lệnh in từ điện thoại (${PRINTER_NAME ? 'máy in Windows ' + PRINTER_NAME : `máy in ${PRINTER_IP}:${PRINTER_PORT}`})`);
       for (;;) {
         await printPending();
+        await backupIfDue();
         await sleep(2000);
       }
     } catch (err) {
