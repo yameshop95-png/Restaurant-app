@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { aggregateMet, mergeDaily, parsePower, readArgs } from './weather-daily.mjs';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { build } from 'esbuild';
+import { aggregateMet, applyPlan, mergeDaily, orderMelbourneDates, parsePower, readArgs } from './weather-daily.mjs';
+import { formatWeatherPlan } from '../src/lib/weather.js';
 
 test('MET aggregation sums the shortest precip interval and uses the Melbourne date', () => {
   const rows = aggregateMet({
@@ -93,8 +99,81 @@ test('archive rows overwrite forecast rows for the same date', () => {
   );
 });
 
+test('cancelled orders do not mark a week, and createdAt wins over created_at', () => {
+  const dates = orderMelbourneDates([
+    { status: 'done', createdAt: '2026-11-03T02:00:00Z', created_at: '2026-11-01T02:00:00Z' },
+    { status: 'cancelled', createdAt: '2026-11-10T02:00:00Z' },
+    { status: 'done', createdAt: null, created_at: '2026-11-18T02:00:00Z' },
+  ]);
+  assert.deepEqual(dates, ['2026-11-03', '2026-11-18']);
+});
+
 test('backfill start date must be an ISO date', () => {
   assert.equal(readArgs(['--from=2026-01-01']).from, '2026-01-01');
+  assert.equal(readArgs(['--dry-run']).dryRun, true);
   assert.equal(readArgs([]).from, null);
   assert.throws(() => readArgs(['--from=yesterday']), /YYYY-MM-DD/);
+});
+
+test('legacy weather strings and auto entries produce the same forecast', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'forecast-weather-'));
+  const outfile = join(dir, 'forecast.mjs');
+  await build({
+    absWorkingDir: new URL('..', import.meta.url).pathname,
+    entryPoints: ['src/lib/forecast.js'],
+    bundle: true,
+    platform: 'node',
+    format: 'esm',
+    outfile,
+    banner: {
+      js: 'import.meta.env ??= { MODE: "test", DEV: false, PROD: false, VITE_SUPABASE_URL: "", VITE_SUPABASE_PUBLISHABLE_KEY: "" };',
+    },
+  });
+  const { weekKey, weeklyForecast } = await import(pathToFileURL(outfile).href);
+  const now = new Date(2026, 10, 18, 15, 0, 0);
+  const key = weekKey(now);
+  const prevKey = weekKey(new Date(2026, 10, 11, 15, 0, 0));
+  const at = (weekStart, daysAfter) => {
+    const [y, m, d] = weekStart.split('-').map(Number);
+    return new Date(y, m - 1, d + daysAfter, 12, 0, 0).toISOString();
+  };
+  const orders = [-4, -3, -2, -1].map((w, i) => ({
+    id: `o${i}`,
+    status: 'done',
+    createdAt: at(key, w * 7 + 1),
+    items: [{ name: 'Bánh cuốn', price: 12, qty: 10 + (i % 2) * 6 }],
+  }));
+  const legacy = { [key]: 'hot', [prevKey]: 'cold' };
+  const mixed = { [key]: { value: 'hot', source: 'auto' }, [prevKey]: 'cold' };
+  const plain = weeklyForecast({ orders, now, weatherLog: legacy });
+  const auto = weeklyForecast({ orders, now, weatherLog: mixed });
+  assert.equal(plain.weather, 'hot');
+  assert.equal(auto.weather, 'hot');
+  assert.equal(typeof plain.weather, 'string');
+  assert.deepEqual(plain.families, auto.families);
+  assert.deepEqual(plain.weeksUsed, auto.weeksUsed);
+  assert.deepEqual(
+    plain.items.map((it) => [it.key, it.expected, it.method]),
+    auto.items.map((it) => [it.key, it.expected, it.method]),
+  );
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('dry-run prints the weatherLog plan and does not write', async () => {
+  let writes = 0;
+  const rows = [{ date: '2026-11-16', source: 'forecast' }];
+  const updates = { '2026-11-16': { value: 'hot', source: 'auto' } };
+  const result = await applyPlan({
+    dryRun: true,
+    rows,
+    updates,
+    writeDaily: async () => { writes += 1; },
+    writeLog: async () => { writes += 1; return ['2026-11-16']; },
+  });
+  assert.equal(result.written, false);
+  assert.equal(writes, 0);
+  const text = formatWeatherPlan({ rows, updates, skipped: [{ key: '2026-11-09', reason: 'manual' }], dryRun: true });
+  assert.match(text, /dry-run: không ghi/);
+  assert.match(text, /weatherLog 2026-11-16: auto hot/);
+  assert.match(text, /2026-11-09: bỏ qua manual/);
 });

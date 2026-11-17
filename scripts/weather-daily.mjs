@@ -1,4 +1,13 @@
-// Lấy thời tiết Wodonga một lần mỗi ngày và upsert vào weather_daily.
+// Lấy thời tiết Wodonga một lần mỗi ngày, upsert weather_daily, rồi tự chọn chip tuần
+// vào shop_settings.data.weatherLog. Ngưỡng chip nằm ở src/lib/weather.js, không viết lại ở đây.
+// Chuỗi 'hot'|'mild'|'cold'|'rain' và { source: 'manual' } là lựa chọn tay, không bị ghi đè.
+// Job ghi { value, source: 'auto' } và cập nhật mỗi ngày. Tuần đã qua chỉ chốt bằng dòng archive.
+//
+//   node scripts/weather-daily.mjs
+//   node scripts/weather-daily.mjs --from=YYYY-MM-DD
+//   node scripts/weather-daily.mjs --from=YYYY-MM-DD --dry-run
+//
+// --from điền các tuần đã qua có đơn (bỏ tuần đã chọn tay). --dry-run in kế hoạch, không ghi.
 // Không chạy khi import (test gọi các hàm thuần). Không đọc file .env trong repo.
 //
 // Nguồn đang dùng (được phép dùng cho quán, có ghi nguồn):
@@ -17,9 +26,13 @@ import {
   addIsoDays,
   conditionFromObservation,
   describeSymbol,
+  formatWeatherPlan,
   isRainCode,
   melbourneDate,
   melbourneToday,
+  nextShopData,
+  planWeatherLogUpdates,
+  weeksToLabel,
 } from '../src/lib/weather.js';
 
 export const WODONGA = { latitude: -36.12, longitude: 146.89 };
@@ -165,7 +178,7 @@ export function mergeDaily(forecastRows, archiveRows) {
 export function readArgs(argv) {
   const from = argv.find((arg) => arg.startsWith('--from='))?.slice('--from='.length) ?? null;
   if (from && !/^\d{4}-\d{2}-\d{2}$/.test(from)) throw new Error('--from must be YYYY-MM-DD');
-  return { from };
+  return { from, dryRun: argv.includes('--dry-run') };
 }
 
 function forecastUrl() {
@@ -207,52 +220,110 @@ async function fetchArchive(startIso, endIso) {
   return rows;
 }
 
-async function upsert(rows) {
+function supabaseConfig() {
   const base = process.env.SUPABASE_URL?.replace(/\/$/, '');
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!base || !key) throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+  if (!base || !key) throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY. Refusing to run.');
   if (!base.startsWith('https://')) throw new Error('SUPABASE_URL must be https');
+  return { base, key };
+}
+
+async function supabaseFetch(url, options = {}) {
+  const { key } = supabaseConfig();
+  let last;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const res = await fetch(url, {
+        ...options,
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+          ...options.headers,
+        },
+        signal: AbortSignal.timeout(20000),
+      });
+      if (res.ok) {
+        if (res.status === 204) return null;
+        const text = await res.text();
+        return text ? JSON.parse(text) : null;
+      }
+      const text = await res.text();
+      const err = new Error(`Supabase HTTP ${res.status}: ${text.slice(0, 180)}`);
+      if (res.status !== 429 && res.status < 500) throw Object.assign(err, { permanent: true });
+      last = err;
+    } catch (err) {
+      if (err?.permanent) throw err;
+      last = err;
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** attempt));
+    }
+  }
+  throw last instanceof Error ? last : new Error('Supabase request failed');
+}
+
+async function upsert(rows) {
+  const { base } = supabaseConfig();
   const fetchedAt = new Date().toISOString();
   const url = `${base}/rest/v1/weather_daily?on_conflict=date`;
   for (let i = 0; i < rows.length; i += 500) {
     const body = rows.slice(i, i + 500).map((row) => ({ ...row, fetched_at: fetchedAt }));
-    let last;
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            apikey: key,
-            Authorization: `Bearer ${key}`,
-            'Content-Type': 'application/json',
-            Prefer: 'resolution=merge-duplicates,return=minimal',
-          },
-          body: JSON.stringify(body),
-          signal: AbortSignal.timeout(20000),
-        });
-        if (res.ok) {
-          last = null;
-          break;
-        }
-        const text = await res.text();
-        const err = new Error(`Supabase HTTP ${res.status}: ${text.slice(0, 180)}`);
-        if (res.status !== 429 && res.status < 500) throw Object.assign(err, { permanent: true });
-        last = err;
-      } catch (err) {
-        if (err?.permanent) throw err;
-        last = err;
-        if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** attempt));
-      }
-    }
-    if (last) throw last;
+    await supabaseFetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(body),
+    });
   }
 }
 
-export async function main(argv = process.argv.slice(2)) {
-  const { from } = readArgs(argv);
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY. Refusing to run.');
+async function readShopSettings() {
+  const { base } = supabaseConfig();
+  const rows = await supabaseFetch(`${base}/rest/v1/shop_settings?id=eq.1&select=id,data`);
+  const row = rows?.[0];
+  if (!row) throw new Error('shop_settings id 1 was not found');
+  return row;
+}
+
+export function orderMelbourneDates(rows) {
+  const dates = [];
+  for (const row of rows ?? []) {
+    if (row.status === 'cancelled') continue;
+    const raw = row.createdAt;
+    const instant = typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(raw) ? raw : row.created_at;
+    if (instant) dates.push(melbourneDate(instant));
   }
+  return dates;
+}
+
+async function readOrderDates() {
+  const { base } = supabaseConfig();
+  const dates = [];
+  for (let offset = 0; ; offset += 1000) {
+    const page = await supabaseFetch(
+      `${base}/rest/v1/orders?select=created_at,createdAt:data->>createdAt,status:data->>status&order=created_at.asc&limit=1000&offset=${offset}`,
+    );
+    dates.push(...orderMelbourneDates(page));
+    if (!page || page.length < 1000) break;
+  }
+  return dates;
+}
+
+// Đọc lại ngay trước khi ghi. Chỉ ghép các khoá weatherLog của job; field khác giữ nguyên.
+async function writeWeatherLog(updates) {
+  if (!Object.keys(updates).length) return [];
+  const row = await readShopSettings();
+  const { data, written } = nextShopData(row.data, updates);
+  if (!written.length) return [];
+  const { base } = supabaseConfig();
+  await supabaseFetch(`${base}/rest/v1/shop_settings?id=eq.${row.id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+    body: JSON.stringify({ data }),
+  });
+  return written;
+}
+
+export async function main(argv = process.argv.slice(2)) {
+  const { from, dryRun } = readArgs(argv);
+  supabaseConfig();
   const today = melbourneToday();
   const archiveStart = from ?? addIsoDays(today, -DEFAULT_ARCHIVE_LOOKBACK);
   const errors = [];
@@ -269,11 +340,27 @@ export async function main(argv = process.argv.slice(2)) {
     errors.push(`archive: ${err.message}`);
   }
   const rows = mergeDaily(forecastRows, archiveRows);
-  if (rows.length) await upsert(rows);
-  const forecastN = rows.filter((row) => row.source === 'forecast').length;
-  const archiveN = rows.filter((row) => row.source === 'archive').length;
-  console.log(`weather_daily upserted ${rows.length} days (${forecastN} forecast, ${archiveN} archive) for ${WODONGA.latitude},${WODONGA.longitude}`);
+  const shop = await readShopSettings();
+  const orderDates = from ? await readOrderDates() : null;
+  const weeks = weeksToLabel({ today, from, orderDates });
+  const plan = planWeatherLogUpdates({ log: shop.data?.weatherLog, rows, weeks });
+  console.log(formatWeatherPlan({ rows, ...plan, dryRun }));
+  const applied = await applyPlan({
+    dryRun,
+    rows,
+    updates: plan.updates,
+    writeDaily: upsert,
+    writeLog: writeWeatherLog,
+  });
+  if (!dryRun) console.log(`weatherLog đã ghi ${applied.keys.length} tuần`);
   if (errors.length) throw new Error(errors.join('; '));
+}
+
+export async function applyPlan({ dryRun, rows, updates, writeDaily, writeLog }) {
+  if (dryRun) return { written: false, keys: [] };
+  if (rows?.length) await writeDaily(rows);
+  const keys = updates && Object.keys(updates).length ? await writeLog(updates) : [];
+  return { written: true, keys };
 }
 
 const invoked = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;

@@ -16,7 +16,7 @@ const SHOP_DEFAULTS = {
   logo: null, // ảnh dạng data URL, đã thu nhỏ
   shippingZones: null, // null: dùng DEFAULT_ZONES trong lib/shippingZones
   webOrdering: null, // website đặt món: { enabled, leadMinutes }; null = đang nhận đơn, đặt trước 30 phút
-  weatherLog: null, // thời tiết từng tuần do chủ quán chọn { '2026-11-16': 'hot' | 'mild' | 'cold' | 'rain' }, cho ô Dự báo
+  weatherLog: null, // { '2026-11-16': 'hot' } là tay; { value: 'hot', source: 'auto' } là job. Xem src/lib/weather.js
 };
 
 const DEVICE_DEFAULTS = {

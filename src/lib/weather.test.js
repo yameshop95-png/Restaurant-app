@@ -7,7 +7,12 @@ import {
   describeSymbol,
   isRainCode,
   melbourneDate,
+  mergeAutoUpdates,
+  mondayOf,
+  nextShopData,
+  planWeatherLogUpdates,
   suggestWeekWeather,
+  weeksToLabel,
 } from './weather.js';
 
 const week = '2026-11-16';
@@ -99,8 +104,86 @@ test('rain weather codes count as wet days', () => {
 test('a stored chip wins in the sentence', () => {
   const suggestion = suggestWeekWeather(days([{ temp: 32 }, { temp: 32 }, { temp: 32 }]), week);
   assert.match(describeSuggestion(suggestion, { stored: 'cold', canEdit: true }), /Đang chọn Lạnh/);
-  assert.doesNotMatch(describeSuggestion(suggestion, { stored: 'hot', canEdit: true }), /Gợi ý/);
+  assert.equal(describeSuggestion(suggestion, { stored: 'hot', canEdit: true }), null);
 });
+
+test('an automatic entry says tự chọn even when the daily rows are missing', () => {
+  const stored = { value: 'hot', source: 'auto' };
+  const suggestion = suggestWeekWeather(days([{ temp: 32 }, { temp: 32 }, { temp: 32 }]), week);
+  assert.match(describeSuggestion(suggestion, { stored }), /Tuần này nắng nóng \(~32°C\) \(tự chọn\)/);
+  assert.equal(describeSuggestion(null, { stored }), 'Tuần này nắng nóng (tự chọn).');
+});
+
+test('manual entries are never overwritten, including a cleared week and a legacy string', () => {
+  const hot = ['2026-11-16', '2026-11-17', '2026-11-18'].map((date) => ({
+    date, temp_max: 33, temp_min: 16, precipitation_mm: 0, weather_code: 0, source: 'archive',
+  }));
+  const log = {
+    '2026-11-16': 'cold',
+    '2026-11-09': { value: null, source: 'manual' },
+    '2026-11-02': { value: 'mild', source: 'auto' },
+  };
+  const weeks = [
+    { key: '2026-11-16', mode: 'current' },
+    { key: '2026-11-09', mode: 'archive' },
+    { key: '2026-11-02', mode: 'archive' },
+  ];
+  const cold = ['2026-11-02', '2026-11-03', '2026-11-04'].map((date) => ({
+    date, temp_max: 12, temp_min: 4, precipitation_mm: 0, weather_code: 0, source: 'archive',
+  }));
+  const { updates, skipped } = planWeatherLogUpdates({ log, rows: [...hot, ...cold], weeks });
+  assert.deepEqual(updates, { '2026-11-02': { value: 'cold', source: 'auto' } });
+  assert.deepEqual(skipped.map((item) => item.reason), ['manual', 'manual']);
+});
+
+test('a past week is finalised from archive rows only', () => {
+  const rows = [
+    ...['2026-11-09', '2026-11-10', '2026-11-11'].map((date) => ({
+      date, temp_max: 33, temp_min: 18, precipitation_mm: 0, weather_code: 0, source: 'forecast',
+    })),
+    ...['2026-11-09', '2026-11-10', '2026-11-11'].map((date) => ({
+      date, temp_max: 12, temp_min: 5, precipitation_mm: 0, weather_code: 3, source: 'archive',
+    })),
+  ];
+  const { updates } = planWeatherLogUpdates({
+    log: {},
+    rows,
+    weeks: [{ key: '2026-11-09', mode: 'archive' }],
+  });
+  assert.equal(updates['2026-11-09'].value, 'cold');
+});
+
+test('backfill weeks follow orders, and the fresh shop row keeps every other field', () => {
+  assert.equal(mondayOf('2026-11-17'), '2026-11-16');
+  assert.equal(mondayOf('2026-11-22'), '2026-11-16');
+  const weeks = weeksToLabel({
+    today: '2026-11-17',
+    from: '2026-11-01',
+    orderDates: ['2026-11-03', '2026-11-18'],
+  });
+  assert.deepEqual(weeks, [
+    { key: '2026-11-16', mode: 'current' },
+    { key: '2026-11-02', mode: 'archive' },
+  ]);
+  const data = {
+    shopName: 'Quán',
+    shippingZones: [{ name: 'nội ô' }],
+    weatherLog: { '2026-10-26': 'rain', '2026-11-16': { value: 'mild', source: 'auto' } },
+  };
+  const { data: next, written } = nextShopData(data, {
+    '2026-11-16': { value: 'hot', source: 'auto' },
+    '2026-10-26': { value: 'cold', source: 'auto' },
+  });
+  assert.deepEqual(written, ['2026-11-16']);
+  assert.equal(next.shopName, 'Quán');
+  assert.deepEqual(next.shippingZones, [{ name: 'nội ô' }]);
+  assert.equal(next.weatherLog['2026-10-26'], 'rain');
+  assert.deepEqual(next.weatherLog['2026-11-16'], { value: 'hot', source: 'auto' });
+  const merged = mergeAutoUpdates({ '2026-11-16': 'hot' }, { '2026-11-16': { value: 'rain', source: 'auto' } });
+  assert.deepEqual(merged.written, []);
+  assert.equal(merged.log['2026-11-16'], 'hot');
+});
+
 
 test('WMO codes and MET symbols share the short Vietnamese labels', () => {
   assert.equal(conditionFromWmo(0), 'Nắng');

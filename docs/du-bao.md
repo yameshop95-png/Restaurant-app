@@ -20,7 +20,7 @@ Cho từng món:
    - Dịp lễ: tuần chứa ngày lễ hoặc tuần ngay trước (khách đặt trước). Năm mới, Quốc khánh Úc 26/1, Phục Sinh, Ngày của Mẹ
      (Chủ nhật thứ 2 tháng 5), Ngày của Cha (Chủ nhật đầu tháng 9), Giáng sinh, và theo âm lịch: Tết, Rằm tháng 7 (Vu Lan), Trung thu (tự tính mọi năm).
      Lưu ý: Tết 2030 theo giờ Việt Nam là 2/2/2030 (lịch Trung Quốc là 3/2).
-   - Thời tiết: chủ quán chọn mỗi tuần (Nóng / Mát / Lạnh / Mưa), lưu chung trong thông tin quán (`weatherLog`, khoá là thứ Hai của tuần). Chưa chọn mà `weather_daily` đủ ngày của tuần đó thì chip được gợi ý (chưa ghi đè `weatherLog` cho tới khi chủ quán bấm). Ngưỡng nằm ở `src/lib/weather.js`.
+   - Thời tiết: mỗi tuần một chip (Nóng / Mát / Lạnh / Mưa), khoá là thứ Hai, nằm trong `weatherLog`. Chuỗi `'hot'` là lựa chọn tay (dữ liệu cũ vẫn đúng). Job hằng ngày ghi `{ value, source: 'auto' }` cho tuần này và chốt tuần đã qua bằng số liệu archive; bấm chip thì lưu chuỗi và job không ghi đè. Ngưỡng ở `src/lib/weather.js`.
    - Mùng 1 / Rằm âm lịch (`src/lib/lunar.js`, thuật toán Hồ Ngọc Đức, giờ UTC+7): tuần có mùng 1 hoặc Rằm, tính cả thứ Hai,
      thứ Ba ngay sau tuần (khách mua từ thứ 7 trước). Nhiều gia đình Việt mua giò chả để cúng.
    - Nghỉ lễ NSW / VIC: tuần có ngày nghỉ lễ rơi vào ngày thường (Albury NSW và Wodonga VIC nghỉ khác nhau: Melbourne Cup,
@@ -74,7 +74,7 @@ Theo thứ tự, mỗi bước kiểm bằng WAPE trên file "Kiểm tra dự b�
 - [ ] Khi có ≥ 1 năm: bật thử hệ số mùa riêng cho từng món; so tuần Tết, Giáng sinh năm nay với năm trước.
 - [ ] Khi có ≥ 2 mùa Tết: học hệ số riêng cho từng tuần trước Tết (4, 3, 2, 1 tuần), vì bánh chưng / bánh tét đặt trước nhiều tuần.
 - [ ] Khoảng dao động: thay ± độ lệch chuẩn bằng phân phối Poisson / nhị thức âm cho món bán ít, để khoảng không âm và sát hơn.
-- [ ] Khi `weather_daily` đã có vài mùa: so WAPE của tuần chủ quán bấm chọn với tuần chỉ để chip gợi ý. Nếu gợi ý tệ hơn, chỉnh ngưỡng ở `src/lib/weather.js`.
+- [ ] Khi `weather_daily` đã có vài mùa: so WAPE của tuần chủ quán bấm chọn (chuỗi trong `weatherLog`) với tuần job tự chọn (`source: 'auto'`). Nếu tuần tự chọn tệ hơn, chỉnh ngưỡng ở `src/lib/weather.js`.
 - [ ] Khách theo ngôn ngữ: khi đủ vài tháng, xem món nào khách tiếng Anh mua nhiều để viết mô tả / ảnh tiếng Anh cho món đó.
 
 ## 5. Dự báo trong tuần từ đơn đã đặt và số nên làm (`src/lib/nowcast.js`, ô "Dự báo món tuần này")

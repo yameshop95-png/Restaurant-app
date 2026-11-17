@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { CloudRain, Snowflake, Sparkles, Sun, TrendingDown, TrendingUp, Wind } from 'lucide-react';
 import { FAMILY_LABEL, WEATHER, weekKey, weeklyForecast } from '../lib/forecast';
 import { saveForecastOnce } from '../lib/forecastLog';
-import { describeSuggestion, suggestWeekWeather } from '../lib/weather';
+import { describeSuggestion, readWeatherEntry, suggestWeekWeather } from '../lib/weather';
 import { useWeatherDaily } from '../hooks/useWeatherDaily';
 import { nowcast, SERVICE_LEVELS } from '../lib/nowcast';
 
@@ -21,22 +21,23 @@ const SHOW = 6;
 const round = (n) => Math.round(n);
 
 // Ô "Dự báo tuần này": món nào khách sẽ mua nhiều, dựa trên dữ liệu bán của quán.
-// Chủ quán chọn thời tiết của tuần (lưu chung trong thông tin quán, weatherLog[weekKey]) để app học
-// món nào bán khác đi khi nóng / lạnh / mưa. Nếu tuần này chưa được chọn và bảng weather_daily có đủ ngày,
-// chip được gợi ý từ thời tiết thật của đúng tuần đó. Lựa chọn đã lưu luôn thắng gợi ý. Thiếu dữ liệu thì ô không đổi.
+// Thời tiết tuần nằm trong shop_settings.data.weatherLog. Chuỗi là lựa chọn tay. Job hằng ngày ghi
+// { value, source: 'auto' } và cập nhật mỗi ngày; bấm chip thì lưu chuỗi và job không ghi đè.
+// Thiếu thời tiết thì ô không đổi, trừ khi tuần này đã có dòng tự chọn.
 export default function ForecastCard({ orders, now, settings, isOwner, onUpdateSettings, weatherDays }) {
   const weatherLog = settings.weatherLog ?? {};
   const thisKey = weekKey(now);
   const stored = weatherLog[thisKey] ?? null;
+  const entry = readWeatherEntry(stored);
   const remoteDays = useWeatherDaily(weatherDays === undefined ? thisKey : null);
   const suggestion = useMemo(
     () => suggestWeekWeather(weatherDays === undefined ? remoteDays : weatherDays, thisKey),
     [weatherDays, remoteDays, thisKey],
   );
   const forecastLog = useMemo(() => {
-    if (stored || !suggestion) return weatherLog;
+    if (entry.manual || entry.auto || !suggestion) return weatherLog;
     return { ...weatherLog, [thisKey]: suggestion.id };
-  }, [weatherLog, stored, suggestion, thisKey]);
+  }, [weatherLog, entry.manual, entry.auto, suggestion, thisKey]);
   const f = useMemo(
     () => weeklyForecast({ orders, now, weatherLog: forecastLog }),
     // `now` đổi mỗi phút; chỉ cần tính lại khi đơn, thời tiết hoặc tuần thay đổi
@@ -56,7 +57,7 @@ export default function ForecastCard({ orders, now, settings, isOwner, onUpdateS
   // Tính lại mỗi phút (`now`) vì tỉ lệ đơn đã nhận thay đổi theo giờ trong tuần
   const nc = useMemo(() => nowcast({ forecast: f, orders, now, level }), [f, orders, now, level]);
   const rows = nc.items.filter((it) => it.total != null);
-  const chosen = stored ?? suggestion?.id ?? null;
+  const chosen = entry.manual || entry.auto ? entry.id : (suggestion?.id ?? null);
   const suggestionLine = describeSuggestion(suggestion, { stored, canEdit: Boolean(isOwner) });
   // Ghi lại dự báo đầu tiên của tuần trên máy này, để sau so với số bán thật (xem docs/du-bao.md)
   useEffect(() => saveForecastOnce(f), [f]);
@@ -64,8 +65,10 @@ export default function ForecastCard({ orders, now, settings, isOwner, onUpdateS
   const setWeather = (id) => {
     if (!isOwner || !onUpdateSettings) return;
     const next = { ...weatherLog };
-    // Chip đã lưu thì bấm lại để bỏ, như trước. Chip mới chỉ đang gợi ý thì bấm một lần là lưu lựa chọn đó.
-    if (stored === id) delete next[thisKey];
+    const active = entry.manual || entry.auto ? entry.id : null;
+    // Chip đã lưu (tay hoặc tự chọn) thì bấm lại để tắt, và ghi là lựa chọn tay để job không bật lại.
+    // Chip mới chỉ đang gợi ý, hoặc chip khác, thì bấm một lần là lưu chuỗi như trước.
+    if (active === id) next[thisKey] = { value: null, source: 'manual' };
     else next[thisKey] = id;
     onUpdateSettings({ weatherLog: next });
   };

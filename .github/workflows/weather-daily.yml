@@ -1,4 +1,5 @@
-# Lấy thời tiết Wodonga mỗi ngày và ghi weather_daily.
+# Lấy thời tiết Wodonga mỗi ngày, ghi weather_daily, rồi tự chọn chip tuần trong shop_settings.data.weatherLog.
+# Chip chủ quán đã bấm (chuỗi, hoặc { source: 'manual' }) không bị ghi đè.
 # Chỉ schedule và workflow_dispatch. Không chạy trên pull request hay push,
 # nên mở PR không đụng database. Schedule chỉ có hiệu lực sau khi file này nằm trên nhánh mặc định.
 # Cần secret SUPABASE_URL và SUPABASE_SERVICE_ROLE_KEY (không commit).
