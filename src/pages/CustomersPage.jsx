@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { CircleDollarSign, MapPin, Pencil, Phone, Plus, Search, Trash2, UserRound, X } from 'lucide-react';
+import { BellRing, CircleDollarSign, MapPin, MessageSquare, Pencil, Phone, Plus, Search, Trash2, UserRound, X } from 'lucide-react';
 import { matchesCustomer, sameCustomer } from '../hooks/useCustomers';
 import { customerProfile } from '../lib/customerInsights';
+import { reminderMessage, smsLink } from '../lib/customerMessage';
 import { formatMoney, orderTotal } from '../lib/stats';
 
 const inputClass = (error) =>
@@ -14,6 +15,7 @@ function CustomerSheet({ customer, canDelete, onSave, onDelete, onClose }) {
     name: customer?.name ?? '',
     phone: customer?.phone ?? '',
     address: customer?.address ?? '',
+    marketingConsent: Boolean(customer?.marketingConsent),
   });
   const [submitted, setSubmitted] = useState(false);
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -60,6 +62,23 @@ function CustomerSheet({ customer, canDelete, onSave, onDelete, onClose }) {
               {shown[key] && <span className="mt-1 block text-sm text-red-600">{shown[key]}</span>}
             </label>
           ))}
+          <label className="flex items-start gap-3 rounded-2xl border border-slate-200 p-3">
+            <input
+              type="checkbox"
+              checked={form.marketingConsent}
+              onChange={(e) => setForm((f) => ({ ...f, marketingConsent: e.target.checked }))}
+              className="mt-1 h-5 w-5 shrink-0"
+            />
+            <span className="text-sm text-slate-700">
+              <b className="block text-slate-900">Khách đồng ý nhận tin nhắn của quán</b>
+              Món mới, nhắc đặt hàng, ưu đãi. Chỉ đánh dấu khi khách đã đồng ý (luật Spam Act của Úc). Khách nhắn STOP thì bỏ đánh dấu.
+              {customer?.consentAt && form.marketingConsent && (
+                <span className="block text-xs text-slate-500">
+                  Đồng ý từ {new Date(customer.consentAt).toLocaleDateString('vi-VN')}
+                </span>
+              )}
+            </span>
+          </label>
         </div>
 
         <div className="flex gap-2 border-t border-slate-200 px-5 py-4">
@@ -92,6 +111,7 @@ export default function CustomersPage({
   customers,
   orders,
   now,
+  settings,
   isOwner,
   onAddCustomer,
   onUpdateCustomer,
@@ -101,6 +121,7 @@ export default function CustomersPage({
   // undefined: đóng · null: thêm khách mới · object: sửa khách đó
   const [editing, setEditing] = useState(undefined);
   const [debtOnly, setDebtOnly] = useState(false);
+  const [dueOnly, setDueOnly] = useState(false);
 
   // Số đơn, tổng tiền và tiền còn nợ (đơn chưa thanh toán, không tính đơn huỷ) của từng khách
   const statsById = new Map(
@@ -115,6 +136,7 @@ export default function CustomersPage({
           debt: unpaid.reduce((sum, o) => sum + orderTotal(o), 0),
           debtCount: unpaid.length,
           profile: customerProfile(list, now ?? new Date()),
+          lang: list.find((o) => o.lang)?.lang ?? 'vi',
         },
       ];
     })
@@ -122,11 +144,23 @@ export default function CustomersPage({
   const debtors = customers.filter((c) => statsById.get(c.id).debt > 0);
   const totalDebt = debtors.reduce((sum, c) => sum + statsById.get(c.id).debt, 0);
 
+  // Khách quen đến hạn đặt lại: đã ≥ 2 lần đặt và đã quá khoảng cách thường lệ giữa hai lần
+  const isDue = (c) => {
+    const p = statsById.get(c.id).profile;
+    return Boolean(p && p.count >= 2 && p.due && c.phone);
+  };
+  const dueList = customers.filter(isDue);
+
   const visible = customers
     .filter((c) => !query.trim() || matchesCustomer(c, query))
     .filter((c) => !debtOnly || statsById.get(c.id).debt > 0)
+    .filter((c) => !dueOnly || isDue(c))
     .sort((a, b) =>
-      debtOnly ? statsById.get(b.id).debt - statsById.get(a.id).debt : a.name.localeCompare(b.name, 'vi')
+      debtOnly
+        ? statsById.get(b.id).debt - statsById.get(a.id).debt
+        : dueOnly
+          ? (statsById.get(b.id).profile?.next7 ?? 0) - (statsById.get(a.id).profile?.next7 ?? 0)
+          : a.name.localeCompare(b.name, 'vi')
     );
 
   return (
@@ -154,6 +188,26 @@ export default function CustomersPage({
               {debtors.length} khách còn nợ · {formatMoney(totalDebt)}
             </span>
             <span className="text-sm">{debtOnly ? 'Đang xem khách còn nợ – bấm để xem tất cả' : 'Bấm để xem khách còn nợ'}</span>
+          </span>
+        </button>
+      )}
+
+      {dueList.length > 0 && (
+        <button
+          onClick={() => {
+            setDueOnly((v) => !v);
+            setDebtOnly(false);
+          }}
+          className={`mb-4 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left ${
+            dueOnly ? 'bg-blue-50 text-blue-600 ring-1 ring-blue-500' : 'bg-card text-blue-600 ring-1 ring-slate-200'
+          }`}
+        >
+          <BellRing size={22} className="shrink-0" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold">{dueList.length} khách quen đến hạn đặt lại</span>
+            <span className="text-sm">
+              {dueOnly ? 'Đang xem khách đến hạn, bấm để xem tất cả' : 'Bấm để xem và nhắn nhắc (khách đã đồng ý nhận tin)'}
+            </span>
           </span>
         </button>
       )}
@@ -206,6 +260,22 @@ export default function CustomersPage({
                         </>
                       )}
                     </p>
+                  )}
+                  {dueOnly && (
+                    <div className="mt-2">
+                      {c.marketingConsent ? (
+                        <a
+                          href={smsLink(c.phone, reminderMessage(c, s.profile, s.lang, settings?.shopName))}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-blue-500 px-3 py-2 text-sm font-semibold text-white active:bg-blue-600"
+                        >
+                          <MessageSquare size={15} /> Nhắn nhắc đặt
+                        </a>
+                      ) : (
+                        <p className="text-xs text-slate-500">
+                          Chưa có đồng ý nhận tin nhắn quảng cáo. Hỏi khách khi họ tới lấy hàng, rồi bấm Sửa để đánh dấu.
+                        </p>
+                      )}
+                    </div>
                   )}
                   {s.debt > 0 && (
                     <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-bold text-red-600">
