@@ -25,6 +25,7 @@ import {
   CustomerActivityPage,
   MenuPage,
   InventoryPage,
+  PrepPage,
   SettingsPage,
 } from './pages';
 
@@ -33,6 +34,7 @@ const PAGES = {
   home: HomePage,
   orders: OrdersPage,
   delivery: DeliveryPage,
+  prep: PrepPage,
   report: ReportPage,
   customers: CustomersPage,
   activity: CustomerActivityPage,

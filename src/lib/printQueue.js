@@ -1,7 +1,8 @@
 // Gửi bill vào hàng đợi để máy tính ở quán (print-bridge) in ra máy Uniwell.
 import { supabase } from './supabase';
 import { billBase64 } from './escpos';
-import { billImageBase64 } from './escposImage';
+import { billImageBase64, canvasBase64, drawPrepSheet } from './escposImage';
+import { timeOf } from './prep';
 
 // In dạng hình ảnh (có đủ dấu tiếng Việt); nếu trình duyệt không vẽ được thì in chữ không dấu
 function payloadFor(order, shopName) {
@@ -32,4 +33,11 @@ export async function sendManyToShopPrinter(orders, shopName, onProgress) {
     onProgress?.(sent, orders.length);
   }
   return sent;
+}
+
+// In phiếu làm hàng của một ngày ra máy in ở quán
+export async function sendPrepSheet(sheet, label, shopName) {
+  const payload = canvasBase64(drawPrepSheet(sheet, label, shopName, timeOf));
+  const { error } = await supabase.from('print_jobs').insert({ payload, note: `Phiếu làm hàng ${label}` });
+  if (error) throw error;
 }
