@@ -2,6 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { CloudRain, Snowflake, Sparkles, Sun, TrendingDown, TrendingUp, Wind } from 'lucide-react';
 import { FAMILY_LABEL, WEATHER, weekKey, weeklyForecast } from '../lib/forecast';
 import { saveForecastOnce } from '../lib/forecastLog';
+import { nowcast, SERVICE_LEVELS } from '../lib/nowcast';
+
+const LEVEL_KEY = 'restaurant-app.service-level';
+const readLevel = () => {
+  try {
+    const v = Number(localStorage.getItem(LEVEL_KEY));
+    return SERVICE_LEVELS.some((l) => l.id === v) ? v : 0.75;
+  } catch {
+    return 0.75;
+  }
+};
 
 const WEATHER_ICON = { hot: Sun, mild: Wind, cold: Snowflake, rain: CloudRain };
 const SHOW = 6;
@@ -19,6 +30,18 @@ export default function ForecastCard({ orders, now, settings, isOwner, onUpdateS
     [orders, weatherLog, thisKey],
   );
   const [open, setOpen] = useState(null);
+  const [level, setLevel] = useState(readLevel);
+  const chooseLevel = (v) => {
+    setLevel(v);
+    try {
+      localStorage.setItem(LEVEL_KEY, String(v));
+    } catch {
+      // không lưu được: vẫn dùng trong lần mở này
+    }
+  };
+  // Tính lại mỗi phút (`now`) vì tỉ lệ đơn đã nhận thay đổi theo giờ trong tuần
+  const nc = useMemo(() => nowcast({ forecast: f, orders, now, level }), [f, orders, now, level]);
+  const rows = nc.items.filter((it) => it.total != null);
   const chosen = weatherLog[thisKey] ?? null;
   // Ghi lại dự báo đầu tiên của tuần trên máy này, để sau so với số bán thật (xem docs/du-bao.md)
   useEffect(() => saveForecastOnce(f), [f]);
@@ -64,53 +87,84 @@ export default function ForecastCard({ orders, now, settings, isOwner, onUpdateS
         </div>
       </div>
 
-      {!f.ready ? (
+      {rows.length === 0 ? (
         <p className="mt-4 rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-500">
-          Cần ít nhất {f.minWeeks} tuần bán hàng để dự báo (hiện có {f.weeksUsed}).
+          {f.ready
+            ? 'Chưa có món nào bán trong 4 tuần gần đây.'
+            : `Cần ít nhất ${f.minWeeks} tuần bán hàng để dự báo (hiện có ${f.weeksUsed}). Trong lúc chờ, xem số đã đặt ở mục Phiếu làm hàng.`}
         </p>
-      ) : f.items.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500">Chưa có món nào bán trong 4 tuần gần đây.</p>
       ) : (
-        <ol className="mt-4 divide-y divide-slate-200 border-t border-slate-200">
-          {f.items.slice(0, SHOW).map((it, i) => {
-            const up = it.change != null && it.change >= 1.1;
-            const down = it.change != null && it.change <= 0.9;
-            return (
-              <li key={it.key} className="py-2.5">
+        <>
+          <div className="mt-4">
+            <p className="text-xs text-slate-500">Mức đủ hàng khi gợi ý số nên làm</p>
+            <div className="mt-1.5 flex flex-wrap gap-2" role="group" aria-label="Mức đủ hàng">
+              {SERVICE_LEVELS.map((l) => (
                 <button
+                  key={l.id}
                   type="button"
-                  onClick={() => setOpen(open === it.key ? null : it.key)}
-                  aria-expanded={open === it.key}
-                  className="flex w-full items-center gap-3 text-left"
+                  aria-pressed={level === l.id}
+                  onClick={() => chooseLevel(l.id)}
+                  title={l.hint}
+                  className={`rounded-xl border px-3 py-1.5 text-sm font-semibold ${
+                    level === l.id ? 'border-blue-500 bg-blue-500 text-white' : 'border-slate-200 text-slate-700'
+                  }`}
                 >
-                  <span className="w-5 shrink-0 text-sm font-bold text-slate-400">{i + 1}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold text-slate-900">{it.name}</span>
-                    <span className="block text-xs text-slate-500">
-                      Đã bán {round(it.soldSoFar)} phần tuần này
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-right">
-                    <span className="flex items-center justify-end gap-1 font-bold text-slate-900">
-                      {up && <TrendingUp size={15} className="text-emerald-600" aria-label="tăng" />}
-                      {down && <TrendingDown size={15} className="text-red-600" aria-label="giảm" />}~{round(it.expected)} phần
-                    </span>
-                    <span className="block text-[11px] text-slate-500">
-                      khoảng {round(it.low)}–{round(it.high)}
-                    </span>
-                  </span>
+                  {l.label} {Math.round(l.id * 100)}%
                 </button>
-                {open === it.key && (
-                  <ul className="mt-2 space-y-0.5 pl-8 text-xs text-slate-500">
-                    {it.reasons.map((r) => (
-                      <li key={r}>• {r}</li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            );
-          })}
-        </ol>
+              ))}
+            </div>
+          </div>
+          <ol className="mt-3 divide-y divide-slate-200 border-t border-slate-200">
+            {rows.slice(0, SHOW).map((it, i) => {
+              const up = it.change != null && it.change >= 1.1;
+              const down = it.change != null && it.change <= 0.9;
+              return (
+                <li key={it.key} className="py-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setOpen(open === it.key ? null : it.key)}
+                    aria-expanded={open === it.key}
+                    className="flex w-full items-center gap-3 text-left"
+                  >
+                    <span className="w-5 shrink-0 text-sm font-bold text-slate-400">{i + 1}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-semibold text-slate-900">{it.name}</span>
+                      <span className="block text-xs text-slate-500">
+                        Đã đặt {round(it.soldSoFar)} · dự kiến ~{round(it.total)} phần (80%: {it.p10}–{it.p90})
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-right">
+                      <span className="flex items-center justify-end gap-1 font-bold text-slate-900">
+                        {up && <TrendingUp size={15} className="text-emerald-600" aria-label="tăng" />}
+                        {down && <TrendingDown size={15} className="text-red-600" aria-label="giảm" />}
+                        Làm {it.make}
+                      </span>
+                      <span className="block text-[11px] text-slate-500">phần cả tuần</span>
+                    </span>
+                  </button>
+                  {open === it.key && (
+                    <ul className="mt-2 space-y-0.5 pl-8 text-xs text-slate-500">
+                      {it.reasons.map((r) => (
+                        <li key={r}>• {r}</li>
+                      ))}
+                      {it.expected != null && <li>• Theo mô hình (chưa tính đơn tuần này): ~{round(it.expected)} phần</li>}
+                      <li>
+                        • Làm {it.make} phần thì khoảng {Math.round(level * 100)}% khả năng đủ hàng cho cả tuần
+                      </li>
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+          {nc.curve.f != null && (
+            <p className="mt-2 text-xs text-slate-500">
+              Tới giờ này trong tuần, {nc.curve.weeks} tuần trước thường đã có khoảng{' '}
+              <span className="font-semibold">{Math.round(nc.curve.f * 100)}%</span> số phần của cả tuần. Càng gần cuối tuần, số dự
+              kiến càng dựa vào đơn thật.
+            </p>
+          )}
+        </>
       )}
 
       {f.notes.map((n) => (

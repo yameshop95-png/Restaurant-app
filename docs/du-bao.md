@@ -70,3 +70,21 @@ Theo thứ tự, mỗi bước kiểm bằng WAPE trên file "Kiểm tra dự b�
 - [ ] Nếu quán muốn thời tiết tự động: mua gói thương mại của một nhà cung cấp thời tiết (đọc kỹ điều khoản), lưu nhiệt độ
       trung bình tuần thay cho lựa chọn tay, rồi so WAPE trước và sau.
 - [ ] Khách theo ngôn ngữ: khi đủ vài tháng, xem món nào khách tiếng Anh mua nhiều để viết mô tả / ảnh tiếng Anh cho món đó.
+
+## 5. Dự báo trong tuần từ đơn đã đặt và số nên làm (`src/lib/nowcast.js`, ô "Dự báo món tuần này")
+
+Quán nhận đặt trước trong tuần, nên giữa tuần đã biết một phần nhu cầu thật.
+
+1. **Đường nhận đơn**: 8 tuần gần nhất, tới cùng thời điểm này trong tuần (tính từ 0 giờ thứ Hai) thường đã có bao nhiêu %
+   số phần của cả tuần → `f` (cần ít nhất 2 tuần có đơn).
+2. **Phần còn lại** của tuần cho mỗi món, trộn hai cách theo trọng số `f`:
+   - theo đơn đã đặt `S`: `S·(1 − f) / f`
+   - theo mô hình (mục 1): `dự báo · (1 − f)`
+   - `còn lại = f · theo đơn + (1 − f) · theo mô hình`; chưa đủ tuần cho mô hình thì chỉ dùng theo đơn.
+   Dự kiến cả tuần = `S + còn lại`.
+3. **Khoảng 80%** và **số nên làm**: phần còn lại theo phân phối nhị thức âm, phương sai = max(1,5 × trung bình,
+   độ lệch chuẩn 8 tuần² × (1 − f)). Số nên làm = `S +` phân vị ở mức đủ hàng chủ quán chọn (60%, 75%, 90%).
+   Cách chọn mức (bài toán người bán báo): mức = lãi mỗi phần ÷ (lãi mỗi phần + tiền mất khi phải bỏ phần dư).
+   Ví dụ giò lụa bán A$13, vốn A$4, dư phải bỏ: 9 ÷ 13 ≈ 69%, chọn "Cân bằng 75%" hoặc "Ít dư 60%".
+
+Mức đủ hàng lưu trên từng máy (`localStorage`, khoá `restaurant-app.service-level`).
