@@ -6,6 +6,8 @@
 # Nên thêm secret WEATHER_USER_AGENT có email liên hệ, ví dụ:
 #   restaurant-dashboard/0.1 owner@example.com
 # MET Norway yêu cầu User-Agent nhận diện được người gọi.
+# Run workflow có hai ô tuỳ chọn: from (YYYY-MM-DD) và dry_run.
+# Lịch hằng ngày không gửi hai ô đó, nên script chạy không có --from và không có --dry-run.
 
 name: Daily weather
 
@@ -15,6 +17,16 @@ on:
     # Lệch khỏi phút :00 vì MET Norway đề nghị không dồn request vào đầu giờ.
     - cron: '17 21 * * *'
   workflow_dispatch:
+    inputs:
+      from:
+        description: 'Backfill start date (YYYY-MM-DD). Leave empty for the daily window.'
+        required: false
+        type: string
+      dry_run:
+        description: 'Print the plan and do not write'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -29,8 +41,21 @@ jobs:
         with:
           node-version: '22'
       - name: Fetch and upsert Wodonga weather
-        run: node scripts/weather-daily.mjs
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           WEATHER_USER_AGENT: ${{ secrets.WEATHER_USER_AGENT }}
+          WEATHER_FROM: ${{ inputs.from }}
+          WEATHER_DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          args=()
+          if [ -n "${WEATHER_FROM}" ]; then
+            case "${WEATHER_FROM}" in
+              [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) args+=("--from=${WEATHER_FROM}") ;;
+              *) echo "from must be YYYY-MM-DD" >&2; exit 1 ;;
+            esac
+          fi
+          if [ "${WEATHER_DRY_RUN}" = "true" ]; then
+            args+=("--dry-run")
+          fi
+          node scripts/weather-daily.mjs "${args[@]}"

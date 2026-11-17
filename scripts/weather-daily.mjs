@@ -7,7 +7,9 @@
 //   node scripts/weather-daily.mjs --from=YYYY-MM-DD
 //   node scripts/weather-daily.mjs --from=YYYY-MM-DD --dry-run
 //
-// --from điền các tuần đã qua có đơn (bỏ tuần đã chọn tay). --dry-run in kế hoạch, không ghi.
+// Cùng hai cờ đó nằm trên Actions → Daily weather → Run workflow (ô from và dry_run).
+// Lịch hằng ngày không gửi cờ nào. --from điền các tuần đã qua có đơn (bỏ tuần đã chọn tay).
+// --dry-run in kế hoạch, không ghi.
 // Không chạy khi import (test gọi các hàm thuần). Không đọc file .env trong repo.
 //
 // Nguồn đang dùng (được phép dùng cho quán, có ghi nguồn):
