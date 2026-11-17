@@ -162,7 +162,19 @@ function conditions(start, weatherLog) {
     weather: weatherLog[key] ?? null,
     moon: moonWeek(start),
     publicHol: publicHolidayWeek(start),
+    tetPeak: tetPeakWeek(start),
   };
+}
+
+// Tuần cao điểm Tết: tuần có thứ 7 giao hàng cuối cùng trước (hoặc đúng) mùng 1 Tết
+export function tetPeakWeek(start) {
+  for (const y of [start.getFullYear(), start.getFullYear() + 1]) {
+    const tet = lunarEventsOfYear(y).find((e) => e.id === 'tet')?.date;
+    if (!tet) continue;
+    const days = Math.round((tet - start) / DAY);
+    if (days >= 5 && days < 12) return 'yes';
+  }
+  return 'no';
 }
 
 // ---------- Dữ liệu theo tuần ----------
@@ -317,6 +329,8 @@ function reasonOf(part, label) {
       return part.value === 'yes'
         ? `Tuần có ngày nghỉ lễ NSW / VIC thường bán ${pct(part.f)} (${part.n} tuần)`
         : null;
+    case 'tetPeak':
+      return `Tuần sát Tết năm trước bán ${part.f >= 1 ? `gấp ${part.f.toFixed(1)} lần` : pct(part.f)} tuần thường`;
     default:
       return null;
   }
@@ -331,7 +345,8 @@ export function weeklyForecast({ orders, now, weatherLog = {} }) {
     cond: conditions(keyDate(thisKey), weatherLog),
     current: true,
   };
-  const done = weeks.filter((w) => !w.current);
+  // Tuần cả quán không có đơn nào = quán nghỉ (VD tháng 6–11/2026): bỏ qua, không tính là bán 0 phần
+  const done = weeks.filter((w) => !w.current && w.qty.size > 0);
   const notes = [];
   const tet = [target.start.getFullYear(), target.start.getFullYear() + 1]
     .flatMap((y) => lunarEventsOfYear(y))
@@ -358,6 +373,26 @@ export function weeklyForecast({ orders, now, weatherLog = {} }) {
   const dishKeys = [...names.keys()];
   const sel = selectFamilies(done, dishKeys);
   const pred = predictWeek(done, target, dishKeys, sel.chosen);
+  // Tết mỗi năm chỉ 1 tuần nên backtest không kịp học: có tuần Tết năm trước thì áp thẳng tỉ lệ bán của tuần đó
+  const tetWeeks = done.filter((w) => w.cond.tetPeak === 'yes');
+  if (target.cond.tetPeak === 'yes' && tetWeeks.length) {
+    let before = 0;
+    let after = 0;
+    for (const k of dishKeys) {
+      const r = pred.get(k);
+      const normal = done.filter((w) => w.cond.tetPeak !== 'yes');
+      const avg = normal.reduce((a, w) => a + (w.qty.get(k) ?? 0), 0) / Math.max(1, normal.length);
+      const tet = tetWeeks.reduce((a, w) => a + (w.qty.get(k) ?? 0), 0) / tetWeeks.length;
+      const f = avg > 0 ? (tetWeeks.length * (tet / avg) + 1) / (tetWeeks.length + 1) : 1;
+      before += r.expected;
+      if (avg > 0 || tet > 0) {
+        r.expected = avg > 0 ? r.expected * f : (r.expected + tet) / 2;
+        r.parts.push({ family: 'tetPeak', value: 'yes', f, n: tetWeeks.length });
+      }
+      after += r.expected;
+    }
+    if (before > 0) notes.push(`Tuần sát Tết: năm trước tuần này bán gấp khoảng ${(after / before).toFixed(1)} lần tuần thường, số dự báo đã tính thêm.`);
+  }
   const items = [];
   for (const k of dishKeys) {
     const r = pred.get(k);
