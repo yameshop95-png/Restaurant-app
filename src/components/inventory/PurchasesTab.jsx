@@ -54,7 +54,7 @@ function PurchaseSheet({ ingredients, onSave, onClose }) {
         <Field label={`Số lượng${ing ? ` (${ing.unit})` : ''}`}>
           <input inputMode="decimal" value={qty} onChange={(e) => setQty(e.target.value)} placeholder="VD: 10" className={inputClass(false)} />
         </Field>
-        <Field label="Tổng tiền (A$)" hint={unitPrice != null && ing ? `= ${money(unitPrice)} / ${ing.unit}` : undefined}>
+        <Field label="Tổng tiền ($)" hint={unitPrice != null && ing ? `= ${money(unitPrice)} / ${ing.unit}` : undefined}>
           <input inputMode="decimal" value={total} onChange={(e) => setTotal(e.target.value)} placeholder="VD: 120" className={inputClass(false)} />
         </Field>
       </div>

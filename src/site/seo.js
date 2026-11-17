@@ -150,7 +150,7 @@ function trimTitle(title) {
 
 function dishDescription(dish, txt) {
   const price = audPrice(dish.price);
-  const tail = [price && txt.portion ? `A$${price} for ${txt.portion}.` : price ? `A$${price}.` : '', 'Pre-order online.']
+  const tail = [price && txt.portion ? `$${price} for ${txt.portion}.` : price ? `$${price}.` : '', 'Pre-order online.']
     .filter(Boolean)
     .join(' ');
   const full = `${txt.short} ${tail}`.replace(/\s+/g, ' ').trim();

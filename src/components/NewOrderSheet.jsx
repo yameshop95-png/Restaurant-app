@@ -369,7 +369,7 @@ export default function NewOrderSheet({ type, order, menu, customers = [], order
 
           <div className="grid grid-cols-2 gap-3">
             {isDelivery && (
-              <Field label="Phí ship (A$)" error={errors.shippingFee} required={false}>
+              <Field label="Phí ship ($)" error={errors.shippingFee} required={false}>
                 <input
                   inputMode="decimal"
                   value={form.shippingFee}
@@ -404,7 +404,7 @@ export default function NewOrderSheet({ type, order, menu, customers = [], order
                 )}
               </Field>
             )}
-            <Field label="Giảm giá (A$)" error={errors.discount} required={false}>
+            <Field label="Giảm giá ($)" error={errors.discount} required={false}>
               <input
                 inputMode="decimal"
                 value={form.discount}

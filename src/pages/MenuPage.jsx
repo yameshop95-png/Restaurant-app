@@ -49,7 +49,7 @@ function MenuItemSheet({ item, menu, onSave, onDelete, onClose }) {
           </label>
           <label className="block">
             <span className="mb-1 block text-sm font-semibold text-slate-700">
-              Giá (A$) <span className="text-red-500">*</span>
+              Giá ($) <span className="text-red-500">*</span>
             </span>
             <input
               inputMode="decimal"

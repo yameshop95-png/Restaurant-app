@@ -31,7 +31,7 @@ function ExpenseSheet({ onSave, onClose }) {
         <Field label="Ngày chi">
           <input type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} className={inputClass(false)} />
         </Field>
-        <Field label="Số tiền (A$)" error={error}>
+        <Field label="Số tiền ($)" error={error}>
           <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="VD: 25" className={inputClass(error)} />
         </Field>
       </div>

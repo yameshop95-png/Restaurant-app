@@ -130,7 +130,7 @@ function RecipeSheet({ dish, recipe, ingredients, costs, onSave, onClear, onClos
         </button>
       </div>
 
-      <Field label="Chi phí khác mỗi phần (A$)" hint="VD: hộp, túi, nước chấm. Để trống nếu không có">
+      <Field label="Chi phí khác mỗi phần ($)" hint="VD: hộp, túi, nước chấm. Để trống nếu không có">
         <input inputMode="decimal" value={extra} onChange={(e) => setExtra(e.target.value)} placeholder="0" className={inputClass(false)} />
       </Field>
 

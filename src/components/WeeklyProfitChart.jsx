@@ -12,7 +12,7 @@ const DEFAULT_TARGET = 500; // lãi trên A$500/tuần mới tô tím, đổi đ
 const COLOR = { over: '#8b5cf6', profit: '#10b981', loss: '#ef4444' };
 const ddmm = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
 const dm = (d) => `${d.getDate()}/${d.getMonth() + 1}`; // nhãn ngắn dưới cột
-const whole = (n) => `A$${Math.round(n).toLocaleString('en-AU')}`;
+const whole = (n) => `$${Math.round(n).toLocaleString('en-AU')}`;
 
 export default function WeeklyProfitChart({ orders, menu, now, target: savedTarget, onTargetChange }) {
   const inventory = useInventory();
@@ -75,7 +75,7 @@ export default function WeeklyProfitChart({ orders, menu, now, target: savedTarg
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="VD 500"
-              aria-label="Mục tiêu lợi nhuận mỗi tuần (A$)"
+              aria-label="Mục tiêu lợi nhuận mỗi tuần ($)"
               className="w-24 rounded-xl border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500"
             />
             <button type="submit" className="rounded-xl bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white">
