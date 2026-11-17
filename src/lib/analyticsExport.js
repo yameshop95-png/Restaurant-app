@@ -67,14 +67,28 @@ export function analyticsSheets({ orders, now, weatherLog = {}, inventory = null
         w.cond.payday,
         w.cond.holiday ?? '',
         WEATHER[w.cond.weather] ?? '',
+        w.cond.moon === 'yes' ? 'có' : '',
+        w.cond.publicHol === 'yes' ? 'có' : '',
       ]);
     }
   }
   sheets.push({
     sheet: 'Món theo tuần',
-    columns: [{ width: 12 }, { width: 26 }, { width: 8 }, { width: 13 }, { width: 10 }, { width: 8 }, { width: 10 }, { width: 12 }, { width: 10 }],
+    columns: [{ width: 12 }, { width: 26 }, { width: 8 }, { width: 13 }, { width: 10 }, { width: 8 }, { width: 10 }, { width: 12 }, { width: 10 }, { width: 12 }, { width: 12 }],
     data: [
-      boldHeader(['Tuần (thứ Hai)', 'Món', 'Phần', 'Trạng thái', 'Tuần trong tháng', 'Mùa', 'Nhóm tuần lương', 'Dịp lễ', 'Thời tiết']),
+      boldHeader([
+        'Tuần (thứ Hai)',
+        'Món',
+        'Phần',
+        'Trạng thái',
+        'Tuần trong tháng',
+        'Mùa',
+        'Nhóm tuần lương',
+        'Dịp lễ',
+        'Thời tiết',
+        'Mùng 1 / Rằm',
+        'Nghỉ lễ NSW/VIC',
+      ]),
       ...weekRows,
     ],
   });
