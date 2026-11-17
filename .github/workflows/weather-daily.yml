@@ -1,0 +1,35 @@
+# Lấy thời tiết Wodonga mỗi ngày và ghi weather_daily.
+# Chỉ schedule và workflow_dispatch. Không chạy trên pull request hay push,
+# nên mở PR không đụng database. Schedule chỉ có hiệu lực sau khi file này nằm trên nhánh mặc định.
+# Cần secret SUPABASE_URL và SUPABASE_SERVICE_ROLE_KEY (không commit).
+# Nên thêm secret WEATHER_USER_AGENT có email liên hệ, ví dụ:
+#   restaurant-dashboard/0.1 owner@example.com
+# MET Norway yêu cầu User-Agent nhận diện được người gọi.
+
+name: Daily weather
+
+on:
+  schedule:
+    # 21:17 UTC. Khoảng 08:17 giờ Melbourne khi đang giờ mùa hè, 07:17 khi giờ chuẩn.
+    # Lệch khỏi phút :00 vì MET Norway đề nghị không dồn request vào đầu giờ.
+    - cron: '17 21 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upsert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fetch and upsert Wodonga weather
+        run: node scripts/weather-daily.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          WEATHER_USER_AGENT: ${{ secrets.WEATHER_USER_AGENT }}
