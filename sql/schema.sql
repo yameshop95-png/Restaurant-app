@@ -2,7 +2,7 @@
 -- CẤU TRÚC DATABASE (Supabase) CỦA APP QUÁN — bản chụp ngày 17/11/2026
 -- Lấy từ kết quả sql/inspect.sql. Dùng để dựng lại project Supabase mới
 -- nếu project cũ bị mất: chạy file này trong SQL Editor của project mới,
--- rồi chạy tiếp sql/security_fixes.sql. Sau đó nhập lại dữ liệu từ file
+-- rồi chạy tiếp sql/security_fixes.sql và sql/manager_role.sql. Sau đó nhập lại dữ liệu từ file
 -- sao lưu (Excel/JSON) trong Cài đặt.
 --
 -- File này KHÔNG chứa dữ liệu (đơn, khách, mã PIN). Tài khoản chủ quán đầu

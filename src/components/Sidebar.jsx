@@ -1,5 +1,6 @@
 import { AlarmClock, BellRing, LogOut, Phone, UserRound, X } from 'lucide-react';
 import { NAV_ITEMS } from './navigation';
+import { ROLE_LABEL } from './StaffSettings';
 
 function Badge({ count, active }) {
   if (!count) return null;
@@ -136,7 +137,7 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
           <UserRound size={18} className="shrink-0 text-slate-500" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-white">{account.name}</p>
-            <p className="text-xs text-slate-500">{account.role === 'owner' ? 'Chủ quán' : 'Nhân viên'}</p>
+            <p className="text-xs text-slate-500">{ROLE_LABEL[account.role] ?? 'Nhân viên'}</p>
           </div>
           <button
             onClick={onLogout}

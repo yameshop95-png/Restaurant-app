@@ -423,6 +423,7 @@ function backupStatus(lastBackupAt) {
 export default function SettingsPage({
   account,
   isOwner,
+  isManager,
   dataReady,
   onLogout,
   orders,
@@ -453,7 +454,7 @@ export default function SettingsPage({
       {isOwner && <ShopInfo settings={settings} onUpdateSettings={onUpdateSettings} />}
       {isOwner && <WebOrderingSettings settings={settings} onUpdateSettings={onUpdateSettings} />}
       {isOwner && <ShippingZonesSettings settings={settings} onUpdateSettings={onUpdateSettings} />}
-      {isOwner && <StaffManager account={account} />}
+      {(isOwner || isManager) && <StaffManager account={account} />}
       <InstallApp />
       <MapsSettings settings={settings} onUpdateSettings={onUpdateSettings} />
       <AlertSettings settings={settings} onUpdateSettings={onUpdateSettings} />

@@ -4,7 +4,12 @@ import { normalizeText } from '../hooks/useCustomers';
 import { hasLocalData, localDataMoved, markLocalDataMoved, readLocalData } from '../lib/localData';
 import { supabase } from '../lib/supabase';
 
-const ROLE_LABEL = { owner: 'Chủ quán', staff: 'Nhân viên' };
+export const ROLE_LABEL = { owner: 'Chủ quán', manager: 'Quản lý', staff: 'Nhân viên' };
+const ROLE_NOTE = {
+  owner: 'Toàn quyền',
+  manager: 'Xem tiền tuần này, quản lý nhân viên; không xem tổng, báo cáo, không sửa giá',
+  staff: 'Tạo, xử lý đơn; không xem tiền, không sửa giá',
+};
 
 const inputClass =
   'w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100';
@@ -30,12 +35,15 @@ export function AccountCard({ account, onLogout }) {
   );
 }
 
-function StaffForm({ person, onSaved, onClose }) {
+function StaffForm({ person, account, onSaved, onClose }) {
   const [name, setName] = useState(person?.name ?? '');
   const [role, setRole] = useState(person?.role ?? 'staff');
   const [pin, setPin] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  // Quản lý chỉ tạo/sửa nhân viên; tự sửa mình thì giữ nguyên quyền quản lý
+  const roles =
+    account.role === 'owner' ? ['owner', 'manager', 'staff'] : [person?.id === account.id ? 'manager' : 'staff'];
 
   const save = async () => {
     if (!name.trim()) return setError('Nhập tên');
@@ -67,8 +75,9 @@ function StaffForm({ person, onSaved, onClose }) {
         <span className="mb-1 block text-sm font-semibold text-slate-700">Tên</span>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="VD: Lan" className={inputClass} />
       </label>
-      <div className="grid grid-cols-2 gap-2">
-        {Object.entries(ROLE_LABEL).map(([id, label]) => (
+      {roles.length > 1 && (
+      <div className="grid grid-cols-3 gap-2">
+        {roles.map((id) => (
           <button
             key={id}
             onClick={() => setRole(id)}
@@ -77,10 +86,12 @@ function StaffForm({ person, onSaved, onClose }) {
               role === id ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-700'
             }`}
           >
-            {label}
+            {ROLE_LABEL[id]}
           </button>
         ))}
       </div>
+      )}
+      <p className="text-xs text-slate-500">{ROLE_NOTE[role]}</p>
       <label className="block">
         <span className="mb-1 block text-sm font-semibold text-slate-700">
           {person ? 'Mã PIN mới (để trống nếu giữ mã cũ)' : 'Mã PIN (4 số)'}
@@ -128,6 +139,9 @@ export function StaffManager({ account }) {
     load();
   }, [load]);
 
+  const isOwner = account.role === 'owner';
+  const canEdit = (p) => isOwner || p.role === 'staff' || p.id === account.id;
+
   const remove = async (person) => {
     if (!window.confirm(`Xoá ${person.name}? Máy đang dùng mã của người này sẽ bị đăng xuất ngay.`)) return;
     const { error: err } = await supabase.rpc('remove_staff', { staff_id: person.id });
@@ -144,7 +158,9 @@ export function StaffManager({ account }) {
         <div>
           <h2 className="font-bold text-slate-900">Nhân viên & mã PIN</h2>
           <p className="text-sm text-slate-500">
-            Nhân viên tạo, xử lý đơn được; không xem báo cáo, doanh thu, không sửa giá
+            {isOwner
+              ? 'Chủ quán toàn quyền · Quản lý xem tiền tuần, quản lý nhân viên · Nhân viên chỉ xử lý đơn'
+              : 'Bạn thêm, sửa, xoá được tài khoản nhân viên và đổi mã PIN của mình'}
           </p>
         </div>
       </div>
@@ -161,17 +177,19 @@ export function StaffManager({ account }) {
                     {p.name}
                     {p.id === account.id && <span className="text-sm font-normal text-slate-400"> (bạn)</span>}
                   </p>
-                  <p className={`text-sm ${p.role === 'owner' ? 'font-semibold text-slate-800' : 'text-slate-500'}`}>
+                  <p className={`text-sm ${p.role !== 'staff' ? 'font-semibold text-slate-800' : 'text-slate-500'}`}>
                     {ROLE_LABEL[p.role]}
                   </p>
                 </div>
+                {canEdit(p) && (
                 <button
                   onClick={() => setEditing(p)}
                   className="flex items-center gap-1 rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-600 active:bg-slate-200"
                 >
                   <Pencil size={14} /> Sửa
                 </button>
-                {p.id !== account.id && (
+                )}
+                {p.id !== account.id && canEdit(p) && (
                   <button
                     onClick={() => remove(p)}
                     className="rounded-lg bg-red-50 p-2 text-red-600 active:bg-red-100"
@@ -186,13 +204,13 @@ export function StaffManager({ account }) {
         )}
 
         {editing !== undefined ? (
-          <StaffForm key={editing?.id ?? 'new'} person={editing} onSaved={load} onClose={() => setEditing(undefined)} />
+          <StaffForm key={editing?.id ?? 'new'} person={editing} account={account} onSaved={load} onClose={() => setEditing(undefined)} />
         ) : (
           <button
             onClick={() => setEditing(null)}
             className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-slate-300 py-3 font-semibold text-slate-700 active:bg-slate-50"
           >
-            <Plus size={18} /> Thêm người
+            <Plus size={18} /> {isOwner ? 'Thêm người' : 'Thêm nhân viên'}
           </button>
         )}
         <p className="text-xs text-slate-400">

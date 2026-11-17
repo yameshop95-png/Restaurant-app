@@ -64,6 +64,8 @@ export default function App() {
 
 function Shop({ account, onLogout }) {
   const isOwner = account.role === 'owner';
+  // Quản lý: như nhân viên, thêm xem tiền tuần này và quản lý tài khoản nhân viên
+  const isManager = account.role === 'manager';
   const [activeTab, setActiveTab] = useState('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const {
@@ -228,6 +230,7 @@ function Shop({ account, onLogout }) {
           <ActivePage
             account={account}
             isOwner={isOwner}
+            isManager={isManager}
             dataReady={ordersReady}
             onLogout={onLogout}
             orders={orders}

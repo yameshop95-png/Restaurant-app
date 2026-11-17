@@ -192,10 +192,12 @@ function DashTiles({ orders, counts, customers, menu, settings, now, isOwner, we
   );
 }
 
-// Nhân viên không thấy doanh thu: chỉ số đơn và số phần từng món
-export default function HomePage({ orders, now, settings, isOwner, onBackupNow, counts, customers, menu, onNavigate, onUpdateSettings }) {
+// Nhân viên không thấy doanh thu: chỉ số đơn và số phần từng món. Quản lý thấy tiền tuần này, không thấy tổng cộng dồn / lợi nhuận
+export default function HomePage({ orders, now, settings, isOwner, isManager, onBackupNow, counts, customers, menu, onNavigate, onUpdateSettings }) {
   const stats = useMemo(() => summarize(orders, now), [orders, now]);
   const maxQty = stats.weekItems[0]?.qty ?? 0;
+  // Quản lý xem được tiền tuần này, không xem tổng cộng dồn và lợi nhuận
+  const seeWeekMoney = isOwner || isManager;
 
   return (
     // Điện thoại / máy tính thường: một cột. Màn hình rộng (xl): hai cột, trái là tổng tiền, phải là món bán trong tuần.
@@ -240,7 +242,7 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow, 
         <p className="mt-1 text-sm text-slate-500">Từ thứ Hai {formatDate(stats.weekStart)}</p>
       </div>
 
-      {isOwner ? (
+      {seeWeekMoney ? (
         <>
           <div className="grid grid-cols-2 gap-3">
             <Card title="Đã thanh toán">
@@ -263,7 +265,9 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow, 
           </div>
           {stats.olderUnpaid.count > 0 && (
             <p className="-mt-1 rounded-2xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-600">
-              + {formatMoney(stats.olderUnpaid.total)} chưa thu từ các tuần trước ({stats.olderUnpaid.count} đơn)
+              {isOwner
+                ? `+ ${formatMoney(stats.olderUnpaid.total)} chưa thu từ các tuần trước (${stats.olderUnpaid.count} đơn)`
+                : `+ ${stats.olderUnpaid.count} đơn tuần trước chưa thu tiền`}
             </p>
           )}
 
@@ -279,12 +283,14 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow, 
 
           <ShiftClose orders={orders} now={now} shopName={settings.shopName} />
 
+          {isOwner && (
           <Card title="Tổng cộng dồn">
             <div className="flex items-end justify-between px-5 pb-5 pt-1">
               <p className="text-3xl font-bold tracking-tight text-slate-900">{formatMoney(stats.allTimeRevenue)}</p>
               <span className="text-sm text-slate-500">{stats.allTimeOrderCount} đơn từ trước tới nay</span>
             </div>
           </Card>
+          )}
         </>
       ) : (
         <Card title="Đơn tuần này">
@@ -328,7 +334,7 @@ export default function HomePage({ orders, now, settings, isOwner, onBackupNow, 
               <li key={item.name} className="px-5 py-3">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="font-semibold text-slate-900">{item.name}</span>
-                  {isOwner && <span className="shrink-0 font-semibold text-slate-900">{formatMoney(item.revenue)}</span>}
+                  {seeWeekMoney && <span className="shrink-0 font-semibold text-slate-900">{formatMoney(item.revenue)}</span>}
                 </div>
                 <div className="mt-1.5 flex items-center gap-3">
                   <div className="h-1.5 flex-1 rounded-full bg-slate-200">
