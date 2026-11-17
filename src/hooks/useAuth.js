@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { cacheClear } from '../lib/listCache';
 import { isNetworkError, supabase } from '../lib/supabase';
 
 // Đăng nhập bằng mã PIN 4 số. Mỗi máy có một phiên ẩn danh của Supabase (không cần email);
@@ -28,13 +29,17 @@ export default function useAuth() {
   // Hỏi máy chủ máy này đang đăng nhập bằng ai. Bị đổi PIN / xoá tài khoản thì về màn hình nhập PIN.
   const check = useCallback(async () => {
     const { data: { session } = {} } = await supabase.auth.getSession();
-    if (!session) return setState({ status: 'signedOut' });
+    if (!session) {
+      cacheClear();
+      return setState({ status: 'signedOut' });
+    }
     const { data, error } = await supabase.rpc('my_account');
     if (error) {
       // Đang dùng mà rớt mạng: giữ nguyên, lần kiểm tra sau sẽ cập nhật
       setState((s) => (s.status === 'signedIn' ? s : { status: 'offline', error: friendly(error) }));
       return;
     }
+    if (!data) cacheClear(); // bị đăng xuất từ xa (đổi PIN, xoá tài khoản): xoá bản lưu tạm
     setState(data ? { status: 'signedIn', account: data } : { status: 'signedOut' });
   }, []);
 
@@ -66,6 +71,7 @@ export default function useAuth() {
 
   const logout = async () => {
     await supabase.rpc('pin_logout');
+    await cacheClear(); // xoá bản lưu tạm dữ liệu quán trên máy này
     setState({ status: 'signedOut' });
   };
 
