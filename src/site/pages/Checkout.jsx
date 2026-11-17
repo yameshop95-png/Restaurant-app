@@ -198,6 +198,12 @@ export default function Checkout() {
   }, [pickupSlots, form.time]);
 
   const items = menu.filter((m) => qty[m.id] > 0).map((m) => ({ ...m, price: Number(m.price), qty: qty[m.id] }));
+  // Gợi ý "Khách hay mua kèm" (chủ quán bật ở tab Báo cáo của app): món hay đi cùng món đang có trong giỏ, chưa có trong giỏ
+  const pairs = web.pairs ?? {};
+  const suggestions = [...new Set(items.flatMap((i) => pairs[i.id] ?? []))]
+    .map((id) => menu.find((m) => m.id === id))
+    .filter((m) => m && m.available !== false && !(qty[m.id] > 0))
+    .slice(0, 3);
   const count = items.reduce((s, i) => s + i.qty, 0);
   const subtotal = items.reduce((s, i) => s + i.qty * i.price, 0);
   const isDelivery = form.type === 'delivery';
@@ -620,6 +626,23 @@ export default function Checkout() {
                       <span className="shrink-0 text-slate-500">{formatMoney(i.qty * i.price)}</span>
                     </p>
                   ))
+                )}
+                {suggestions.length > 0 && (
+                  <div className="py-2" data-testid="pairs">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{t.pairsTitle}</p>
+                    <div className="mt-1.5 flex flex-wrap gap-2">
+                      {suggestions.map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => setCartQty(m.id, 1)}
+                          className="rounded-full border border-blue-500 px-3 py-1.5 text-sm font-semibold text-blue-500 active:bg-blue-50"
+                        >
+                          + {checkoutName(m, lang)} · {formatMoney(Number(m.price))}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
                 {isDelivery && (
                   <p className="flex justify-between gap-3 text-slate-500">

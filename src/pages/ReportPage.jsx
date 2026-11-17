@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import AnalyticsExportCard from '../components/AnalyticsExportCard';
 import LanguageCard from '../components/LanguageCard';
+import PairsCard from '../components/PairsCard';
 import { buildReport, PERIODS, reportForAI, shiftPeriod } from '../lib/report';
 import { formatMoney } from '../lib/stats';
 
@@ -247,7 +248,7 @@ const INSIGHT_ICON = {
   neutral: <Lightbulb size={16} className="mt-0.5 shrink-0 text-amber-600" />,
 };
 
-export default function ReportPage({ orders, menu, settings }) {
+export default function ReportPage({ orders, menu, settings, onUpdateSettings }) {
   const [kind, setKind] = useState('month');
   const [anchor, setAnchor] = useState(() => new Date());
   const report = useMemo(() => buildReport(orders, kind, anchor, menu), [orders, kind, anchor, menu]);
@@ -421,6 +422,7 @@ export default function ReportPage({ orders, menu, settings }) {
       </Card>
 
       <LanguageCard orders={orders} range={report.range} />
+      <PairsCard orders={orders} menu={menu} settings={settings ?? {}} onUpdateSettings={onUpdateSettings} />
 
       <AIAnalysis report={report} />
 

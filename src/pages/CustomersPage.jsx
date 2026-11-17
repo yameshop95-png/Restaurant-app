@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CircleDollarSign, MapPin, Pencil, Phone, Plus, Search, Trash2, UserRound, X } from 'lucide-react';
 import { matchesCustomer, sameCustomer } from '../hooks/useCustomers';
+import { customerProfile } from '../lib/customerInsights';
 import { formatMoney, orderTotal } from '../lib/stats';
 
 const inputClass = (error) =>
@@ -87,7 +88,15 @@ function CustomerSheet({ customer, canDelete, onSave, onDelete, onClose }) {
   );
 }
 
-export default function CustomersPage({ customers, orders, isOwner, onAddCustomer, onUpdateCustomer, onDeleteCustomer }) {
+export default function CustomersPage({
+  customers,
+  orders,
+  now,
+  isOwner,
+  onAddCustomer,
+  onUpdateCustomer,
+  onDeleteCustomer,
+}) {
   const [query, setQuery] = useState('');
   // undefined: đóng · null: thêm khách mới · object: sửa khách đó
   const [editing, setEditing] = useState(undefined);
@@ -105,6 +114,7 @@ export default function CustomersPage({ customers, orders, isOwner, onAddCustome
           total: list.reduce((sum, o) => sum + orderTotal(o), 0),
           debt: unpaid.reduce((sum, o) => sum + orderTotal(o), 0),
           debtCount: unpaid.length,
+          profile: customerProfile(list, now ?? new Date()),
         },
       ];
     })
@@ -176,6 +186,25 @@ export default function CustomersPage({ customers, orders, isOwner, onAddCustome
                   {s.count > 0 && (
                     <p className="mt-0.5 text-xs text-slate-400">
                       {s.count} đơn · {formatMoney(s.total)}
+                    </p>
+                  )}
+                  {s.profile && s.profile.count >= 2 && (
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      Hay mua:{' '}
+                      {s.profile.dishes
+                        .filter((d) => d.p >= 0.4)
+                        .slice(0, 3)
+                        .map((d) => `${d.name} ${Math.round(d.p * 100)}%`)
+                        .join(' · ') || 'chưa rõ'}
+                      {s.profile.next7 != null && (
+                        <>
+                          {' · '}
+                          <span className={s.profile.next7 >= 0.5 ? 'font-semibold text-emerald-600' : ''}>
+                            khả năng đặt trong 7 ngày {Math.round(s.profile.next7 * 100)}%
+                          </span>{' '}
+                          (thường {Math.round(s.profile.typical)} ngày/lần, lần cuối {s.profile.since} ngày trước)
+                        </>
+                      )}
                     </p>
                   )}
                   {s.debt > 0 && (
