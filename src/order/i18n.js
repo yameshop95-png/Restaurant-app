@@ -35,6 +35,7 @@ export const TEXT = {
     email: 'Email (không bắt buộc)',
     errEmail: 'Email chưa đúng',
     privacyNote: 'Nếu bạn chưa đặt xong, quán có thể lưu tên, số điện thoại và email bạn đã nhập để liên hệ lại.',
+    consent: 'Đồng ý nhận tin nhắn của quán (món mới, nhắc đặt món). Trả lời STOP để ngừng bất cứ lúc nào.',
     address: 'Địa chỉ giao',
     addressHint: 'Số nhà, tên đường, khu (suburb)',
     houseNo: 'Số nhà',
@@ -66,6 +67,7 @@ export const TEXT = {
     errItems: 'Chọn ít nhất 1 món',
     errors: {
       closed: 'Quán đang tạm ngưng nhận đơn online. Bạn gọi quán để đặt nhé.',
+      closed_date: 'Quán nghỉ ngày này. Bạn chọn ngày khác nhé.',
       delivery_day: 'Ngày giao không hợp lệ. Bạn chọn lại ngày giao nhé.',
       cutoff: 'Đã qua hạn chót đặt giao cho ngày này. Bạn chọn ngày giao tuần sau nhé.',
       zone: 'Địa chỉ ngoài khu giao hàng. Bạn chọn "Đến lấy" hoặc gọi quán nhé.',
@@ -123,6 +125,7 @@ export const TEXT = {
     email: 'Email (optional)',
     errEmail: 'Check the email address',
     privacyNote: 'If you do not finish your order, the shop may keep the name, phone and email you entered to follow up.',
+    consent: 'Send me texts from the shop (new dishes, order reminders). Reply STOP to opt out any time.',
     address: 'Delivery address',
     addressHint: 'Street number, street, suburb',
     houseNo: 'Number',
@@ -154,6 +157,7 @@ export const TEXT = {
     errItems: 'Add at least 1 item',
     errors: {
       closed: 'Online orders are paused right now. Please call us to order.',
+      closed_date: 'We are closed on that day. Please pick another day.',
       delivery_day: 'That delivery day is not available. Please pick the delivery day again.',
       cutoff: 'Orders for that delivery day have closed. Please choose next week.',
       zone: 'This address is outside our delivery area. Choose Pickup or give us a call.',

@@ -93,6 +93,7 @@ export default function Checkout() {
     street: '',
     suburb: '',
     note: '',
+    consent: false, // đồng ý nhận tin nhắn; mặc định không tích (Spam Act)
     deliveryDate: '',
     website: '', // ô bẫy chống máy tự gửi, người thật không thấy
   }));
@@ -261,6 +262,7 @@ export default function Checkout() {
       deliverAt: due.toISOString(),
       items: items.map((i) => ({ id: i.id, qty: i.qty })),
       lang, // để quán nhắn tin xác nhận đúng ngôn ngữ khách dùng
+      marketingConsent: form.consent,
     };
     const { data: res, error } = await siteClient().rpc('place_web_order', { payload });
     setSending(false);
@@ -268,7 +270,7 @@ export default function Checkout() {
     if (res?.error) {
       const msg = t.errors[res.error];
       if (res.error === 'time') return setServerError(t.errTime(res.leadMinutes ?? lead));
-      if (res.error === 'cutoff' || res.error === 'delivery_day') load();
+      if (res.error === 'cutoff' || res.error === 'delivery_day' || res.error === 'closed_date') load();
       if (res.error === 'unavailable') {
         load();
         return setServerError(t.errors.unavailable(res.item));
@@ -534,6 +536,15 @@ export default function Checkout() {
                 />
               </Field>
               <p className="-mt-1 text-xs text-slate-500">{t.privacyNote}</p>
+              <label className="flex items-start gap-3 rounded-xl bg-slate-50 px-3 py-3 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={form.consent}
+                  onChange={(e) => setForm((f) => ({ ...f, consent: e.target.checked }))}
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-blue-500"
+                />
+                <span>{t.consent}</span>
+              </label>
               {isDelivery && (
                 <fieldset className="space-y-3">
                   <legend className="mb-1 text-sm font-semibold text-slate-700">{t.address}</legend>
