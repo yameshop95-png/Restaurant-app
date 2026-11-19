@@ -145,7 +145,7 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
               >
                 <Printer size={14} /> In bill
               </button>
-              {order.customer?.phone && (
+              {order.customer?.phone && order.status === 'pending' && (
                 <button
                   onClick={() => setMessaging(true)}
                   className="flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600 active:bg-slate-200"
