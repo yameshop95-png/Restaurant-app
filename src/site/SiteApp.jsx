@@ -16,16 +16,6 @@ import Post from './pages/Post';
 const LANG_KEY = 'order-site.lang';
 const CART_KEY = 'site.cart';
 
-// Bật hiệu ứng chuyển trang sau lần mở đầu. Giảm chuyển động thì không bật.
-function markPageEnter() {
-  if (typeof document === 'undefined') return;
-  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-    delete document.documentElement.dataset.nav;
-    return;
-  }
-  document.documentElement.dataset.nav = '1';
-}
-
 // Website cho khách. Lúc build, mỗi trang được dựng sẵn thành HTML (scripts/prerender.mjs) để Google đọc được;
 // trên trình duyệt React tiếp quản, tải lại giá / còn hết món mới nhất và chuyển trang không cần tải lại.
 // Lần vẽ đầu tiên phải giống hệt bản dựng sẵn: tiếng Anh, giỏ trống; sau đó mới đọc ngôn ngữ và giỏ đã lưu.
@@ -56,13 +46,7 @@ export default function SiteApp({ initialPath, initialData }) {
     setLangState(saved ?? 'vi');
     setCart(store.get(CART_KEY, {}));
     reload();
-    const onPop = () => {
-      const next = window.location.pathname;
-      setPathname((prev) => {
-        if (prev !== next) markPageEnter();
-        return next;
-      });
-    };
+    const onPop = () => setPathname(window.location.pathname);
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, [reload]);
@@ -110,7 +94,6 @@ export default function SiteApp({ initialPath, initialData }) {
     if (!to.startsWith(BASE)) return;
     e?.preventDefault();
     const [p, hash] = to.split('#');
-    if (p !== window.location.pathname) markPageEnter();
     window.history.pushState({}, '', to);
     setPathname(p);
     setTimeout(() => (hash ? document.getElementById(hash)?.scrollIntoView() : window.scrollTo(0, 0)), 0);
@@ -158,9 +141,7 @@ export default function SiteApp({ initialPath, initialData }) {
     <SiteContext.Provider value={value}>
       <div className="flex min-h-screen flex-col bg-page">
         <Nav />
-        <main key={`${route.name}:${route.slug ?? ''}`} className="page-enter flex-1 pb-28">
-          {page}
-        </main>
+        <main className="flex-1 pb-24">{page}</main>
         <Footer />
         <CartBar />
         <MessengerButton />
