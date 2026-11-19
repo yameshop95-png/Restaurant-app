@@ -7,7 +7,10 @@ import './staff-motion.css';
 // iOS chỉ hiện :active trên phần tử không phải nút sau khi đã có một listener chạm.
 window.addEventListener('touchstart', () => {}, { passive: true });
 
-// Giữ ô đang bấm thêm một nhịp sau khi thả, để vệt cam kịp hiện trên cú chạm nhanh.
+// Bong bóng: bóp nhẹ rồi nảy vượt lên và về chỗ. Chạy hết sau khi thả tay,
+// để một cú chạm nhanh trên điện thoại vẫn thấy đủ nhịp.
+const SQUISH_MS = 90;
+const POP_MS = 560;
 const pressTarget = (event) => {
   const node = event.target;
   if (!(node instanceof Element)) return null;
@@ -16,30 +19,34 @@ const pressTarget = (event) => {
   return el;
 };
 let pressedEl = null;
-const releasePress = (el) => {
-  window.clearTimeout(el._staffPressTimer);
-  el._staffPressTimer = window.setTimeout(() => el.classList.remove('is-pressed'), 220);
+const stopBubble = (el) => {
+  window.clearTimeout(el._staffSquishTimer);
+  window.clearTimeout(el._staffPopTimer);
+  el.classList.remove('is-squish', 'is-pop');
+};
+const playBubble = (el) => {
+  stopBubble(el);
+  void el.offsetWidth;
+  el.classList.add('is-squish');
+  el._staffSquishTimer = window.setTimeout(() => {
+    el.classList.remove('is-squish');
+    el.classList.add('is-pop');
+    el._staffPopTimer = window.setTimeout(() => el.classList.remove('is-pop'), POP_MS);
+  }, SQUISH_MS);
 };
 window.addEventListener(
   'pointerdown',
   (event) => {
     const el = pressTarget(event);
     if (!el) return;
-    if (pressedEl && pressedEl !== el) {
-      window.clearTimeout(pressedEl._staffPressTimer);
-      pressedEl.classList.remove('is-pressed');
-    }
     pressedEl = el;
-    el.classList.add('is-pressed');
-    window.clearTimeout(el._staffPressTimer);
+    playBubble(el);
   },
   { passive: true },
 );
 window.addEventListener(
   'pointerup',
   () => {
-    if (!pressedEl) return;
-    releasePress(pressedEl);
     pressedEl = null;
   },
   { passive: true },
@@ -48,8 +55,7 @@ window.addEventListener(
   'pointercancel',
   () => {
     if (!pressedEl) return;
-    window.clearTimeout(pressedEl._staffPressTimer);
-    pressedEl.classList.remove('is-pressed');
+    stopBubble(pressedEl);
     pressedEl = null;
   },
   { passive: true },

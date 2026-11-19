@@ -75,37 +75,77 @@ html.staff-app button.staff-float:active:not(:disabled) {
   transform: scale(0.97);
 }
 
-/* Dashboard tiles and menu rows: a quick lift plus an orange glow.
-   The transition is short so a phone tap reaches the full state before the finger lifts.
-   .is-pressed is held briefly after pointerup (see main.jsx) so the glow stays visible. */
+/* Dashboard tiles and menu rows: a bubble tap.
+   Finger down squishes (is-squish), then the tile springs past its size and settles (is-pop).
+   The sequence keeps running after the finger lifts so a short phone tap still shows the pop.
+   The orange edge stays 1px. The halo is a wide, dim blur — not a solid ring. */
 html.staff-app .staff-press {
   position: relative;
   z-index: 0;
   -webkit-tap-highlight-color: transparent;
   transition:
-    transform 0.1s cubic-bezier(0.2, 0.85, 0.2, 1),
-    box-shadow 0.1s ease,
-    border-color 0.08s ease,
+    transform 0.52s cubic-bezier(0.34, 1.3, 0.45, 1),
+    border-color 0.35s ease,
     background-color 0.15s ease,
     color 0.15s ease;
+}
+
+html.staff-app .staff-press::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow:
+    0 0 18px 2px rgba(255, 150, 80, 0.16),
+    0 0 42px 16px rgba(255, 100, 36, 0.11);
+  transition: opacity 0.45s ease;
 }
 
 html.staff-app .staff-press button:active:not(:disabled) {
   transform: none;
 }
 
-html.staff-app button.staff-press:active:not(:disabled),
-html.staff-app button.staff-press.is-pressed:not(:disabled),
-html.staff-app li.staff-press:active,
-html.staff-app li.staff-press.is-pressed {
+html.staff-app button.staff-press.is-squish,
+html.staff-app li.staff-press.is-squish {
   z-index: 5;
-  transform: translateY(-6px) scale(1.06);
-  border-color: #ff7a33;
-  box-shadow:
-    inset 0 0 0 3px #ff6a22,
-    0 0 0 2px #ff5722,
-    0 0 22px 5px rgba(255, 94, 20, 0.95),
-    0 18px 34px rgba(0, 0, 0, 0.55);
+  transform: translateY(1px) scale(0.95);
+  transition:
+    transform 0.08s ease-out,
+    border-color 0.12s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+html.staff-app button.rounded-3xl.bg-card.staff-press.is-squish {
+  transform: translateY(1px) scale(0.95);
+}
+
+html.staff-app button.staff-press.is-pop,
+html.staff-app li.staff-press.is-pop {
+  z-index: 5;
+  transform: translateY(-5px) scale(1.045);
+  border-color: rgba(255, 168, 114, 0.5);
+  transition:
+    transform 0.5s cubic-bezier(0.34, 1.56, 0.4, 1),
+    border-color 0.22s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+html.staff-app button.rounded-3xl.bg-card.staff-press.is-pop {
+  transform: translateY(-5px) scale(1.045);
+}
+
+html.staff-app li.staff-press.is-pop {
+  outline: 1px solid rgba(255, 168, 114, 0.45);
+  outline-offset: -1px;
+}
+
+html.staff-app .staff-press.is-squish::after,
+html.staff-app .staff-press.is-pop::after {
+  opacity: 1;
 }
 
 html.staff-app .staff-menu {
@@ -222,8 +262,26 @@ html.staff-app .staff-stagger > *:nth-child(n + 9):not(.fixed) { animation-delay
   html.staff-app button.rounded-3xl.bg-card:active,
   html.staff-app button:active,
   html.staff-app .staff-press:active,
-  html.staff-app .staff-press.is-pressed {
+  html.staff-app .staff-press.is-squish,
+  html.staff-app .staff-press.is-pop {
     transform: none !important;
+  }
+
+  html.staff-app .staff-press.is-squish,
+  html.staff-app .staff-press.is-pop {
+    border-color: rgba(255, 168, 114, 0.55);
+  }
+
+  html.staff-app li.staff-press.is-squish,
+  html.staff-app li.staff-press.is-pop {
+    outline: 1px solid rgba(255, 168, 114, 0.5);
+    outline-offset: -1px;
+  }
+
+  html.staff-app .staff-press.is-squish::after,
+  html.staff-app .staff-press.is-pop::after {
+    opacity: 1;
+    transition: none;
   }
 
   html.staff-app .staff-chrome,
