@@ -81,7 +81,7 @@ export const TEXT = {
     callUs: 'Gọi quán',
     textUs: 'Nhắn tin',
     afterCutoff: (day, cut) =>
-      `Đã quá hạn đặt online cho ${day} này (${cut}). Bạn vẫn có thể gọi điện hoặc nhắn tin trực tiếp cho quán, quán sẽ cố gắng sắp xếp. Đơn giao hàng đặt tại đây sẽ được giao vào tuần sau.`,
+      `Đã quá hạn đặt online cho ${day} này (${cut}). Bạn nhắn tin hoặc gọi điện trực tiếp cho quán, quán sẽ sắp xếp và lên đơn giúp bạn. Nếu bạn muốn đặt cho tuần sau thì cứ đặt bình thường bên dưới.`,
     loadError: 'Không tải được thực đơn.',
     retry: 'Thử lại',
     doneTitle: 'Đã nhận đơn!',
@@ -174,7 +174,7 @@ export const TEXT = {
     callUs: 'Call us',
     textUs: 'Text us',
     afterCutoff: (day, cut) =>
-      `Online orders for this ${day} closed at ${cut}. You can still call or text us directly and we will do our best to fit you in. Delivery orders placed here will be for next week.`,
+      `Online orders for this ${day} closed at ${cut}. Please text or call us directly and we will arrange it and enter your order. If you would like to order for next week, just order as normal below.`,
     loadError: 'Could not load the menu.',
     retry: 'Try again',
     doneTitle: 'Order received!',

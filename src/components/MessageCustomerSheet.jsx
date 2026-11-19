@@ -94,9 +94,13 @@ export default function MessageCustomerSheet({ order, shopName, shopAddress, onC
           </button>
           <a
             href={smsLink(phone, text)}
+            // Để trình duyệt mở app Tin nhắn trước; cập nhật trạng thái đơn và đóng khung sau đó, vì đổi giao diện
+            // ngay lúc bấm làm màn hình nhảy và có thể huỷ việc chuyển sang app Tin nhắn.
             onClick={() => {
-              onSent?.(kind);
-              onClose();
+              setTimeout(() => {
+                onSent?.(kind);
+                onClose();
+              }, 800);
             }}
             className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-blue-500 py-3.5 font-semibold text-white active:bg-blue-600"
           >
