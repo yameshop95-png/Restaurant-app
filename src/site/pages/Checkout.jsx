@@ -168,6 +168,22 @@ export default function Checkout() {
     }
   }, [deliveryDays, form.deliveryDate]);
 
+  // Đã quá hạn đặt online cho ngày giao sắp tới (từ hạn chót đến hết giờ giao): báo khách gọi hoặc nhắn tin cho quán
+  const pastCutoff = useMemo(() => {
+    const now = new Date();
+    const [ch, cm] = dCut.split(':').map(Number);
+    const [eh, em] = dEnd.split(':').map(Number);
+    for (let i = 0; i < 8; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      if (d.getDay() !== dDay || closedDates.includes(dateKey(d))) continue;
+      const cutoff = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1, ch, cm);
+      const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), eh, em);
+      return now >= cutoff && now < end;
+    }
+    return false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dDay, dCut, dEnd, data, closedDates]);
+
   const days = useMemo(() => {
     const earliest = earliestReady(new Date(), lead);
     const out = [];
@@ -389,6 +405,26 @@ export default function Checkout() {
             <Banknote size={15} /> {t.payOnPickup}
           </span>
         </div>
+
+        {!closed && pastCutoff && shop.shopPhone && (
+          <div className="mb-5 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-slate-800">
+            <p className="leading-relaxed">{t.afterCutoff(t.weekdays[dDay], formatClock(dCut, lang))}</p>
+            <div className="mt-3 flex flex-wrap gap-3">
+              <a
+                href={`tel:${formatPhoneTel(shop.shopPhone)}`}
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-500 px-4 py-2.5 font-semibold text-white"
+              >
+                <Phone size={18} /> {t.callUs} {formatPhoneDisplay(shop.shopPhone)}
+              </a>
+              <a
+                href={`sms:${formatPhoneTel(shop.shopPhone)}`}
+                className="inline-flex items-center gap-2 rounded-xl border border-blue-300 px-4 py-2.5 font-semibold text-blue-700"
+              >
+                {t.textUs}
+              </a>
+            </div>
+          </div>
+        )}
 
         {closed ? (
           <section className="rounded-3xl border border-slate-200 bg-card p-6 text-center">
