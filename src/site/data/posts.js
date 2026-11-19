@@ -3,6 +3,323 @@
 // **đậm**, *nghiêng*, [chữ](/order/menu/banh-cuon) cho link. dishes: slug các món liên quan (hiện cuối bài, đặt được luôn).
 export const POSTS = [
   {
+    slug: 'how-to-make-nuoc-cham',
+    title: 'How to Make Nước Chấm (Vietnamese Dipping Sauce)',
+    description:
+      'A simple nước chấm recipe with fish sauce, lime, sugar and chilli. Metric quantities, plus tips for bánh cuốn and Saturday pickup in Albury–Wodonga.',
+    date: '2026-11-19',
+    cover: '/site/photos/nuoc-cham.webp',
+    coverAlt: 'A small white bowl of Vietnamese dipping sauce with sliced red and green chilli and minced garlic, sitting on a bamboo tray.',
+    dishes: ['banh-cuon', 'banh-gio', 'gio-lua'],
+    faq: [
+      {
+        q: 'What is the difference between nước mắm and nước chấm?',
+        a: 'Nước mắm is fish sauce, the bottled ingredient. Nước chấm is the mixed dipping sauce made from fish sauce with water, lime juice or vinegar, sugar, garlic and usually chilli. On Vietnamese menus, “nước mắm” is sometimes used as a short way to say the dipping sauce.',
+      },
+      {
+        q: 'How long does nước chấm last in the fridge?',
+        a: 'Use homemade nước chấm within about 5 to 7 days if it contains fresh lime, garlic and chilli. You can keep a base of water, sugar and fish sauce in the fridge for up to 2 weeks, then add lime, garlic and chilli when you serve it.',
+      },
+      {
+        q: 'Can I make nước chấm without fish sauce?',
+        a: 'You can mix a similar sweet-sour dip with soy sauce or a mushroom-based sauce instead of fish sauce, but it is a different sauce, not a like-for-like substitute. It will still contain allergens from soy or mushrooms. Do not use fish sauce if you have a fish allergy.',
+      },
+      {
+        q: 'What do you eat nước chấm with?',
+        a: 'It is the usual dip for bánh cuốn, bánh giò, sliced giò lụa, noodle salads and grilled meat. It is not the same as the peanut or hoisin sauce sometimes served with fresh rice paper rolls.',
+      },
+    ],
+    body: `Nước chấm is the light dipping sauce that goes with so many Vietnamese meals. It should taste bright and balanced: salty, sour, a little sweet, and as hot as you like. This is a standard home recipe, not a copy of the sauce we send out with orders. Once you can mix it, you can serve it with [bánh cuốn](/order/menu/banh-cuon), [bánh giò](/order/menu/banh-gio) or a few slices of [giò lụa](/order/menu/gio-lua).
+
+*Say it roughly: "nook chum".*
+
+**Allergen note:** this sauce is made with **fish sauce**, which is a fish allergen. Do not use it if you or anyone at the table has a fish allergy.
+
+## What is nước chấm?
+
+**Nước mắm** is fish sauce, the thin, amber liquid sold in bottles. **Nước chấm** (also called nước mắm chấm) is the mixed dip you make from it, with water, lime juice or vinegar, sugar, garlic and chilli. People sometimes say "nước mắm" when they mean the dip. If a recipe or a menu only says nước mắm, check whether they mean the bottle or the bowl on the table.
+
+Every cook balances the sauce a little differently. Taste as you go. Fish sauce brands also vary in saltiness, so there is no single perfect spoonful.
+
+## Ingredients
+
+Makes about 200 ml, enough for 4 people as a dip. These are **Australian tablespoons (20 ml)**.
+
+- 80 ml water (4 tablespoons)
+- 40 ml fish sauce (2 tablespoons)
+- 40 ml fresh lime juice (2 tablespoons), or rice vinegar, or a mix of the two
+- 2 tablespoons white sugar (about 30 g)
+- 1–2 garlic cloves, finely chopped
+- 1 bird's eye chilli, thinly sliced, or less if you prefer it mild
+- optional: a few thin shreds of carrot
+
+Look for a Vietnamese fish sauce at an Asian grocer in Albury–Wodonga. Coles and Woolworths also stock fish sauce, and both sell bottled Vietnamese-style dipping sauces if you need a standby. Fresh lime is the first choice; lemon juice or rice vinegar will still give you a good sour note if limes are dear.
+
+## Method
+
+### 1. Dissolve the sugar
+
+Stir the sugar into the water until it dissolves. If the grains sit in the bottom of the jug, use slightly warm water. There is no need to boil it.
+
+### 2. Add the fish sauce and lime
+
+Stir in the fish sauce and the lime juice or vinegar. Taste. It should be salty and sour, with a gentle sweetness behind them. Add a little more lime if it is too salty, a pinch more sugar if it is too sharp, or a splash of water if it feels too strong.
+
+### 3. Finish with garlic and chilli
+
+Stir in the garlic, chilli and carrot, if using. Leave the sauce for 10 minutes so the flavours settle, then taste once more.
+
+## Tips for a good bowl
+
+- Add the chilli at the table if some people want it mild.
+- Lime juice can taste dull, or a little bitter, if it sits in the sauce for many days. A useful habit is to keep a base of water, sugar and fish sauce in a jar, then add lime, garlic and chilli when you serve it.
+- This is not the same sauce as the peanut or hoisin dip often served with fresh rice paper rolls (gỏi cuốn), which are a different dish from bánh cuốn. That dip is a different recipe and is a **peanut allergen** if it contains peanuts.
+- Dip each piece of bánh cuốn into the sauce. Do not pour the whole bowl over the plate, or the rice sheets can turn soggy. That is the same advice we give in our [guide to bánh cuốn](/order/blog/what-is-banh-cuon).
+
+## How to serve it
+
+Spoon the sauce into small bowls and put it on the table with:
+
+- [bánh cuốn](/order/menu/banh-cuon), with fried shallots on top
+- [bánh giò](/order/menu/banh-gio), unwrapped and still warm
+- thin slices of [giò lụa](/order/menu/gio-lua) or other giò chả
+- herbs, cucumber and bean sprouts on the side
+
+Short on time? Pre-order [ours](/order/menu/banh-cuon) for Saturday pickup. Our bánh cuốn already comes with nước mắm dipping sauce and fried shallots. Order by 8 pm Friday, then pick up on Saturday between 6 am and 9 pm, or choose Saturday morning delivery in Wodonga, Albury, Lavington and Thurgoona. You pay when you collect or when the order arrives.
+
+Keeps for up to 7 days in the fridge or 6 months in the freezer. That line is for our ready-made dishes, such as bánh cuốn and giò lụa. Homemade nước chấm is different: keep it in a clean jar in the fridge and use it within a week, or keep the water, sugar and fish sauce base for up to 2 weeks and finish it when you eat.
+
+## Frequently asked questions
+
+### What is the difference between nước mắm and nước chấm?
+
+Nước mắm is fish sauce, the bottled ingredient. Nước chấm is the mixed dipping sauce made from fish sauce with water, lime juice or vinegar, sugar, garlic and usually chilli. On Vietnamese menus, "nước mắm" is sometimes used as a short way to say the dipping sauce.
+
+### How long does nước chấm last in the fridge?
+
+Use homemade nước chấm within about 5 to 7 days if it contains fresh lime, garlic and chilli. You can keep a base of water, sugar and fish sauce in the fridge for up to 2 weeks, then add lime, garlic and chilli when you serve it.
+
+### Can I make nước chấm without fish sauce?
+
+You can mix a similar sweet-sour dip with soy sauce or a mushroom-based sauce instead of fish sauce, but it is a different sauce, not a like-for-like substitute. It will still contain allergens from soy or mushrooms. Do not use fish sauce if you have a fish allergy.
+
+### What do you eat nước chấm with?
+
+It is the usual dip for bánh cuốn, bánh giò, sliced giò lụa, noodle salads and grilled meat. It is not the same as the peanut or hoisin sauce sometimes served with fresh rice paper rolls.`,
+  },
+
+  {
+    slug: 'how-to-make-fried-shallots',
+    title: 'How to Make Crispy Fried Shallots (Hành Phi)',
+    description:
+      'How to fry shallots until crisp (hành phi), keep them crunchy, and use them on bánh cuốn. A beginner method with supermarket ingredients.',
+    date: '2026-11-19',
+    cover: '/site/photos/hanh-phi.webp',
+    coverAlt: 'Golden crispy fried shallots scattered over Vietnamese steamed rice rolls, served with sliced pork roll, herbs and a small bowl of dipping sauce.',
+    dishes: ['banh-cuon', 'xoi-khuc'],
+    faq: [
+      {
+        q: 'Why do my fried shallots burn or taste bitter?',
+        a: 'They were probably left in the oil until they looked fully brown. Lift them out when they are still pale gold. They keep cooking and darken as they drain and cool. Dark brown shallots in the pan usually taste bitter on the plate.',
+      },
+      {
+        q: 'How do I keep fried shallots crispy?',
+        a: 'Cool them completely, then store them in an airtight jar at room temperature, with a little paper towel in the lid if they still feel oily. Use them within 1 to 2 weeks. If they go soft, a few minutes in a low oven (about 140°C) can crisp them up again, but watch them closely.',
+      },
+      {
+        q: 'Can I use onion or spring onion instead of shallots?',
+        a: 'Brown onion can work in a pinch, but the flavour is stronger and it is easier to burn. Spring onions (sometimes also called shallots in older Australian usage) are not a good substitute here. Use the small red or purple bulbs sold as shallots or eschalots.',
+      },
+      {
+        q: 'Are store-bought fried shallots all right?',
+        a: 'Yes. Jars and packets from Coles, Woolworths, Aldi or an Asian grocer are a fair shortcut. Homemade hành phi usually tastes fresher and sweeter, and you also get a pot of shallot oil for cooking.',
+      },
+    ],
+    body: `Hành phi is crispy fried shallot, the golden topping scattered over [bánh cuốn](/order/menu/banh-cuon) and many bowls of sticky rice. The method is simple, but the timing matters: pull the shallots out while they still look a little pale, because they keep browning as they cool. This is a standard home method, not a trade secret, and it uses ingredients you can find at a supermarket or an Asian grocer.
+
+*Say it roughly: "han fee".*
+
+## Which shallots to buy
+
+In Australia the word "shallot" can be confusing. For hành phi you want the **small red or purple bulbs**, sometimes labelled eschalots. You do not want spring onions, even though some older Australian packing still calls those shallots.
+
+Coles and Woolworths usually stock them in the fresh herb and onion bay. An Asian grocer will often have a better price if you are frying a larger batch.
+
+## Ingredients
+
+Makes about 1 packed cup of fried shallots, plus a jar of shallot oil.
+
+- 250 g small red shallots (eschalots)
+- 300 ml neutral oil, such as canola, sunflower or vegetable oil
+- a pinch of salt, optional
+
+You need enough oil to almost cover the sliced shallots. A small, deep saucepan is safer than a wide frying pan, because the oil is less likely to spit over the sides.
+
+## Method
+
+### 1. Slice the shallots thinly
+
+Peel the shallots and slice them into thin, even rings. Even slices brown at the same speed. Pat them dry with paper towel. Wet shallots make the oil spit and are more likely to turn soggy.
+
+### 2. Start in a cold pan
+
+Put the shallots and the oil in a cold saucepan, then set it over medium-low heat. Starting in cold oil helps the shallots soften and then crisp more evenly than tipping them into already-hot oil.
+
+### 3. Fry slowly and keep them moving
+
+Cook, stirring often, for about 10 to 15 minutes. The bubbles will be small and steady, not fierce. If the oil is smoking, the heat is too high. The shallots are ready to lift out when they are **pale gold**, not deep brown.
+
+### 4. Drain and cool
+
+Lift the shallots out with a slotted spoon onto a rack or a tray lined with paper towel. Spread them out. Sprinkle with a pinch of salt if you like. They will darken one or two shades as they cool and should turn crisp.
+
+Leave the oil to cool, then strain it into a clean jar. Shallot oil is useful for stir-fries, eggs, or frying the next batch.
+
+### 5. Store them dry
+
+When the shallots are completely cold, put them in an airtight jar. Keep them at room temperature and use them within 1 to 2 weeks, while they are still crisp.
+
+## Tips
+
+- If they already look dark brown in the pan, they will taste bitter once cool. It is better to take them out a little early.
+- Do not crowd the pan. Fry in two batches if you have more than about 250 g.
+- Keep a lid nearby, and never put water on hot oil. If you need to stop the cooking quickly, lift the pan off the heat and scoop the shallots out.
+- Coles, Woolworths, Aldi and most Asian grocers sell ready-fried shallots. They are a fair shortcut for a weeknight. Homemade hành phi is worth it when you want a sweeter, fresher topping, or when you are already cooking for a table of people.
+
+## How to use hành phi
+
+Scatter it over:
+
+- [bánh cuốn](/order/menu/banh-cuon), just before you eat, so it stays crisp
+- [xôi khúc](/order/menu/xoi-khuc) or a bowl of sticky rice
+- noodle salads, eggs, or sliced giò
+
+Short on time? Pre-order [ours](/order/menu/banh-cuon) for Saturday pickup. Our bánh cuốn already comes with fried shallots and nước mắm dipping sauce. Order by 8 pm Friday, then pick up on Saturday between 6 am and 9 pm, or choose Saturday morning delivery in Wodonga, Albury, Lavington and Thurgoona. You pay when you collect or when the order arrives.
+
+If you also want a dipping sauce to go with the shallots, see our [nước chấm recipe](/order/blog/how-to-make-nuoc-cham).
+
+Keeps for up to 7 days in the fridge or 6 months in the freezer. That line is for our ready-made dishes, such as bánh cuốn and xôi khúc. Homemade hành phi is different: keep it in an airtight jar at room temperature and use it while it is still crisp, usually within 1 to 2 weeks. The strained shallot oil keeps in the fridge for several weeks.
+
+## Frequently asked questions
+
+### Why do my fried shallots burn or taste bitter?
+
+They were probably left in the oil until they looked fully brown. Lift them out when they are still pale gold. They keep cooking and darken as they drain and cool. Dark brown shallots in the pan usually taste bitter on the plate.
+
+### How do I keep fried shallots crispy?
+
+Cool them completely, then store them in an airtight jar at room temperature, with a little paper towel in the lid if they still feel oily. Use them within 1 to 2 weeks. If they go soft, a few minutes in a low oven (about 140°C) can crisp them up again, but watch them closely.
+
+### Can I use onion or spring onion instead of shallots?
+
+Brown onion can work in a pinch, but the flavour is stronger and it is easier to burn. Spring onions (sometimes also called shallots in older Australian usage) are not a good substitute here. Use the small red or purple bulbs sold as shallots or eschalots.
+
+### Are store-bought fried shallots all right?
+
+Yes. Jars and packets from Coles, Woolworths, Aldi or an Asian grocer are a fair shortcut. Homemade hành phi usually tastes fresher and sweeter, and you also get a pot of shallot oil for cooking.`,
+  },
+
+  {
+    slug: 'vietnamese-pickled-carrot-and-daikon',
+    title: 'Vietnamese Pickled Carrot and Daikon (Đồ Chua)',
+    description:
+      'Make đồ chua, the sweet-tangy pickled carrot and daikon for bánh mì and giò lụa. A quick fridge pickle with ingredients from Australian shops.',
+    date: '2026-11-19',
+    cover: '/site/photos/do-chua.webp',
+    coverAlt: 'Julienned white daikon and orange carrot on a plate, with a portion lifted on chopsticks.',
+    dishes: ['gio-lua', 'cha-bi', 'cha-chien', 'cha-bo'],
+    faq: [
+      {
+        q: 'How long does đồ chua last in the fridge?',
+        a: 'Kept in a clean jar and covered with the pickling liquid, đồ chua usually keeps for about 2 weeks in the fridge. Use a clean spoon each time. If it smells off, looks cloudy in an unusual way, or the vegetables go slimy, throw it out.',
+      },
+      {
+        q: 'When is đồ chua ready to eat?',
+        a: 'It is good after about 2 hours, once the vegetables have lost their raw edge. It tastes better after a night in the fridge, when the sweet-and-sour flavour has gone through the sticks.',
+      },
+      {
+        q: 'Can I make đồ chua without daikon?',
+        a: 'Yes. Carrot alone still makes a useful pickle for bánh mì and noodle bowls. Daikon adds crunch and a milder, juicier bite, so a mix of the two is the usual version.',
+      },
+      {
+        q: 'Why does daikon smell strong?',
+        a: 'Raw daikon can smell sharp or sulphurous. Tossing the cut daikon with a little salt, leaving it for 10 minutes, then rinsing and patting it dry takes some of that smell out before you pickle it.',
+      },
+    ],
+    body: `Đồ chua is the sweet-and-tangy pickle of carrot and daikon that goes into a bánh mì and sits beside sliced [giò lụa](/order/menu/gio-lua). It is one of the easiest Vietnamese basics to make at home: no fermenting, no special kit, and it is ready the same day. This is a standard fridge pickle, not a shop recipe.
+
+*Say it roughly: "daw choo-ah".*
+
+## Ingredients
+
+Makes one 750 ml to 1 litre jar. These are **Australian tablespoons (20 ml)**.
+
+- 250 g carrot
+- 250 g daikon (white radish)
+- 250 ml water
+- 125 ml rice vinegar or white vinegar
+- 80 g white sugar (about ⅓ cup)
+- 1 teaspoon fine salt, plus a little extra if you pre-salt the daikon
+
+Carrot is easy to find at Coles, Woolworths or a greengrocer. Daikon is sometimes labelled white radish and is more reliable at an Asian grocer; larger supermarkets also stock it now and then in the Asian vegetable bay. If you cannot find daikon, use all carrot.
+
+## Method
+
+### 1. Cut the vegetables into matchsticks
+
+Peel the carrot and daikon, then cut them into thin sticks, about the length of your little finger. A julienne peeler or a mandoline (with a guard) is faster than a knife, but a careful knife works fine. Try to keep the sticks a similar size so they pickle evenly.
+
+### 2. Optional: tame the daikon smell
+
+Raw daikon can smell a little sharp. If you want a milder pickle, toss the daikon sticks with ½ teaspoon of salt, leave them for 10 minutes, then rinse and pat them dry. You can skip this step if you are in a hurry.
+
+### 3. Mix the brine
+
+Stir the water, vinegar, sugar and 1 teaspoon of salt until the sugar and salt dissolve. The brine should taste clearly sweet and sour. If your vinegar is very sharp, add a pinch more sugar.
+
+### 4. Pack and refrigerate
+
+Pack the carrot and daikon into a clean glass jar and pour the brine over so the vegetables sit under the liquid. Cool, then refrigerate. The pickle is ready in about 2 hours and tastes better the next day.
+
+## Tips
+
+- Use a clean spoon each time you take some out, and keep the vegetables pushed under the liquid.
+- If the daikon smells stronger after a few days, that is common. It should still smell clean and pickled, not rotten.
+- This pickle does not use fish sauce. If you serve it with [nước chấm](/order/blog/how-to-make-nuoc-cham) or in a bánh mì with pâté, those extras have their own allergens — fish sauce is a **fish allergen**.
+- The usual place for đồ chua is a crusty roll with sliced giò, cucumber, coriander and chilli. It is also good next to [chả bì](/order/menu/cha-bi), [chả chiên](/order/menu/cha-chien) or [chả bò](/order/menu/cha-bo), or in a noodle bowl.
+
+## How to serve it
+
+Drain a small handful and add it to:
+
+- a homemade bánh mì with [giò lụa](/order/menu/gio-lua) or another roll from our [giò chả guide](/order/blog/gio-cha-guide)
+- a plate of sliced giò chả with herbs and cucumber
+- leftover rice or noodles, for crunch and a sour lift
+
+Short on time? Pre-order [our giò lụa](/order/menu/gio-lua) for Saturday pickup and make the pickle the day before. Order by 8 pm Friday, then pick up on Saturday between 6 am and 9 pm, or choose Saturday morning delivery in Wodonga, Albury, Lavington and Thurgoona. You pay when you collect or when the order arrives. Browse the full [menu](/order/menu) if you want a few kinds of roll on the same plate.
+
+Keeps for up to 7 days in the fridge or 6 months in the freezer. That line is for our ready-made dishes, such as giò lụa and chả. Homemade đồ chua is different: keep it in a clean jar in the fridge, covered by its brine, and use it within about 2 weeks. It is not a freezer pickle.
+
+## Frequently asked questions
+
+### How long does đồ chua last in the fridge?
+
+Kept in a clean jar and covered with the pickling liquid, đồ chua usually keeps for about 2 weeks in the fridge. Use a clean spoon each time. If it smells off, looks cloudy in an unusual way, or the vegetables go slimy, throw it out.
+
+### When is đồ chua ready to eat?
+
+It is good after about 2 hours, once the vegetables have lost their raw edge. It tastes better after a night in the fridge, when the sweet-and-sour flavour has gone through the sticks.
+
+### Can I make đồ chua without daikon?
+
+Yes. Carrot alone still makes a useful pickle for bánh mì and noodle bowls. Daikon adds crunch and a milder, juicier bite, so a mix of the two is the usual version.
+
+### Why does daikon smell strong?
+
+Raw daikon can smell sharp or sulphurous. Tossing the cut daikon with a little salt, leaving it for 10 minutes, then rinsing and patting it dry takes some of that smell out before you pickle it.`,
+  },
+
+  {
     slug: 'what-is-banh-cuon',
     title: 'What Is Bánh Cuốn? A Guide to Vietnamese Steamed Rice Rolls',
     description:
