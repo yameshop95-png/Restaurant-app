@@ -44,7 +44,7 @@ html.staff-app button {
     color 0.18s ease;
 }
 
-html.staff-app button:active:not(:disabled):not(.staff-press) {
+html.staff-app button:active:not(:disabled):not(.staff-press):not(.staff-tab) {
   transform: scale(0.97);
 }
 
@@ -146,6 +146,101 @@ html.staff-app li.staff-press.is-pop {
 html.staff-app .staff-press.is-squish::after,
 html.staff-app .staff-press.is-pop::after {
   opacity: 1;
+}
+
+html.staff-app .staff-tab-pill.is-squish,
+html.staff-app .staff-tab-pill.is-pop {
+  z-index: 5;
+}
+
+html.staff-app .staff-tab-pill.is-squish {
+  transform: translateY(1px) scale(0.95);
+  transition: transform 0.08s ease-out;
+}
+
+html.staff-app .staff-tab-pill.is-pop {
+  transform: translateY(-3px) scale(1.045);
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.4, 1);
+}
+
+/* Bottom tabs: the highlight is a pill around the icon and label.
+   The button itself stays a plain hit target, with no square border or tap outline. */
+html.staff-app .staff-tab {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  background-color: transparent;
+}
+
+html.staff-app .staff-tab:focus {
+  outline: none;
+}
+
+html.staff-app .staff-tab::-moz-focus-inner {
+  border: 0;
+}
+
+html.staff-app .staff-tab-pill {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  max-width: 100%;
+  padding: 5px 8px 6px;
+  border-radius: 999px;
+  line-height: 1.15;
+}
+
+html.staff-app .staff-tab-pill.staff-press::after {
+  content: none;
+}
+
+html.staff-app .staff-tab-pill::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    160deg,
+    rgba(255, 214, 176, 0.8),
+    rgba(255, 120, 64, 0.16) 46%,
+    rgba(255, 168, 110, 0.55)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+html.staff-app .staff-tab-pill.is-active,
+html.staff-app .staff-tab-pill.is-squish,
+html.staff-app .staff-tab-pill.is-pop,
+html.staff-app .staff-tab:focus-visible .staff-tab-pill {
+  box-shadow:
+    0 0 12px 1px rgba(255, 160, 90, 0.16),
+    0 0 26px 8px rgba(255, 110, 40, 0.1);
+}
+
+html.staff-app .staff-tab-pill.is-active::before,
+html.staff-app .staff-tab-pill.is-squish::before,
+html.staff-app .staff-tab-pill.is-pop::before,
+html.staff-app .staff-tab:focus-visible .staff-tab-pill::before {
+  opacity: 1;
+}
+
+html.staff-app .staff-tab:focus-visible .staff-tab-pill {
+  box-shadow:
+    0 0 0 2px #121214,
+    0 0 0 3px rgba(255, 176, 120, 0.8),
+    0 0 18px 3px rgba(255, 140, 70, 0.22);
 }
 
 html.staff-app .staff-menu {
@@ -267,9 +362,15 @@ html.staff-app .staff-stagger > *:nth-child(n + 9):not(.fixed) { animation-delay
     transform: none !important;
   }
 
-  html.staff-app .staff-press.is-squish,
-  html.staff-app .staff-press.is-pop {
+  html.staff-app .staff-press.is-squish:not(.staff-tab-pill),
+  html.staff-app .staff-press.is-pop:not(.staff-tab-pill) {
     border-color: rgba(255, 168, 114, 0.55);
+  }
+
+  html.staff-app .staff-tab-pill,
+  html.staff-app .staff-tab-pill::before {
+    animation: none !important;
+    transition: none !important;
   }
 
   html.staff-app li.staff-press.is-squish,
