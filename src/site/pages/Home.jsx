@@ -2,13 +2,13 @@ import { Banknote, CalendarCheck, Leaf, ShieldCheck, ShoppingBag, Truck } from '
 
 // Biểu tượng cho từng ý trong t.points (cùng thứ tự)
 const POINT_ICONS = [Leaf, CalendarCheck, ShieldCheck, ShoppingBag, Truck, Banknote];
-import { formatMoney } from '../../lib/stats';
+import { formatMoney } from '../format';
 import { DEFAULT_ZONES } from '../../lib/shippingZones';
 import { TEXT as ORDER_TEXT } from '../../order/i18n';
 import { formatClock, formatLead, zoneDisplayName } from '../format';
 import { BLOG_ENABLED, formatPostDate, orderingRules, path, photoAlt, sortedPosts } from '../lib';
 import SplitText from '../SplitText';
-import { Deco, DishCard, Link, Photo, SectionTitle, useSite } from '../ui';
+import { DishCard, Link, Photo, SectionTitle, useSite } from '../ui';
 
 // Trang chủ theo bố cục mẫu Figma: mở đầu · món đặc biệt · giới thiệu quán · lấy & giao hàng · kêu gọi đặt món
 export default function Home() {
@@ -27,16 +27,13 @@ export default function Home() {
   const lead = formatLead(rules.lead, lang);
   const name = shop.shopName || t.defaultName;
   const posts = sortedPosts().slice(0, 3);
-  const photoOf = (d) => d && { src: d.content.photo, alt: photoAlt(d, lang) };
 
   return (
     <>
-      <Hero t={t} tall={photoOf(pick(0))} round={photoOf(pick(1))} name={name} logo={shop.logo || '/logo-round.svg'} />
+      <Hero t={t} />
 
       {/* Món đặc biệt + giới thiệu quán: chung một nền xám như mẫu */}
       <section className="relative overflow-hidden bg-mist">
-        <Deco name="sprig" className="-left-4 top-2 w-20 opacity-30 sm:left-[14%] sm:top-10 sm:w-40 sm:opacity-50" />
-        <Deco name="basil" className="-right-6 top-2 w-24 opacity-30 sm:right-[16%] sm:top-8 sm:w-44 sm:opacity-40" />
         <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 md:py-24">
           <SectionTitle title={t.specialTitle} text={t.specialText} />
           <div className="mt-14 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
@@ -52,8 +49,7 @@ export default function Home() {
 
           <div className="mt-24 grid items-center gap-12 md:mt-32 md:grid-cols-2">
             <div className="relative mx-auto aspect-square w-full max-w-[520px]">
-              <Deco name="branch" className="-right-6 -top-12 w-44 opacity-40 sm:w-56" />
-              <div className="relative h-full w-full overflow-hidden rounded-full border-[10px] border-white shadow-[0_40px_80px_-30px_rgba(16,26,36,0.55)]">
+              <div className="relative h-full w-full overflow-hidden">
                 <Photo src={pick(2)?.content.photo} alt={pick(2) ? photoAlt(pick(2), lang) : name} />
               </div>
             </div>
@@ -87,7 +83,6 @@ export default function Home() {
 
       {/* Đến lấy & giao hàng */}
       <section id="delivery" className="relative scroll-mt-32 overflow-hidden">
-        <Deco name="garlic" className="-left-16 -top-6 w-32 opacity-25 sm:left-0 sm:top-8 sm:w-56 sm:opacity-40" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-4 py-20 sm:px-6 md:grid-cols-2 md:py-28">
           <div>
             <SectionTitle align="left" title={t.deliveryTitle} />
@@ -96,7 +91,7 @@ export default function Home() {
               <p>{t.deliveryText(days[rules.day], start, end, cutDay, cutoff)}</p>
             </div>
             <h3 className="mt-8 text-xs font-bold uppercase tracking-wide text-ink">{t.feeTitle}</h3>
-            <ul className="mt-3 divide-y divide-slate-200 rounded-[20px] bg-mist px-5">
+            <ul className="mt-3 divide-y divide-slate-300 bg-mist px-5">
               {zones.map((z) => (
                 <li key={z.id} className="flex items-center justify-between gap-3 py-3.5">
                   <span className="text-ink">{zoneDisplayName(z.name)}</span>
@@ -114,11 +109,10 @@ export default function Home() {
             </div>
           </div>
           <div className="relative mx-auto aspect-square w-full max-w-[460px]">
-            <div className="absolute inset-0 rounded-full bg-blue-500" />
-            <div className="absolute inset-[9%] overflow-hidden rounded-full border-[10px] border-white shadow-[0_30px_60px_-24px_rgba(16,26,36,0.6)]">
+            <div className="absolute inset-0 overflow-hidden">
               <Photo src={pick(3)?.content.photo} alt={pick(3) ? photoAlt(pick(3), lang) : name} />
             </div>
-            <p className="absolute -bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-white px-5 py-3 font-semibold text-ink shadow-[0_16px_30px_-12px_rgba(16,26,36,0.4)]">
+            <p className="absolute bottom-0 left-0 flex items-center gap-2 whitespace-nowrap bg-page px-5 py-3 font-semibold text-ink">
               <Truck size={18} className="text-blue-500" /> {days[rules.day]} {start}–{end}
             </p>
           </div>
@@ -143,7 +137,7 @@ export default function Home() {
 
       {/* Kêu gọi đặt món (chỗ ô đăng ký nhận tin của mẫu) */}
       <section className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="relative overflow-hidden rounded-[28px] bg-ink px-6 py-16 text-center sm:px-12 sm:py-20">
+        <div className="relative overflow-hidden bg-ink px-6 py-16 text-center sm:px-12 sm:py-20">
           <img
             src="/site/photos/cta-weekend.webp"
             alt="Lạp xưởng sausages and a plate of fried rice on an outdoor table"
@@ -155,7 +149,7 @@ export default function Home() {
             {t.ctaTitle}
           </h2>
           <p className="relative mx-auto mt-4 max-w-lg leading-7 text-white/85 text-balance">{t.ctaText}</p>
-          <div className="relative mx-auto mt-9 flex max-w-xl flex-col items-stretch gap-3 rounded-[14px] bg-white p-2 text-left sm:flex-row sm:items-center sm:justify-between sm:pl-5">
+          <div className="relative mx-auto mt-9 flex max-w-xl flex-col items-stretch gap-3 bg-page p-2 text-left sm:flex-row sm:items-center sm:justify-between sm:pl-5">
             <span className="px-3 pt-2 text-sm text-slate-500 sm:p-0">{t.ctaNote(cutDay, cutoff)}</span>
             <Link to={path('/checkout')} className="btn btn-accent shrink-0 px-6 py-3.5 text-base">
               {t.nav.order}
@@ -167,23 +161,26 @@ export default function Home() {
   );
 }
 
-function Hero({ t, tall, round, name, logo }) {
+function Hero({ t }) {
   return (
-    <section className="relative overflow-hidden">
-      {/* Vòng tròn mảnh góc trên bên trái như mẫu */}
-      <div aria-hidden className="deco -left-80 -top-96 h-[760px] w-[760px] rounded-full border border-slate-200" />
-      <div
-        aria-hidden
-        className="deco -left-64 -top-[26rem] h-[760px] w-[760px] rounded-full border border-slate-200"
-      />
-      <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-4 pb-16 pt-8 sm:px-6 md:grid-cols-[1fr_1.05fr] md:pb-24 md:pt-12">
+    <section className="relative">
+      {/* Ảnh tràn màn hình, không chữ đè lên; tiêu đề nằm dưới ảnh */}
+      <div className="relative h-[46vh] min-h-[280px] w-full overflow-hidden sm:h-[56vh]">
+        <img
+          src="/site/photos/cta-weekend.webp"
+          alt="Lạp xưởng sausages and a plate of fried rice on an outdoor table"
+          fetchpriority="high"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      </div>
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-2 md:gap-14 md:py-16">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-500">{t.heroKicker}</p>
+          <p className="text-sm font-semibold text-blue-500">{t.heroKicker}</p>
           <SplitText
             key={t.heroTitle}
             tag="h1"
             text={t.heroTitle}
-            className="mt-4 font-serif text-5xl font-bold leading-[1.04] text-ink text-balance sm:text-6xl lg:text-[68px]"
+            className="mt-3 font-serif text-4xl font-normal leading-[1.08] tracking-tight text-ink text-balance sm:text-5xl lg:text-6xl"
             delay={35}
             duration={0.7}
             splitType="chars"
@@ -192,50 +189,21 @@ function Hero({ t, tall, round, name, logo }) {
             threshold={0.1}
             rootMargin="-100px"
           />
-          <p className="mt-6 max-w-md leading-7 text-slate-500">{t.heroText}</p>
-          <div className="mt-9 flex flex-wrap gap-4">
-            <Link to={path('/menu')} className="btn btn-dark">
-              {t.nav.menu}
-            </Link>
-            <Link to={path('/checkout')} className="btn btn-accent">
+        </div>
+        <div className="md:pt-8">
+          <p className="max-w-md text-lg leading-8 text-slate-500">{t.heroText}</p>
+          <div className="mt-8 flex flex-wrap gap-4">
+            <Link to={path('/checkout')} className="btn btn-dark">
               {t.nav.order}
             </Link>
+            <Link to={path('/menu')} className="btn btn-accent">
+              {t.nav.menu}
+            </Link>
           </div>
-          <div className="mt-12 flex items-center gap-4">
-            <ul className="flex gap-3">
-              {POINT_ICONS.slice(0, 3).map((Icon, i) => (
-                <li
-                  key={t.points[i]}
-                  title={t.points[i]}
-                  className="flex h-11 w-11 items-center justify-center rounded-full text-ink ring-1 ring-ink"
-                >
-                  <Icon size={18} aria-hidden="true" />
-                  <span className="sr-only">{t.points[i]}</span>
-                </li>
-              ))}
-            </ul>
-            <span className="h-px w-16 bg-slate-300 sm:w-28" />
-            <span className="text-sm text-slate-500">{t.freshBadge}</span>
-          </div>
-        </div>
-
-        <div className="relative mx-auto w-full max-w-[540px]">
-          <Deco name="basil" className="-right-4 -top-12 w-44 opacity-40 sm:-right-10 sm:w-64" />
-          <Deco name="branch" className="-bottom-12 right-[30%] w-48 opacity-35 sm:w-60" />
-          <div className="relative ml-auto aspect-[516/712] w-[76%] overflow-hidden rounded-[72px_40px_72px_24px] shadow-[0_40px_80px_-40px_rgba(16,26,36,0.7)]">
-            {tall ? (
-              <Photo src={tall.src} alt={tall.alt} eager />
-            ) : (
-              <div className="relative flex h-full w-full flex-col items-center justify-start gap-5 bg-ink px-6 pl-[22%] pt-[16%] text-center">
-                <Deco name="pan" className="-right-24 -top-10 w-80 opacity-15 invert" />
-                <img src={logo} alt="" className="relative w-3/5 rounded-full" />
-                <p className="relative hidden font-serif text-2xl text-white sm:block sm:text-3xl">{name}</p>
-              </div>
-            )}
-          </div>
-          <div className="absolute bottom-[8%] left-0 aspect-square w-[50%] overflow-hidden rounded-full border-[10px] border-white shadow-[0_30px_60px_-20px_rgba(16,26,36,0.55)]">
-            <Photo src={round?.src} alt={round?.alt ?? name} eager />
-          </div>
+          <p className="mt-8 flex items-center gap-3 text-sm text-slate-500">
+            <Leaf size={18} className="text-blue-500" aria-hidden="true" />
+            {t.freshBadge}
+          </p>
         </div>
       </div>
     </section>
@@ -244,7 +212,7 @@ function Hero({ t, tall, round, name, logo }) {
 
 export function PostCard({ post, lang, t }) {
   return (
-    <article className="flex flex-col overflow-hidden rounded-[28px] bg-card shadow-[0_24px_50px_-30px_rgba(16,26,36,0.35)] ring-1 ring-slate-200/70">
+    <article className="flex flex-col overflow-hidden bg-card ring-1 ring-slate-300">
       <Link to={path(`/blog/${post.slug}`)} className="block aspect-[16/9] overflow-hidden">
         <Photo src={post.cover} alt={post.coverAlt || post.title} />
       </Link>
