@@ -11,7 +11,7 @@ const TABS = [
 export default function BottomNav({ activeTab, counts, onTabChange, onMore }) {
   const inTabs = TABS.some((t) => t.id === activeTab);
   const item = (active) =>
-    `staff-tab relative flex min-w-0 flex-1 items-center justify-center px-0.5 pb-1.5 pt-1.5 text-[11px] font-semibold ${
+    `staff-tab relative flex min-h-11 min-w-0 flex-1 items-center justify-center px-0.5 pb-1.5 pt-1.5 text-[13px] font-medium ${
       active ? 'text-orange-600' : 'text-slate-500'
     }`;
   const pill = (active, icon, label) => (
@@ -29,9 +29,9 @@ export default function BottomNav({ activeTab, counts, onTabChange, onMore }) {
           const count = badgeKey ? counts[badgeKey] : 0;
           return (
             <button key={id} onClick={() => onTabChange(id)} aria-current={active ? 'page' : undefined} className={item(active)}>
-              {pill(active, <Icon size={21} strokeWidth={active ? 2.4 : 2} />, label)}
+              {pill(active, <Icon size={20} strokeWidth={active ? 2.25 : 2} />, label)}
               {count > 0 && (
-                <span className="absolute left-1/2 top-1 ml-2 min-w-5 rounded-full bg-red-500 px-1 text-center text-[10px] font-bold leading-5 text-white ring-2 ring-card">
+                <span className="absolute left-1/2 top-1 ml-2 min-w-6 rounded-full bg-red-500 px-1 text-center text-[13px] font-bold leading-5 text-white ring-2 ring-card">
                   {count > 99 ? '99+' : count}
                 </span>
               )}

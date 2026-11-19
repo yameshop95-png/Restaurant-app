@@ -134,7 +134,7 @@ export default function MenuPage({ menu, isOwner, onAddMenuItem, onUpdateMenuIte
                     <button
                       onClick={() => onMoveMenuItem(m.id, -1)}
                       disabled={i === 0}
-                      className="rounded p-0.5 text-slate-400 active:bg-slate-100 disabled:opacity-20"
+                      className="staff-nudge rounded-xl text-slate-400 active:bg-slate-100 disabled:opacity-20"
                       aria-label={`Đưa ${m.name} lên`}
                     >
                       <ChevronUp size={18} />
@@ -142,7 +142,7 @@ export default function MenuPage({ menu, isOwner, onAddMenuItem, onUpdateMenuIte
                     <button
                       onClick={() => onMoveMenuItem(m.id, 1)}
                       disabled={i === menu.length - 1}
-                      className="rounded p-0.5 text-slate-400 active:bg-slate-100 disabled:opacity-20"
+                      className="staff-nudge rounded-xl text-slate-400 active:bg-slate-100 disabled:opacity-20"
                       aria-label={`Đưa ${m.name} xuống`}
                     >
                       <ChevronDown size={18} />

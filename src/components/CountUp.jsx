@@ -3,25 +3,34 @@ import { useEffect, useRef, useState } from 'react';
 const reducedNow = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+// Phones show the final figure. Counting on every frame is extra work on an older iPhone.
+const stillNow = () =>
+  reducedNow() || (typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches);
+
 // Đếm nhẹ tới số cuối. Chuỗi hiển thị luôn đi qua `format` (formatMoney / số nguyên), không đổi cách viết tiền.
 export const formatCount = (n) => String(Math.round(Number(n) || 0));
 
 export default function CountUp({ value, format, className }) {
   const target = Number.isFinite(Number(value)) ? Number(value) : 0;
-  const [reduced, setReduced] = useState(reducedNow);
+  const [still, setStill] = useState(stillNow);
   const fromRef = useRef(0);
   const first = useRef(true);
-  const [shown, setShown] = useState(() => (reducedNow() ? target : 0));
+  const [shown, setShown] = useState(() => (stillNow() ? target : 0));
 
   useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const onChange = () => setReduced(mq.matches);
-    mq.addEventListener?.('change', onChange);
-    return () => mq.removeEventListener?.('change', onChange);
+    const reducedMq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const coarseMq = window.matchMedia('(pointer: coarse)');
+    const onChange = () => setStill(reducedMq.matches || coarseMq.matches);
+    reducedMq.addEventListener?.('change', onChange);
+    coarseMq.addEventListener?.('change', onChange);
+    return () => {
+      reducedMq.removeEventListener?.('change', onChange);
+      coarseMq.removeEventListener?.('change', onChange);
+    };
   }, []);
 
   useEffect(() => {
-    if (reduced) {
+    if (still) {
       fromRef.current = target;
       setShown(target);
       return undefined;
@@ -46,7 +55,7 @@ export default function CountUp({ value, format, className }) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [target, reduced]);
+  }, [target, still]);
 
   return (
     <span className={className}>

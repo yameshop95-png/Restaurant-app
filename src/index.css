@@ -25,7 +25,8 @@
   --color-slate-100: #2a2a33;
   --color-slate-200: #2e2e38;
   --color-slate-300: #3d3d49;
-  --color-slate-400: #6b7487;
+  /* Chữ phụ đủ tương phản trên nền #121214 và thẻ #1e1e24 (không dưới 13px ở lớp motion) */
+  --color-slate-400: #9aa3b2;
   --color-slate-500: #94a3b8;
   --color-slate-600: #aab5c5;
   --color-slate-700: #cbd5e1;
@@ -77,8 +78,10 @@
   --color-amber-800: #ecd48a;
   --color-amber-900: #f3e3b0;
 
+  /* Không dùng tím cho giao diện quán. Lớp cũ trỏ về vàng / cam / xám. */
   --color-violet-100: #2a2a33;
-  --color-violet-500: #8b5cf6;
+  --color-violet-400: #d4af37;
+  --color-violet-500: #ff8a65;
   --color-violet-600: #cbd5e1;
   --color-violet-700: #e2e8f0;
 

@@ -205,6 +205,9 @@ function Shop({ account, onLogout }) {
 
   return (
     <div className="min-h-screen">
+      <a className="staff-skip" href="#noi-dung">
+        Vào nội dung
+      </a>
       <Sidebar
         activeTab={activeTab}
         onTabChange={handleTabChange}
@@ -226,7 +229,7 @@ function Shop({ account, onLogout }) {
           onBellClick={() => handleTabChange('orders')}
         />
 
-        <main className="mx-auto max-w-7xl p-4 pb-28 sm:p-6 sm:pb-28 lg:pb-6">
+        <main id="noi-dung" tabIndex={-1} className="mx-auto max-w-7xl p-4 pb-28 outline-none sm:p-6 sm:pb-28 lg:pb-6">
           {!ordersReady && (
             <p className="mx-auto mb-4 max-w-2xl rounded-2xl bg-card px-4 py-3 text-center text-sm text-slate-500">
               {loadError ? `Chưa tải được dữ liệu: ${loadError}. Đang thử lại…` : 'Đang tải dữ liệu…'}

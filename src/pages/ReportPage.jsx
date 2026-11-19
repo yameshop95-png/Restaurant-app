@@ -4,7 +4,6 @@ import {
   ChevronRight,
   Lightbulb,
   Loader2,
-  Sparkles,
   TrendingDown,
   TrendingUp,
 } from 'lucide-react';
@@ -178,14 +177,10 @@ function AIAnalysis({ report }) {
 
   return (
     <Card
-      title={
-        <span className="flex items-center gap-2">
-          <Sparkles size={18} className="text-violet-500" /> Phân tích bằng AI
-        </span>
-      }
+      title="Phân tích bằng AI"
     >
       <div className="space-y-3 px-5 pb-5 pt-2">
-        <p className="text-sm text-slate-500">
+        <p className="text-base leading-relaxed text-slate-600">
           Claude đọc số liệu của {report.range.label.toLowerCase()} và nhận xét món bán chạy, giá bán, thời điểm bán và
           dự báo kỳ tới. Chỉ gửi số liệu tổng hợp, không gửi tên, SĐT hay địa chỉ khách.
         </p>
@@ -195,14 +190,14 @@ function AIAnalysis({ report }) {
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="Nhập mã truy cập AI"
-            className="w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+            className="w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
           />
         )}
 
         <button
           onClick={run}
           disabled={state.status === 'loading' || !report.orderCount}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 py-3.5 font-semibold text-white active:bg-violet-700 disabled:bg-slate-300"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600 disabled:bg-slate-300 disabled:text-slate-500"
         >
           {state.status === 'loading' ? (
             <>
@@ -210,7 +205,7 @@ function AIAnalysis({ report }) {
             </>
           ) : (
             <>
-              <Sparkles size={19} /> {state.status === 'done' ? 'Phân tích lại' : 'Phân tích'} {report.range.label.toLowerCase()}
+              {state.status === 'done' ? 'Phân tích lại' : 'Phân tích'} {report.range.label.toLowerCase()}
             </>
           )}
         </button>
@@ -224,13 +219,13 @@ function AIAnalysis({ report }) {
             {stale && <p className="text-sm font-semibold text-amber-700">Kết quả dưới đây là của {state.label}.</p>}
             {AI_SECTIONS.map(([key, title]) => (
               <div key={key}>
-                <h3 className="text-sm font-bold text-violet-700">{title}</h3>
-                <p className="text-[15px] leading-relaxed text-slate-700">{state.analysis[key]}</p>
+                <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+                <p className="text-base leading-relaxed text-slate-700">{state.analysis[key]}</p>
               </div>
             ))}
             <div>
-              <h3 className="text-sm font-bold text-violet-700">Nên làm ngay</h3>
-              <ul className="list-disc space-y-1 pl-5 text-[15px] text-slate-700">
+              <h3 className="text-sm font-semibold text-slate-800">Nên làm ngay</h3>
+              <ul className="list-disc space-y-1 pl-5 text-base text-slate-700">
                 {state.analysis.de_xuat.map((t, i) => (
                   <li key={i}>{t}</li>
                 ))}

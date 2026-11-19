@@ -1,8 +1,89 @@
-/* Motion for the staff app only. Loaded from src/main.jsx (index.html), never from the public /order site.
-   Transform and opacity only. Backdrop blur is limited to the top bar, bottom tab bar, and open sheets. */
+/* Staff app only. Loaded from src/main.jsx (index.html), never from the public /order site.
+   One system: 18px cards, 12px controls, 13px labels, one orange accent, one focus ring.
+   Floating cards, the bubble press (thin orange glow) and the pill tab stay.
+   Motion is transform and opacity. Blur only on a fine pointer, and only on the top bar, tab bar and sheets. */
 
 html.staff-app {
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --m-in: 150ms;
+  --m-out: 120ms;
+  --m-press: 90ms;
+  --r-card: 18px;
+  --r-control: 12px;
+  --hairline: rgba(248, 250, 252, 0.12);
+  --action: #ff8a65;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Labels and meta share one size. Nothing in the staff UI sits under 13px. */
+html.staff-app .text-xs,
+html.staff-app .text-\[10px\],
+html.staff-app .text-\[11px\],
+html.staff-app .text-\[12px\] {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+/* One radius family: cards 18, controls 12, the tab pill stays fully round. */
+html.staff-app .rounded-3xl {
+  border-radius: var(--r-card);
+}
+
+html.staff-app .rounded-lg,
+html.staff-app .rounded-xl,
+html.staff-app .rounded-2xl {
+  border-radius: var(--r-control);
+}
+
+html.staff-app .border-slate-200.rounded-3xl,
+html.staff-app .border-slate-200.rounded-2xl,
+html.staff-app .border-slate-200.rounded-xl {
+  border-color: var(--hairline);
+}
+
+/* Thumb targets. The bottom tab is already a full-width hit area. */
+html.staff-app button:not(.staff-tab),
+html.staff-app input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]),
+html.staff-app select {
+  min-height: 44px;
+}
+
+html.staff-app button.rounded-full {
+  min-width: 44px;
+}
+
+/* Reorder chevrons sit in a stack. Wide enough to hit, short enough that a menu row stays one line. */
+html.staff-app button.staff-nudge {
+  min-width: 44px;
+  min-height: 32px;
+}
+
+html.staff-app :focus-visible {
+  outline: 2px solid var(--action);
+  outline-offset: 2px;
+}
+
+html.staff-app .staff-skip {
+  position: fixed;
+  left: 16px;
+  top: 12px;
+  z-index: 60;
+  transform: translateY(-150%);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-control);
+  background: #1e1e24;
+  color: #f8fafc;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+html.staff-app .staff-skip:focus {
+  transform: none;
+}
+
+html.staff-app #noi-dung:focus {
+  outline: none;
 }
 
 html.staff-app .staff-count {
@@ -11,7 +92,7 @@ html.staff-app .staff-count {
 
 /* Floating summary panels: soft layered shadow, slight depth. List rows (li) stay lighter. */
 html.staff-app .rounded-3xl.bg-card {
-  border-radius: 18px;
+  border-radius: var(--r-card);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.05) inset,
     0 10px 22px -16px rgba(0, 0, 0, 0.75);
@@ -19,37 +100,39 @@ html.staff-app .rounded-3xl.bg-card {
 
 html.staff-app section.rounded-3xl.bg-card,
 html.staff-app div.rounded-3xl.bg-card,
+html.staff-app p.rounded-3xl.bg-card,
 html.staff-app button.rounded-3xl.bg-card,
 html.staff-app .staff-float {
-  border-radius: 18px;
+  border-radius: var(--r-card);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 1px 2px rgba(0, 0, 0, 0.28),
-    0 14px 32px -16px rgba(0, 0, 0, 0.72),
-    0 28px 48px -28px rgba(0, 0, 0, 0.8);
+    0 1px 0 rgba(255, 255, 255, 0.07) inset,
+    0 1px 2px rgba(0, 0, 0, 0.22),
+    0 12px 28px -16px rgba(0, 0, 0, 0.62),
+    0 22px 40px -28px rgba(0, 0, 0, 0.72);
 }
 
 html.staff-app section.rounded-3xl.bg-card,
 html.staff-app div.rounded-3xl.bg-card,
+html.staff-app p.rounded-3xl.bg-card,
 html.staff-app .staff-float:not(button) {
-  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 180ms var(--ease);
 }
 
-/* Spring press on buttons. Cards and keys that are buttons use the same curve. */
+/* Quiet press on ordinary buttons. Tiles and menu rows keep the bubble below. */
 html.staff-app button {
   transition:
-    transform 0.42s cubic-bezier(0.34, 1.35, 0.64, 1),
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease;
+    transform var(--m-press) var(--ease),
+    background-color var(--m-in) var(--ease),
+    border-color var(--m-in) var(--ease),
+    color var(--m-in) var(--ease);
 }
 
 html.staff-app button:active:not(:disabled):not(.staff-press):not(.staff-tab) {
-  transform: scale(0.97);
+  transform: translateY(1px) scale(0.985);
 }
 
 html.staff-app .staff-row {
-  transition: transform 0.42s cubic-bezier(0.34, 1.35, 0.64, 1);
+  transition: transform var(--m-press) var(--ease);
 }
 
 html.staff-app .staff-row:active {
@@ -57,7 +140,7 @@ html.staff-app .staff-row:active {
 }
 
 /* One press motion: the row scales, the control inside it does not scale again. */
-html.staff-app .staff-row button:active:not(:disabled) {
+html.staff-app .staff-row button:active:not(:disabled):not(.staff-press):not(.staff-tab) {
   transform: none;
 }
 
@@ -66,7 +149,11 @@ html.staff-app .staff-row button:active:not(:disabled) {
   html.staff-app div.rounded-3xl.bg-card:hover,
   html.staff-app button.rounded-3xl.bg-card:hover,
   html.staff-app .staff-float:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
+  }
+
+  html.staff-app button:not(.staff-press):not(.staff-tab):not(:disabled):hover {
+    transform: translateY(-1px);
   }
 }
 
@@ -103,7 +190,7 @@ html.staff-app .staff-press::after {
   transition: opacity 0.45s ease;
 }
 
-html.staff-app .staff-press button:active:not(:disabled) {
+html.staff-app .staff-press button:active:not(:disabled):not(.staff-tab) {
   transform: none;
 }
 
@@ -189,6 +276,18 @@ html.staff-app .staff-tab-pill {
   padding: 5px 8px 6px;
   border-radius: 999px;
   line-height: 1.15;
+  white-space: nowrap;
+}
+
+/* Five labels on a 320px phone: 13px wraps the pill. 12px keeps one line. */
+@media (max-width: 359px) {
+  html.staff-app .staff-tab {
+    font-size: 12px;
+  }
+  html.staff-app .staff-tab-pill {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
 }
 
 html.staff-app .staff-tab-pill.staff-press::after {
@@ -248,13 +347,13 @@ html.staff-app .staff-menu {
 }
 
 html.staff-app .staff-menu > li:first-child {
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
+  border-top-left-radius: var(--r-card);
+  border-top-right-radius: var(--r-card);
 }
 
 html.staff-app .staff-menu > li:last-child {
-  border-bottom-left-radius: 16px;
-  border-bottom-right-radius: 16px;
+  border-bottom-left-radius: var(--r-card);
+  border-bottom-right-radius: var(--r-card);
 }
 
 /* Frosted chrome. Small strips only — not full-page blur. */
@@ -274,7 +373,7 @@ html.staff-app .staff-sheet {
     0 18px 44px rgba(0, 0, 0, 0.38);
   -webkit-backdrop-filter: blur(12px) saturate(1.2);
   backdrop-filter: blur(12px) saturate(1.2);
-  animation: staff-sheet-in 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: staff-sheet-in 0.28s var(--ease);
 }
 
 @media (min-width: 640px) {
@@ -287,24 +386,15 @@ html.staff-app .staff-scrim {
   animation: staff-fade 0.28s ease-out;
 }
 
-/* Tab content arrives with a short slide + rise. Transform sits on the blocks themselves,
-   not on a parent of the fixed "add" buttons or sheets, so those stay pinned to the screen. */
+/* One short arrival for the blocks on screen. No per-item delay.
+   Transform sits on the blocks themselves, not on a parent of the fixed "add" buttons or sheets. */
 html.staff-app .staff-stagger > *:not(.fixed) {
-  animation: staff-enter-forward 0.48s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: staff-enter-forward 0.22s var(--ease) backwards;
 }
 
 html.staff-app .staff-view[data-dir='back'] .staff-stagger > *:not(.fixed) {
   animation-name: staff-enter-back;
 }
-
-html.staff-app .staff-stagger > *:nth-child(2):not(.fixed) { animation-delay: 0.04s; }
-html.staff-app .staff-stagger > *:nth-child(3):not(.fixed) { animation-delay: 0.08s; }
-html.staff-app .staff-stagger > *:nth-child(4):not(.fixed) { animation-delay: 0.12s; }
-html.staff-app .staff-stagger > *:nth-child(5):not(.fixed) { animation-delay: 0.16s; }
-html.staff-app .staff-stagger > *:nth-child(6):not(.fixed) { animation-delay: 0.2s; }
-html.staff-app .staff-stagger > *:nth-child(7):not(.fixed) { animation-delay: 0.24s; }
-html.staff-app .staff-stagger > *:nth-child(8):not(.fixed) { animation-delay: 0.28s; }
-html.staff-app .staff-stagger > *:nth-child(n + 9):not(.fixed) { animation-delay: 0.32s; }
 
 @keyframes staff-fade {
   from { opacity: 0; }
@@ -313,8 +403,8 @@ html.staff-app .staff-stagger > *:nth-child(n + 9):not(.fixed) { animation-delay
 
 @keyframes staff-sheet-in {
   from {
-    opacity: 0.45;
-    transform: translate3d(0, 22px, 0);
+    opacity: 0.6;
+    transform: translate3d(0, 16px, 0);
   }
   to { opacity: 1; }
 }
@@ -322,7 +412,7 @@ html.staff-app .staff-stagger > *:nth-child(n + 9):not(.fixed) { animation-delay
 @keyframes staff-enter-forward {
   from {
     opacity: 0;
-    transform: translate3d(12px, 12px, 0);
+    transform: translate3d(8px, 6px, 0);
   }
   to { opacity: 1; }
 }
@@ -330,9 +420,19 @@ html.staff-app .staff-stagger > *:nth-child(n + 9):not(.fixed) { animation-delay
 @keyframes staff-enter-back {
   from {
     opacity: 0;
-    transform: translate3d(-12px, 12px, 0);
+    transform: translate3d(-8px, 6px, 0);
   }
   to { opacity: 1; }
+}
+
+/* Older phones: a solid bar matches the frosted colour without the blur cost. */
+@media (hover: none) and (pointer: coarse) {
+  html.staff-app .staff-chrome,
+  html.staff-app .staff-sheet {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: #1c1c22;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -353,6 +453,8 @@ html.staff-app .staff-stagger > *:nth-child(n + 9):not(.fixed) { animation-delay
   html.staff-app .staff-row:active,
   html.staff-app section.rounded-3xl.bg-card:hover,
   html.staff-app div.rounded-3xl.bg-card:hover,
+  html.staff-app p.rounded-3xl.bg-card:hover,
+  html.staff-app button:hover,
   html.staff-app button.rounded-3xl.bg-card:hover,
   html.staff-app button.rounded-3xl.bg-card:active,
   html.staff-app button:active,
