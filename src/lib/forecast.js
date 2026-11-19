@@ -13,6 +13,7 @@
 import { normalizeText } from './text';
 import { periodRange } from './report';
 import { lunarEventsOfYear, moonDays } from './lunar';
+import { weatherId } from './weather';
 
 export const WEATHER = [
   { id: 'hot', label: 'Nóng' },
@@ -159,7 +160,7 @@ function conditions(start, weatherLog) {
     season: season(start),
     payday: payWeek(start),
     holiday: h ? h.id : null,
-    weather: weatherLog[key] ?? null,
+    weather: weatherId(weatherLog[key]),
     moon: moonWeek(start),
     publicHol: publicHolidayWeek(start),
     tetPeak: tetPeakWeek(start),

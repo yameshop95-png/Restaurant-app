@@ -1,0 +1,61 @@
+# Lấy thời tiết Wodonga mỗi ngày, ghi weather_daily, rồi tự chọn chip tuần trong shop_settings.data.weatherLog.
+# Chip chủ quán đã bấm (chuỗi, hoặc { source: 'manual' }) không bị ghi đè.
+# Chỉ schedule và workflow_dispatch. Không chạy trên pull request hay push,
+# nên mở PR không đụng database. Schedule chỉ có hiệu lực sau khi file này nằm trên nhánh mặc định.
+# Cần secret SUPABASE_URL và SUPABASE_SERVICE_ROLE_KEY (không commit).
+# Nên thêm secret WEATHER_USER_AGENT có email liên hệ, ví dụ:
+#   restaurant-dashboard/0.1 owner@example.com
+# MET Norway yêu cầu User-Agent nhận diện được người gọi.
+# Run workflow có hai ô tuỳ chọn: from (YYYY-MM-DD) và dry_run.
+# Lịch hằng ngày không gửi hai ô đó, nên script chạy không có --from và không có --dry-run.
+
+name: Daily weather
+
+on:
+  schedule:
+    # 21:17 UTC. Khoảng 08:17 giờ Melbourne khi đang giờ mùa hè, 07:17 khi giờ chuẩn.
+    # Lệch khỏi phút :00 vì MET Norway đề nghị không dồn request vào đầu giờ.
+    - cron: '17 21 * * *'
+  workflow_dispatch:
+    inputs:
+      from:
+        description: 'Backfill start date (YYYY-MM-DD). Leave empty for the daily window.'
+        required: false
+        type: string
+      dry_run:
+        description: 'Print the plan and do not write'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  upsert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fetch and upsert Wodonga weather
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          WEATHER_USER_AGENT: ${{ secrets.WEATHER_USER_AGENT }}
+          WEATHER_FROM: ${{ inputs.from }}
+          WEATHER_DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          args=()
+          if [ -n "${WEATHER_FROM}" ]; then
+            case "${WEATHER_FROM}" in
+              [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) args+=("--from=${WEATHER_FROM}") ;;
+              *) echo "from must be YYYY-MM-DD" >&2; exit 1 ;;
+            esac
+          fi
+          if [ "${WEATHER_DRY_RUN}" = "true" ]; then
+            args+=("--dry-run")
+          fi
+          node scripts/weather-daily.mjs "${args[@]}"

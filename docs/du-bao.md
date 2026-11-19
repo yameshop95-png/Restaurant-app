@@ -1,7 +1,8 @@
 # Dự báo món, phân loại món, báo cáo ngôn ngữ
 
 Tài liệu này ghi lại cách app đang dự báo và phân tích, để cải tiến dần khi có thêm dữ liệu thật.
-Mọi tính toán chạy trong trình duyệt, từ đơn hàng của quán. Không gọi dịch vụ ngoài, không lưu thêm bảng mới lên Supabase.
+Mọi tính toán dự báo chạy trong trình duyệt, từ đơn hàng của quán. App không gọi API thời tiết.
+Thời tiết ngày (nếu chủ quán đã chạy migration) nằm ở bảng `weather_daily`; ô dự báo chỉ đọc bảng đó.
 
 ## 1. Dự báo món tuần này (`src/lib/forecast.js`, ô "Dự báo món tuần này" ở Màn hình chính)
 
@@ -19,7 +20,7 @@ Cho từng món:
    - Dịp lễ: tuần chứa ngày lễ hoặc tuần ngay trước (khách đặt trước). Năm mới, Quốc khánh Úc 26/1, Phục Sinh, Ngày của Mẹ
      (Chủ nhật thứ 2 tháng 5), Ngày của Cha (Chủ nhật đầu tháng 9), Giáng sinh, và theo âm lịch: Tết, Rằm tháng 7 (Vu Lan), Trung thu (tự tính mọi năm).
      Lưu ý: Tết 2030 theo giờ Việt Nam là 2/2/2030 (lịch Trung Quốc là 3/2).
-   - Thời tiết: chủ quán chọn mỗi tuần (Nóng / Mát / Lạnh / Mưa), lưu chung trong thông tin quán (`weatherLog`)
+   - Thời tiết: mỗi tuần một chip (Nóng / Mát / Lạnh / Mưa), khoá là thứ Hai, nằm trong `weatherLog`. Chuỗi `'hot'` là lựa chọn tay (dữ liệu cũ vẫn đúng). Job hằng ngày ghi `{ value, source: 'auto' }` cho tuần này và chốt tuần đã qua bằng số liệu archive; bấm chip thì lưu chuỗi và job không ghi đè. Ngưỡng ở `src/lib/weather.js`.
    - Mùng 1 / Rằm âm lịch (`src/lib/lunar.js`, thuật toán Hồ Ngọc Đức, giờ UTC+7): tuần có mùng 1 hoặc Rằm, tính cả thứ Hai,
      thứ Ba ngay sau tuần (khách mua từ thứ 7 trước). Nhiều gia đình Việt mua giò chả để cúng.
    - Nghỉ lễ NSW / VIC: tuần có ngày nghỉ lễ rơi vào ngày thường (Albury NSW và Wodonga VIC nghỉ khác nhau: Melbourne Cup,
@@ -31,9 +32,10 @@ Cho từng món:
 
 Tham số nằm ở `PARAMS` trong `src/lib/forecast.js`.
 
-Vì sao không lấy thời tiết tự động: API miễn phí của Open-Meteo không cho dùng cho việc kinh doanh (kể cả bảng điều khiển nội
-bộ để lập kế hoạch); muốn dùng phải mua gói thương mại. Nghiên cứu về bán hàng nhà hàng cho thấy nhiệt độ là yếu tố thời tiết
-ảnh hưởng mạnh nhất tới món khách chọn, mưa ảnh hưởng tâm trạng nhiều hơn doanh số.
+Vì sao không dùng Open-Meteo: API miễn phí của họ chỉ cho việc phi thương mại (kể cả bảng điều khiển nội bộ để lập kế hoạch).
+Gói Standard khoảng USD 29/tháng cho phép dùng thương mại nhưng không gồm API lịch sử; archive cần gói Professional khoảng USD 99/tháng.
+Dữ liệu đang lưu lấy từ MET Norway (dự báo, được dùng cho quán theo NLOD / CC BY 4.0) và NASA POWER (ngày đã qua, CC BY 4.0), ghi bằng job hằng ngày, không gọi từ trình duyệt.
+Nghiên cứu về bán hàng nhà hàng cho thấy nhiệt độ là yếu tố thời tiết ảnh hưởng mạnh nhất tới món khách chọn, mưa ảnh hưởng tâm trạng nhiều hơn doanh số. Chip Mưa vẫn được giữ vì chủ quán đã dùng nó để dạy mô hình.
 
 ## 2. Phân loại món (`src/lib/menuEngineering.js`, tab Inventory → Tổng quan)
 
@@ -72,8 +74,7 @@ Theo thứ tự, mỗi bước kiểm bằng WAPE trên file "Kiểm tra dự b�
 - [ ] Khi có ≥ 1 năm: bật thử hệ số mùa riêng cho từng món; so tuần Tết, Giáng sinh năm nay với năm trước.
 - [ ] Khi có ≥ 2 mùa Tết: học hệ số riêng cho từng tuần trước Tết (4, 3, 2, 1 tuần), vì bánh chưng / bánh tét đặt trước nhiều tuần.
 - [ ] Khoảng dao động: thay ± độ lệch chuẩn bằng phân phối Poisson / nhị thức âm cho món bán ít, để khoảng không âm và sát hơn.
-- [ ] Nếu quán muốn thời tiết tự động: mua gói thương mại của một nhà cung cấp thời tiết (đọc kỹ điều khoản), lưu nhiệt độ
-      trung bình tuần thay cho lựa chọn tay, rồi so WAPE trước và sau.
+- [ ] Khi `weather_daily` đã có vài mùa: so WAPE của tuần chủ quán bấm chọn (chuỗi trong `weatherLog`) với tuần job tự chọn (`source: 'auto'`). Nếu tuần tự chọn tệ hơn, chỉnh ngưỡng ở `src/lib/weather.js`.
 - [ ] Khách theo ngôn ngữ: khi đủ vài tháng, xem món nào khách tiếng Anh mua nhiều để viết mô tả / ảnh tiếng Anh cho món đó.
 
 ## 5. Dự báo trong tuần từ đơn đã đặt và số nên làm (`src/lib/nowcast.js`, ô "Dự báo món tuần này")
