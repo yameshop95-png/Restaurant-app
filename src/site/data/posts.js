@@ -11,7 +11,7 @@ export const POSTS = [
     cover: '/site/photos/banh-cuon.webp',
     coverAlt: 'Bánh cuốn rice rolls topped with fried shallots and herbs, with slices of pork roll',
     dishes: ['banh-cuon', 'gio-lua', 'cha-chien'],
-    body: `If you have ever walked past a Vietnamese breakfast stall and seen a cook ladling batter onto a cloth stretched over a steaming pot, you have seen **bánh cuốn** being made. These soft, silky rice rolls are one of northern Vietnam's best-loved breakfasts, and they are surprisingly light for how satisfying they are.
+    body: `If you have ever walked past a Vietnamese breakfast stall and seen a cook ladling batter onto a cloth stretched over a steaming pot, you have seen **bánh cuốn** being made. These soft, silky rice rolls are one of Vietnam's best-loved breakfasts, and they are surprisingly light for how satisfying they are.
 
 ## What is bánh cuốn made of?
 
@@ -114,7 +114,7 @@ Ready? [Start your order](/order/checkout).`,
     slug: 'vietnamese-menu-guide',
     title: 'Bánh Cuốn, Giò Chả, Xôi Khúc and More: A Guide to Our Vietnamese Menu',
     description:
-      'New to northern Vietnamese food? Meet bánh cuốn, bánh giò, xôi khúc, giò lụa, chả and lạp xưởng: what each dish is, how to eat it and how to say it.',
+      'New to these Vietnamese dishes? Meet bánh cuốn, bánh giò, xôi khúc, giò lụa, chả and lạp xưởng: what each dish is, how to eat it and how to say it.',
     date: '2026-11-10',
     cover: '/site/photos/banh-cuon.webp',
     coverAlt: 'Bánh cuốn rice rolls topped with fried shallots and herbs, with slices of pork roll',
@@ -145,7 +145,7 @@ Ready? [Start your order](/order/checkout).`,
         a: 'No. Despite the word bánh, which is often translated as cake, bánh cuốn is savoury: thin steamed rice sheets around seasoned pork and wood ear mushroom, eaten with a fish sauce dipping sauce.',
       },
     ],
-    body: `If your idea of Vietnamese food stops at phở and bánh mì, our menu might look like a list of unfamiliar words. Every dish on it is an everyday northern Vietnamese food: something families eat for breakfast, pack for lunch or put on the table at Tết, the Lunar New Year.
+    body: `If your idea of Vietnamese food stops at phở and bánh mì, our menu might look like a list of unfamiliar words. Every dish on it is an everyday Vietnamese food: something families eat for breakfast, pack for lunch or put on the table at Tết, the Lunar New Year.
 
 This guide goes through the menu one group at a time. For each dish you'll find what it is, how people usually eat it, and a rough guide to saying it. Vietnamese is a tonal language, so the pronunciations are only close enough to order with. Nobody will mind if your tones aren't perfect.
 
@@ -159,7 +159,7 @@ This guide goes through the menu one group at a time. For each dish you'll find 
 
 [Bánh cuốn](/order/menu/banh-cuon) means "rolled cake", but it isn't sweet. A thin rice batter is spread over cloth stretched across a pot of steaming water. A few seconds later it has set into a soft, almost see-through sheet. The cook lifts the sheet off, fills it with seasoned minced pork and chopped wood ear mushroom, and rolls it up.
 
-**How it's eaten:** traditionally topped with crispy fried shallots (hành phi) and served with a light fish sauce dipping sauce (nước mắm or nước chấm). Ours comes with both the dipping sauce and the fried shallots. Slices of giò lụa usually go on the side, with fresh herbs. Dip each piece rather than pouring the sauce over, so the rolls stay soft. In northern Vietnam it's a classic breakfast, but it works any time of day.
+**How it's eaten:** traditionally topped with crispy fried shallots (hành phi) and served with a light fish sauce dipping sauce (nước mắm or nước chấm). Ours comes with both the dipping sauce and the fried shallots. Slices of giò lụa usually go on the side, with fresh herbs. Dip each piece rather than pouring the sauce over, so the rolls stay soft. It's a classic breakfast, but it works any time of day.
 
 ### Bánh giò: pyramid rice dumpling
 
@@ -169,7 +169,7 @@ This guide goes through the menu one group at a time. For each dish you'll find 
 
 [Bánh giò](/order/menu/banh-gio) is a pyramid-shaped dumpling. A soft rice-flour dough is wrapped around minced pork and wood ear mushroom, folded into banana leaves and steamed. The leaf gives it its shape and a gentle fragrance. The dough inside stays smooth and slightly wobbly.
 
-**How it's eaten:** unwrap the leaf and eat it warm, on its own or with a little chilli sauce or fish sauce. In Hanoi it's a popular breakfast and a filling snack you can eat on the go.
+**How it's eaten:** unwrap the leaf and eat it warm, on its own or with a little chilli sauce or fish sauce. It's a popular breakfast and a filling snack you can eat on the go.
 
 ### Xôi khúc: sticky rice cudweed dumpling
 
@@ -177,7 +177,7 @@ This guide goes through the menu one group at a time. For each dish you'll find 
 
 [ẢNH: cần ảnh thật của món xôi khúc]
 
-[Xôi khúc](/order/menu/xoi-khuc) is a northern favourite you won't see on many menus in Australia. The green dough is made with rau khúc (cudweed), a soft herb that gives it its colour and a mild, grassy scent. The dough is wrapped around a savoury filling of mung bean and pork, coated in sticky rice and steamed. We sell it by the piece.
+[Xôi khúc](/order/menu/xoi-khuc) is a traditional favourite you won't see on many menus in Australia. The green dough is made with rau khúc (cudweed), a soft herb that gives it its colour and a mild, grassy scent. The dough is wrapped around a savoury filling of mung bean and pork, coated in sticky rice and steamed. We sell it by the piece.
 
 **How it's eaten:** warm, held in the hand. The outside is chewy sticky rice, the middle soft and savoury. One or two make a filling breakfast.
 
@@ -269,7 +269,7 @@ Don't let the English name put you off: there's no cheese in it. [Giò thủ](/o
 
 ## Where to start
 
-If you're new to these dishes, start with bánh cuốn and a few slices of giò lụa. That's the classic northern breakfast pairing. Add bánh giò or xôi khúc if you want something to eat warm in your hand. For a platter, pick two or three kinds of giò chả, slice them and serve with herbs and nước chấm.
+If you're new to these dishes, start with bánh cuốn and a few slices of giò lụa. That's the classic breakfast pairing. Add bánh giò or xôi khúc if you want something to eat warm in your hand. For a platter, pick two or three kinds of giò chả, slice them and serve with herbs and nước chấm.
 
 Everything here is on our [menu](/order/menu), and you can [pre-order online](/order/checkout). Pick up on Saturday, 6 am to 9 pm, or another day by request, or get Saturday morning delivery.
 
