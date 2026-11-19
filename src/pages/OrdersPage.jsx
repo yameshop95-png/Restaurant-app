@@ -77,7 +77,7 @@ const backLabel = (order) =>
     ? 'Khách chưa lấy – chuyển về Hoàn thành'
     : BACK_LABEL[order.status];
 
-function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetStatus, onSetPaid }) {
+function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetStatus, onSetPaid, onMarkStep }) {
   const status = STATUS[order.status];
   const cancelled = order.status === 'cancelled';
   const due = dueInfo(order, now);
@@ -85,6 +85,9 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
   // Bấm "Đã thanh toán" thì hỏi khách trả bằng gì
   const [choosingPay, setChoosingPay] = useState(false);
   const [messaging, setMessaging] = useState(false);
+  // Đơn online chờ xử lý đi qua 3 bước: nhận đơn → nhắn xác nhận cho khách → hoàn thành
+  const online = order.source === 'web' && order.status === 'pending';
+  const stage = !online ? null : order.confirmedAt ? 'confirmed' : order.receivedAt ? 'received' : 'new';
   const askPayment = () => setChoosingPay(true);
 
   const share = async () => {
@@ -168,7 +171,10 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
             </span>
           )}
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.badge}`}>
-            {statusLabel(order.status, order.type)}
+            {stage === 'new' && 'Chưa nhận đơn'}
+            {stage === 'received' && 'Đã nhận · chưa xác nhận'}
+            {stage === 'confirmed' && 'Đã xác nhận'}
+            {!stage && statusLabel(order.status, order.type)}
           </span>
           {!cancelled && (
             <span
@@ -344,23 +350,47 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
         ))}
 
       {order.status === 'pending' && (
-        <div className="mt-2 flex gap-2">
-          <button
-            onClick={() => window.confirm(`Huỷ đơn #${order.number}?`) && onSetStatus(order.id, 'cancelled')}
-            className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-4 py-3 font-semibold text-slate-600 active:bg-slate-200"
-          >
-            <X size={18} /> Huỷ
-          </button>
-          <button
-            onClick={() => onSetStatus(order.id, 'done')}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600"
-          >
-            <Check size={18} /> Hoàn thành
-          </button>
+        <div className="mt-2 space-y-2">
+          {stage === 'received' && (
+            <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              Kiểm tra làm được và đủ món, rồi nhắn xác nhận cho khách.
+            </p>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={() => window.confirm(`Huỷ đơn #${order.number}?`) && onSetStatus(order.id, 'cancelled')}
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-4 py-3 font-semibold text-slate-600 active:bg-slate-200"
+            >
+              <X size={18} /> Huỷ
+            </button>
+            {stage === 'new' && (
+              <button
+                onClick={() => onMarkStep(order.id, { receivedAt: new Date().toISOString() }, 'đã nhận đơn')}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600"
+              >
+                <Check size={18} /> Đã nhận đơn
+              </button>
+            )}
+            {stage === 'received' && (
+              <button
+                onClick={() => setMessaging(true)}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600"
+              >
+                <MessageSquare size={18} /> Xác nhận &amp; nhắn khách
+              </button>
+            )}
+            {(!stage || stage === 'confirmed') && (
+              <button
+                onClick={() => onSetStatus(order.id, 'done')}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600"
+              >
+                <Check size={18} /> Hoàn thành
+              </button>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Quay lại bước trước khi bấm nhầm (ngoài nút "Hoàn tác" hiện ngay sau khi bấm) */}
       {PREVIOUS_STATUS[order.status] && (
         <button
           onClick={() => onSetStatus(order.id, PREVIOUS_STATUS[order.status])}
@@ -375,6 +405,11 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
           shopName={shopName}
           shopAddress={shopAddress}
           onClose={() => setMessaging(false)}
+          onSent={(kind) =>
+            kind === 'confirm' &&
+            stage === 'received' &&
+            onMarkStep(order.id, { confirmedAt: new Date().toISOString() }, 'đã nhắn xác nhận cho khách')
+          }
         />
       )}
     </li>
@@ -420,6 +455,7 @@ export default function OrdersPage({
   onUpdateOrder,
   onSetStatus,
   onSetPaid,
+  onMarkStep,
   now,
   settings,
 }) {
@@ -670,6 +706,7 @@ export default function OrdersPage({
                       onEdit={setEditing}
                       onSetStatus={onSetStatus}
                       onSetPaid={onSetPaid}
+                      onMarkStep={onMarkStep}
                     />
                   ))}
                 </ul>

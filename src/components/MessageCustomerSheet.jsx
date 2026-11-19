@@ -8,7 +8,7 @@ const LANGS = [
 ];
 
 // Soạn tin cho khách rồi mở app Tin nhắn của điện thoại (nhân viên bấm Gửi). Không tốn phí, gửi từ số của quán.
-export default function MessageCustomerSheet({ order, shopName, shopAddress, onClose }) {
+export default function MessageCustomerSheet({ order, shopName, shopAddress, onClose, onSent }) {
   const [kind, setKind] = useState(() => defaultKind(order));
   const [lang, setLang] = useState(() => defaultLang(order));
   const [edited, setEdited] = useState(null);
@@ -94,7 +94,10 @@ export default function MessageCustomerSheet({ order, shopName, shopAddress, onC
           </button>
           <a
             href={smsLink(phone, text)}
-            onClick={onClose}
+            onClick={() => {
+              onSent?.(kind);
+              onClose();
+            }}
             className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-blue-500 py-3.5 font-semibold text-white active:bg-blue-600"
           >
             <MessageSquare size={18} /> Mở Tin nhắn

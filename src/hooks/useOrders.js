@@ -49,7 +49,8 @@ export default function useOrders(account) {
   //          shippingFee, discount (A$),
   //          items: [{ name, price, qty, note? }], status: 'pending' | 'done' | 'shipped' | 'cancelled',
   //          paid: boolean, paymentMethod: 'cash' | 'transfer' | 'payid' | null, paidAt (ISO), createdAt,
-  //          createdBy: tên người tạo đơn }
+  //          createdBy: tên người tạo đơn,
+  //          receivedAt (ISO): đã bấm "Đã nhận đơn"; confirmedAt (ISO): đã nhắn xác nhận cho khách (chỉ đơn online) }
   const addOrder = ({ type, customer, deliverAt, table, note, items, shippingFee, discount }) =>
     setOrders((prev) => [
       {
@@ -73,6 +74,9 @@ export default function useOrders(account) {
       },
       ...prev,
     ]);
+
+  // Gắn thêm trường cho đơn (vd receivedAt / confirmedAt: các bước nhận đơn và xác nhận đơn online)
+  const markOrder = (id, patch) => setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, ...patch } : o)));
 
   const setStatus = (id, status) => setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
 
@@ -101,5 +105,5 @@ export default function useOrders(account) {
     return fresh.length;
   };
 
-  return { orders, ready, loadError, addOrder, updateOrder, setStatus, setPaid, importOrders };
+  return { orders, ready, loadError, addOrder, updateOrder, setStatus, markOrder, setPaid, importOrders };
 }
