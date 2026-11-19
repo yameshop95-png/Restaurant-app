@@ -1,4 +1,4 @@
-import { formatMoney } from '../lib/stats';
+import { formatMoney } from './format';
 import { normalizeText } from '../lib/text';
 import { CATEGORIES, DISHES } from './data/dishes';
 import { POSTS } from './data/posts';

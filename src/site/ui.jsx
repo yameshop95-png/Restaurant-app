@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Facebook, Mail, Minus, Phone, Plus, ShoppingBag } from 'lucide-react';
 import { TAGLINE } from '../lib/brand';
-import { formatMoney } from '../lib/stats';
+import { formatMoney } from './format';
 import { TEXT as ORDER_TEXT } from '../order/i18n';
 import { formatClock, formatPhoneDisplay, formatPhoneTel } from './format';
 import { BLOG_ENABLED, dishText, orderingRules, path, photoAlt, SOCIAL } from './lib';

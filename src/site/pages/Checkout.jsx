@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Banknote, Check, Loader2, Minus, Phone, Plus, ShoppingBag, Truck } from 'lucide-react';
 import { DEFAULT_ZONES } from '../../lib/shippingZones';
-import { formatMoney } from '../../lib/stats';
+import { formatMoney } from '../format';
 import { TEXT } from '../../order/i18n';
 import { siteClient, store } from '../client';
 import { trackContact, trackOrdered } from '../tracker';

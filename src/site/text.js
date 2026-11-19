@@ -23,7 +23,7 @@ export const SITE_TEXT = {
     specialText: 'Made every week from fresh ingredients, the traditional way.',
     welcomeTitle: (name) => `Welcome to ${name}`,
     welcomeText:
-      'We hand-make northern Vietnamese favourites from fresh ingredients: silky bánh cuốn, giò lụa and chả, beef balls and sticky-rice dumplings. Every batch is made each week, and we follow strict hygiene and food safety practices from preparation to packing.',
+      'We hand-make Vietnamese favourites from fresh ingredients: silky bánh cuốn, giò lụa and chả, beef balls and sticky-rice dumplings. Every batch is made each week, and we follow strict hygiene and food safety practices from preparation to packing.',
     points: [
       'Fresh ingredients',
       'Made every week',
@@ -115,7 +115,7 @@ export const SITE_TEXT = {
     specialText: 'Nguyên liệu tươi, làm mới mỗi tuần theo kiểu truyền thống.',
     welcomeTitle: (name) => `Chào mừng đến ${name}`,
     welcomeText:
-      'Quán làm tay các món miền Bắc từ nguyên liệu tươi: bánh cuốn mỏng mịn, giò lụa, chả, bò viên và xôi. Mỗi mẻ đều làm mới hằng tuần, giữ vệ sinh an toàn thực phẩm từ khâu chuẩn bị đến khi đóng gói.',
+      'Quán làm tay các món Việt từ nguyên liệu tươi: bánh cuốn mỏng mịn, giò lụa, chả, bò viên và xôi. Mỗi mẻ đều làm mới hằng tuần, giữ vệ sinh an toàn thực phẩm từ khâu chuẩn bị đến khi đóng gói.',
     points: [
       'Nguyên liệu tươi',
       'Làm mới mỗi tuần',

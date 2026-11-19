@@ -2,7 +2,7 @@ import { Banknote, CalendarCheck, Leaf, ShieldCheck, ShoppingBag, Truck } from '
 
 // Biểu tượng cho từng ý trong t.points (cùng thứ tự)
 const POINT_ICONS = [Leaf, CalendarCheck, ShieldCheck, ShoppingBag, Truck, Banknote];
-import { formatMoney } from '../../lib/stats';
+import { formatMoney } from '../format';
 import { DEFAULT_ZONES } from '../../lib/shippingZones';
 import { TEXT as ORDER_TEXT } from '../../order/i18n';
 import { formatClock, formatLead, zoneDisplayName } from '../format';
