@@ -157,10 +157,11 @@ function Shop({ account, onLogout }) {
       fresh.forEach((o) => sendToShopPrinter(o, settings.shopName).catch(() => {}));
     }
   }, [orders, ordersReady, settings.autoPrint, settings.shopName]);
-  // Chuông báo lặp lại mỗi 15 giây cho tới khi có người bấm vào thông báo, kẻo nhân viên bận không nghe thấy
+  // Chuông báo lặp lại mỗi 3,5 giây cho tới khi có người bấm vào thông báo để mở đơn (xác nhận),
+  // kẻo nhân viên bận không nghe thấy. Bấm vào thông báo hoặc nút X sẽ tắt chuông.
   useEffect(() => {
     if (!onlineAlerts.length) return undefined;
-    const timer = setInterval(alertBeep, 15000);
+    const timer = setInterval(alertBeep, 3500);
     return () => clearInterval(timer);
   }, [onlineAlerts.length]);
   // Lần chạm đầu tiên vào app mở khoá âm thanh của trình duyệt
