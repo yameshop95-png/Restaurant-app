@@ -55,7 +55,7 @@ export default function ForecastCard({ orders, now, settings, isOwner, onUpdateS
   };
 
   return (
-    <section className="font-ui rise-in rounded-[28px] border border-slate-200 bg-card px-5 pb-5 pt-5 shadow-sm">
+    <section className="rounded-3xl border border-slate-200 bg-card px-5 pb-4 pt-4 shadow-sm">
       <div className="flex items-center gap-2">
         <Sparkles size={18} className="text-blue-500" aria-hidden="true" />
         <h2 className="text-[15px] text-slate-500">Dự báo món tuần này</h2>
@@ -76,7 +76,7 @@ export default function ForecastCard({ orders, now, settings, isOwner, onUpdateS
                 disabled={!isOwner}
                 aria-pressed={on}
                 onClick={() => setWeather(w.id)}
-                className={`press flex items-center gap-1.5 rounded-2xl border px-3.5 py-2 text-sm font-semibold ${
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm font-semibold transition ${
                   on ? 'border-blue-500 bg-blue-500 text-white' : 'border-slate-200 text-slate-700'
                 } ${isOwner ? '' : 'cursor-default opacity-80'}`}
               >
@@ -105,7 +105,7 @@ export default function ForecastCard({ orders, now, settings, isOwner, onUpdateS
                   aria-pressed={level === l.id}
                   onClick={() => chooseLevel(l.id)}
                   title={l.hint}
-                  className={`press rounded-2xl border px-3.5 py-2 text-sm font-semibold ${
+                  className={`rounded-xl border px-3 py-1.5 text-sm font-semibold ${
                     level === l.id ? 'border-blue-500 bg-blue-500 text-white' : 'border-slate-200 text-slate-700'
                   }`}
                 >
@@ -114,17 +114,17 @@ export default function ForecastCard({ orders, now, settings, isOwner, onUpdateS
               ))}
             </div>
           </div>
-          <ol className="stagger mt-3 divide-y divide-slate-200 border-t border-slate-200">
+          <ol className="mt-3 divide-y divide-slate-200 border-t border-slate-200">
             {rows.slice(0, SHOW).map((it, i) => {
               const up = it.change != null && it.change >= 1.1;
               const down = it.change != null && it.change <= 0.9;
               return (
-                <li key={it.key} className="rise-in py-3">
+                <li key={it.key} className="py-2.5">
                   <button
                     type="button"
                     onClick={() => setOpen(open === it.key ? null : it.key)}
                     aria-expanded={open === it.key}
-                    className="press flex w-full items-center gap-3 text-left"
+                    className="flex w-full items-center gap-3 text-left"
                   >
                     <span className="w-5 shrink-0 text-sm font-bold text-slate-400">{i + 1}</span>
                     <span className="min-w-0 flex-1">
@@ -143,7 +143,7 @@ export default function ForecastCard({ orders, now, settings, isOwner, onUpdateS
                     </span>
                   </button>
                   {open === it.key && (
-                    <ul className="forecast-pop mt-2 space-y-0.5 pl-8 text-xs text-slate-500">
+                    <ul className="mt-2 space-y-0.5 pl-8 text-xs text-slate-500">
                       {it.reasons.map((r) => (
                         <li key={r}>• {r}</li>
                       ))}

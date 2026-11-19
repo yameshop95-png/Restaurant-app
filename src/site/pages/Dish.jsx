@@ -21,7 +21,7 @@ export default function Dish({ slug }) {
       >
         <ArrowLeft size={16} /> {t.backMenu}
       </Link>
-      <article className="rise-in mt-6 grid gap-10 md:grid-cols-2 md:items-center">
+      <article className="mt-6 grid gap-10 md:grid-cols-2 md:items-center">
         <div className="relative mx-auto aspect-square w-full max-w-[480px]">
           <Deco name="basil" className="-right-6 -top-8 w-40 opacity-40" />
           <div className="relative h-full w-full overflow-hidden rounded-full border-[10px] border-mist shadow-[0_40px_80px_-30px_rgba(16,26,36,0.55)]">
@@ -49,7 +49,7 @@ export default function Dish({ slug }) {
       {posts.length > 0 && (
         <section className="pt-14">
           <h2 className="mb-6 font-serif text-3xl font-bold text-ink">{t.related}</h2>
-          <div className="stagger grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3">
             {posts.map((p) => (
               <PostCard key={p.slug} post={p} lang={lang} t={t} />
             ))}
@@ -59,7 +59,7 @@ export default function Dish({ slug }) {
       {more.length > 0 && (
         <section className="pt-14">
           <h2 className="mb-8 font-serif text-3xl font-bold text-ink">{t.moreDishes}</h2>
-          <div className="stagger grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
             {more.map((d) => (
               <DishCard key={d.slug} dish={d} />
             ))}

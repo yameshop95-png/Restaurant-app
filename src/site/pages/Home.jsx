@@ -9,7 +9,6 @@ import { formatClock, formatLead, zoneDisplayName } from '../format';
 import { BLOG_ENABLED, formatPostDate, orderingRules, path, photoAlt, sortedPosts } from '../lib';
 import SplitText from '../SplitText';
 import { Deco, DishCard, Link, Photo, SectionTitle, useSite } from '../ui';
-import WeekForecastDemo from '../WeekForecastDemo';
 
 // Trang chủ theo bố cục mẫu Figma: mở đầu · món đặc biệt · giới thiệu quán · lấy & giao hàng · kêu gọi đặt món
 export default function Home() {
@@ -34,17 +33,13 @@ export default function Home() {
     <>
       <Hero t={t} tall={photoOf(pick(0))} round={photoOf(pick(1))} name={name} logo={shop.logo || '/logo-round.svg'} />
 
-      <div className="mx-auto max-w-3xl scroll-mt-36 px-4 pb-6 sm:px-6">
-        <WeekForecastDemo />
-      </div>
-
       {/* Món đặc biệt + giới thiệu quán: chung một nền xám như mẫu */}
       <section className="relative overflow-hidden bg-mist">
         <Deco name="sprig" className="-left-4 top-2 w-20 opacity-30 sm:left-[14%] sm:top-10 sm:w-40 sm:opacity-50" />
         <Deco name="basil" className="-right-6 top-2 w-24 opacity-30 sm:right-[16%] sm:top-8 sm:w-44 sm:opacity-40" />
         <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 md:py-24">
           <SectionTitle title={t.specialTitle} text={t.specialText} />
-          <div className="stagger mt-14 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-14 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
             {popular.map((d) => (
               <DishCard key={d.slug} dish={d} />
             ))}
@@ -101,7 +96,7 @@ export default function Home() {
               <p>{t.deliveryText(days[rules.day], start, end, cutDay, cutoff)}</p>
             </div>
             <h3 className="mt-8 text-xs font-bold uppercase tracking-wide text-ink">{t.feeTitle}</h3>
-            <ul className="soft-shadow rise-in mt-3 divide-y divide-slate-200 rounded-[24px] bg-white px-5">
+            <ul className="mt-3 divide-y divide-slate-200 rounded-[20px] bg-mist px-5">
               {zones.map((z) => (
                 <li key={z.id} className="flex items-center justify-between gap-3 py-3.5">
                   <span className="text-ink">{zoneDisplayName(z.name)}</span>
@@ -133,7 +128,7 @@ export default function Home() {
       {BLOG_ENABLED && (
         <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
           <SectionTitle title={t.fromBlog} />
-          <div className="stagger mt-10 grid gap-6 md:grid-cols-3">
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
             {posts.map((p) => (
               <PostCard key={p.slug} post={p} lang={lang} t={t} />
             ))}
@@ -148,7 +143,7 @@ export default function Home() {
 
       {/* Kêu gọi đặt món (chỗ ô đăng ký nhận tin của mẫu) */}
       <section className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="rise-in relative overflow-hidden rounded-[28px] bg-ink px-6 py-16 text-center sm:px-12 sm:py-20">
+        <div className="relative overflow-hidden rounded-[28px] bg-ink px-6 py-16 text-center sm:px-12 sm:py-20">
           <img
             src="/site/photos/cta-weekend.webp"
             alt="Lạp xưởng sausages and a plate of fried rice on an outdoor table"
@@ -182,7 +177,7 @@ function Hero({ t, tall, round, name, logo }) {
         className="deco -left-64 -top-[26rem] h-[760px] w-[760px] rounded-full border border-slate-200"
       />
       <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-4 pb-16 pt-8 sm:px-6 md:grid-cols-[1fr_1.05fr] md:pb-24 md:pt-12">
-        <div className="rise-in">
+        <div>
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-500">{t.heroKicker}</p>
           <SplitText
             key={t.heroTitle}
@@ -224,7 +219,7 @@ function Hero({ t, tall, round, name, logo }) {
           </div>
         </div>
 
-        <div className="rise-in relative mx-auto w-full max-w-[540px]">
+        <div className="relative mx-auto w-full max-w-[540px]">
           <Deco name="basil" className="-right-4 -top-12 w-44 opacity-40 sm:-right-10 sm:w-64" />
           <Deco name="branch" className="-bottom-12 right-[30%] w-48 opacity-35 sm:w-60" />
           <div className="relative ml-auto aspect-[516/712] w-[76%] overflow-hidden rounded-[72px_40px_72px_24px] shadow-[0_40px_80px_-40px_rgba(16,26,36,0.7)]">
@@ -249,7 +244,7 @@ function Hero({ t, tall, round, name, logo }) {
 
 export function PostCard({ post, lang, t }) {
   return (
-    <article className="press rise-in flex flex-col overflow-hidden rounded-[28px] bg-card shadow-[0_24px_50px_-30px_rgba(16,26,36,0.35)] ring-1 ring-slate-200/70">
+    <article className="flex flex-col overflow-hidden rounded-[28px] bg-card shadow-[0_24px_50px_-30px_rgba(16,26,36,0.35)] ring-1 ring-slate-200/70">
       <Link to={path(`/blog/${post.slug}`)} className="block aspect-[16/9] overflow-hidden">
         <Photo src={post.cover} alt={post.coverAlt || post.title} />
       </Link>
