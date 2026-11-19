@@ -88,7 +88,7 @@ export default function MessageCustomerSheet({ order, shopName, shopAddress, onC
             <textarea
               value={text}
               onChange={(e) => setEdited(e.target.value)}
-              rows={6}
+              rows={11}
               className="w-full rounded-xl border border-slate-300 px-4 py-3 text-[15px] leading-relaxed outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </label>

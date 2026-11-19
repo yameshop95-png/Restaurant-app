@@ -26,6 +26,10 @@ function when(order, lang) {
   return `${time} ${weekday} ${d.getDate()}/${d.getMonth() + 1}`;
 }
 
+// Mỗi món một dòng: "1× Bánh cuốn," ... dòng cuối kết thúc bằng dấu chấm
+const itemLines = (order) =>
+  (order.items ?? []).map((i, idx, all) => `${i.qty}× ${i.name}${idx === all.length - 1 ? '.' : ','}`);
+
 export function customerMessage(order, kind, lang, shopName, shopAddress = '') {
   const shop = shopName?.trim() || DEFAULT_SHOP;
   const address = shopAddress?.trim() || '';
@@ -42,16 +46,19 @@ export function customerMessage(order, kind, lang, shopName, shopAddress = '') {
     const pay = order.paid ? 'Paid, thank you.' : `Please pay cash on ${delivery ? 'delivery' : 'pickup'}.`;
     if (kind === 'confirm') {
       return [
-        `${shop}: Hi ${name}, thank you for your order #${order.number}. We have received it and confirmed we can make everything.`,
+        `${shop}:`,
+        `Hi ${name}, thank you for your order #${order.number}. We have received it and confirmed we can make everything.`,
         delivery
           ? at && `We will deliver to you on ${at}.`
           : `Please come to pick it up${at ? ` on ${at}` : ''}${address ? ` at ${address}` : ''}.`,
-        items && `Order: ${items}.`,
-        `Total ${total}${fee ? ` incl. ${fee} delivery` : ''}. ${pay}`,
+        items && 'Order:',
+        ...itemLines(order),
+        `Total ${total}${fee ? ` incl. ${fee} delivery` : ''}.`,
+        pay,
         'Thank you!',
       ]
         .filter(Boolean)
-        .join(' ');
+        .join('\n');
     }
     return delivery
       ? `${shop}: Hi ${name}, order #${order.number} is on its way. Total ${total}. ${pay} Thank you!`
@@ -61,16 +68,19 @@ export function customerMessage(order, kind, lang, shopName, shopAddress = '') {
   const pay = order.paid ? 'Đã thanh toán, cảm ơn bạn.' : 'Vui lòng trả tiền mặt khi nhận hàng.';
   if (kind === 'confirm') {
     return [
-      `${shop}: Chào anh/chị ${name}, quán đã nhận đơn #${order.number} và xác nhận làm được đủ món.`,
+      `${shop}:`,
+      `Chào anh/chị ${name}, quán đã nhận đơn #${order.number} và xác nhận làm được đủ món.`,
       delivery
         ? `Quán sẽ giao hàng đến anh/chị${at ? ` vào ${at}` : ''}.`
         : `Mời anh/chị đến lấy hàng${at ? ` lúc ${at}` : ''}${address ? ` tại ${address}` : ''}.`,
-      items && `Món: ${items}.`,
-      `Tổng ${total}${fee ? ` (gồm ship ${fee})` : ''}. ${pay}`,
+      items && 'Món:',
+      ...itemLines(order),
+      `Tổng ${total}${fee ? ` (gồm ship ${fee})` : ''}.`,
+      pay,
       'Cảm ơn anh/chị!',
     ]
       .filter(Boolean)
-      .join(' ');
+      .join('\n');
   }
   return delivery
     ? `${shop}: Chào ${name}, đơn #${order.number} đang được giao tới bạn. Tổng ${total}. ${pay} Cảm ơn bạn!`
