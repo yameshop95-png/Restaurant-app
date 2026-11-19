@@ -98,7 +98,7 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
   };
 
   return (
-    <li className={`rounded-3xl border border-slate-200 bg-card p-4 shadow-sm ${due ? DUE_STYLE[due.level].card : ''}`}>
+    <li className={`staff-row rounded-3xl border border-slate-200 bg-card p-4 shadow-sm ${due ? DUE_STYLE[due.level].card : ''}`}>
       {due && (
         <p
           className={`-mx-1 -mt-1 mb-3 flex items-center gap-2 rounded-2xl px-3 py-2 font-bold ${DUE_STYLE[due.level].banner}`}
@@ -501,7 +501,7 @@ export default function OrdersPage({
   };
 
   return (
-    <div className="mx-auto max-w-2xl pb-24 md:max-w-5xl">
+    <div className="staff-stagger mx-auto max-w-2xl pb-24 md:max-w-5xl">
       {!fixedType && (
         <div className="mb-3 grid grid-cols-2 gap-2">
           {Object.entries(ORDER_TYPES).map(([id, info]) => {

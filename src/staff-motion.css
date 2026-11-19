@@ -1,0 +1,496 @@
+/* Staff app only. Loaded from src/main.jsx (index.html), never from the public /order site.
+   One system: 18px cards, 12px controls, 13px labels, one orange accent, one focus ring.
+   Floating cards, the bubble press (thin orange glow) and the pill tab stay.
+   Motion is transform and opacity. Blur only on a fine pointer, and only on the top bar, tab bar and sheets. */
+
+html.staff-app {
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --m-in: 150ms;
+  --m-out: 120ms;
+  --m-press: 90ms;
+  --r-card: 18px;
+  --r-control: 12px;
+  --hairline: rgba(248, 250, 252, 0.12);
+  --action: #ff8a65;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Labels and meta share one size. Nothing in the staff UI sits under 13px. */
+html.staff-app .text-xs,
+html.staff-app .text-\[10px\],
+html.staff-app .text-\[11px\],
+html.staff-app .text-\[12px\] {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+/* One radius family: cards 18, controls 12, the tab pill stays fully round. */
+html.staff-app .rounded-3xl {
+  border-radius: var(--r-card);
+}
+
+html.staff-app .rounded-lg,
+html.staff-app .rounded-xl,
+html.staff-app .rounded-2xl {
+  border-radius: var(--r-control);
+}
+
+html.staff-app .border-slate-200.rounded-3xl,
+html.staff-app .border-slate-200.rounded-2xl,
+html.staff-app .border-slate-200.rounded-xl {
+  border-color: var(--hairline);
+}
+
+/* Thumb targets. The bottom tab is already a full-width hit area. */
+html.staff-app button:not(.staff-tab),
+html.staff-app input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]),
+html.staff-app select {
+  min-height: 44px;
+}
+
+html.staff-app button.rounded-full {
+  min-width: 44px;
+}
+
+/* Reorder chevrons sit in a stack. Wide enough to hit, short enough that a menu row stays one line. */
+html.staff-app button.staff-nudge {
+  min-width: 44px;
+  min-height: 32px;
+}
+
+html.staff-app :focus-visible {
+  outline: 2px solid var(--action);
+  outline-offset: 2px;
+}
+
+html.staff-app .staff-skip {
+  position: fixed;
+  left: 16px;
+  top: 12px;
+  z-index: 60;
+  transform: translateY(-150%);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-control);
+  background: #1e1e24;
+  color: #f8fafc;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+html.staff-app .staff-skip:focus {
+  transform: none;
+}
+
+html.staff-app #noi-dung:focus {
+  outline: none;
+}
+
+html.staff-app .staff-count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Floating summary panels: soft layered shadow, slight depth. List rows (li) stay lighter. */
+html.staff-app .rounded-3xl.bg-card {
+  border-radius: var(--r-card);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 10px 22px -16px rgba(0, 0, 0, 0.75);
+}
+
+html.staff-app section.rounded-3xl.bg-card,
+html.staff-app div.rounded-3xl.bg-card,
+html.staff-app p.rounded-3xl.bg-card,
+html.staff-app button.rounded-3xl.bg-card,
+html.staff-app .staff-float {
+  border-radius: var(--r-card);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.07) inset,
+    0 1px 2px rgba(0, 0, 0, 0.22),
+    0 12px 28px -16px rgba(0, 0, 0, 0.62),
+    0 22px 40px -28px rgba(0, 0, 0, 0.72);
+}
+
+html.staff-app section.rounded-3xl.bg-card,
+html.staff-app div.rounded-3xl.bg-card,
+html.staff-app p.rounded-3xl.bg-card,
+html.staff-app .staff-float:not(button) {
+  transition: transform 180ms var(--ease);
+}
+
+/* Quiet press on ordinary buttons. Tiles and menu rows keep the bubble below. */
+html.staff-app button {
+  transition:
+    transform var(--m-press) var(--ease),
+    background-color var(--m-in) var(--ease),
+    border-color var(--m-in) var(--ease),
+    color var(--m-in) var(--ease);
+}
+
+html.staff-app button:active:not(:disabled):not(.staff-press):not(.staff-tab) {
+  transform: translateY(1px) scale(0.985);
+}
+
+html.staff-app .staff-row {
+  transition: transform var(--m-press) var(--ease);
+}
+
+html.staff-app .staff-row:active {
+  transform: scale(0.985);
+}
+
+/* One press motion: the row scales, the control inside it does not scale again. */
+html.staff-app .staff-row button:active:not(:disabled):not(.staff-press):not(.staff-tab) {
+  transform: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html.staff-app section.rounded-3xl.bg-card:hover,
+  html.staff-app div.rounded-3xl.bg-card:hover,
+  html.staff-app button.rounded-3xl.bg-card:hover,
+  html.staff-app .staff-float:hover {
+    transform: translateY(-2px);
+  }
+
+  html.staff-app button:not(.staff-press):not(.staff-tab):not(:disabled):hover {
+    transform: translateY(-1px);
+  }
+}
+
+html.staff-app button.rounded-3xl.bg-card:active:not(:disabled):not(.staff-press),
+html.staff-app button.staff-float:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Dashboard tiles and menu rows: a bubble tap.
+   Finger down squishes (is-squish), then the tile springs past its size and settles (is-pop).
+   The sequence keeps running after the finger lifts so a short phone tap still shows the pop.
+   The orange edge stays 1px. The halo is a wide, dim blur — not a solid ring. */
+html.staff-app .staff-press {
+  position: relative;
+  z-index: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.52s cubic-bezier(0.34, 1.3, 0.45, 1),
+    border-color 0.35s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+html.staff-app .staff-press::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow:
+    0 0 18px 2px rgba(255, 150, 80, 0.16),
+    0 0 42px 16px rgba(255, 100, 36, 0.11);
+  transition: opacity 0.45s ease;
+}
+
+html.staff-app .staff-press button:active:not(:disabled):not(.staff-tab) {
+  transform: none;
+}
+
+html.staff-app button.staff-press.is-squish,
+html.staff-app li.staff-press.is-squish {
+  z-index: 5;
+  transform: translateY(1px) scale(0.95);
+  transition:
+    transform 0.08s ease-out,
+    border-color 0.12s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+html.staff-app button.rounded-3xl.bg-card.staff-press.is-squish {
+  transform: translateY(1px) scale(0.95);
+}
+
+html.staff-app button.staff-press.is-pop,
+html.staff-app li.staff-press.is-pop {
+  z-index: 5;
+  transform: translateY(-5px) scale(1.045);
+  border-color: rgba(255, 168, 114, 0.5);
+  transition:
+    transform 0.5s cubic-bezier(0.34, 1.56, 0.4, 1),
+    border-color 0.22s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+html.staff-app button.rounded-3xl.bg-card.staff-press.is-pop {
+  transform: translateY(-5px) scale(1.045);
+}
+
+html.staff-app li.staff-press.is-pop {
+  outline: 1px solid rgba(255, 168, 114, 0.45);
+  outline-offset: -1px;
+}
+
+html.staff-app .staff-press.is-squish::after,
+html.staff-app .staff-press.is-pop::after {
+  opacity: 1;
+}
+
+html.staff-app .staff-tab-pill.is-squish,
+html.staff-app .staff-tab-pill.is-pop {
+  z-index: 5;
+}
+
+html.staff-app .staff-tab-pill.is-squish {
+  transform: translateY(1px) scale(0.95);
+  transition: transform 0.08s ease-out;
+}
+
+html.staff-app .staff-tab-pill.is-pop {
+  transform: translateY(-3px) scale(1.045);
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.4, 1);
+}
+
+/* Bottom tabs: the highlight is a pill around the icon and label.
+   The button itself stays a plain hit target, with no square border or tap outline. */
+html.staff-app .staff-tab {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  background-color: transparent;
+}
+
+html.staff-app .staff-tab:focus {
+  outline: none;
+}
+
+html.staff-app .staff-tab::-moz-focus-inner {
+  border: 0;
+}
+
+html.staff-app .staff-tab-pill {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  max-width: 100%;
+  padding: 5px 8px 6px;
+  border-radius: 999px;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+/* Five labels on a 320px phone: 13px wraps the pill. 12px keeps one line. */
+@media (max-width: 359px) {
+  html.staff-app .staff-tab {
+    font-size: 12px;
+  }
+  html.staff-app .staff-tab-pill {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+}
+
+html.staff-app .staff-tab-pill.staff-press::after {
+  content: none;
+}
+
+html.staff-app .staff-tab-pill::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    160deg,
+    rgba(255, 214, 176, 0.8),
+    rgba(255, 120, 64, 0.16) 46%,
+    rgba(255, 168, 110, 0.55)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+html.staff-app .staff-tab-pill.is-active,
+html.staff-app .staff-tab-pill.is-squish,
+html.staff-app .staff-tab-pill.is-pop,
+html.staff-app .staff-tab:focus-visible .staff-tab-pill {
+  box-shadow:
+    0 0 12px 1px rgba(255, 160, 90, 0.16),
+    0 0 26px 8px rgba(255, 110, 40, 0.1);
+}
+
+html.staff-app .staff-tab-pill.is-active::before,
+html.staff-app .staff-tab-pill.is-squish::before,
+html.staff-app .staff-tab-pill.is-pop::before,
+html.staff-app .staff-tab:focus-visible .staff-tab-pill::before {
+  opacity: 1;
+}
+
+html.staff-app .staff-tab:focus-visible .staff-tab-pill {
+  box-shadow:
+    0 0 0 2px #121214,
+    0 0 0 3px rgba(255, 176, 120, 0.8),
+    0 0 18px 3px rgba(255, 140, 70, 0.22);
+}
+
+html.staff-app .staff-menu {
+  overflow: visible;
+}
+
+html.staff-app .staff-menu > li:first-child {
+  border-top-left-radius: var(--r-card);
+  border-top-right-radius: var(--r-card);
+}
+
+html.staff-app .staff-menu > li:last-child {
+  border-bottom-left-radius: var(--r-card);
+  border-bottom-right-radius: var(--r-card);
+}
+
+/* Frosted chrome. Small strips only — not full-page blur. */
+html.staff-app .staff-chrome {
+  background-color: rgba(30, 30, 36, 0.86);
+  border-color: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(14px) saturate(1.25);
+  backdrop-filter: blur(14px) saturate(1.25);
+}
+
+html.staff-app .staff-sheet {
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  background-color: rgba(30, 30, 36, 0.9);
+  box-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 18px 44px rgba(0, 0, 0, 0.38);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  backdrop-filter: blur(12px) saturate(1.2);
+  animation: staff-sheet-in 0.28s var(--ease);
+}
+
+@media (min-width: 640px) {
+  html.staff-app .staff-sheet {
+    border-radius: 20px;
+  }
+}
+
+html.staff-app .staff-scrim {
+  animation: staff-fade 0.28s ease-out;
+}
+
+/* One short arrival for the blocks on screen. No per-item delay.
+   Transform sits on the blocks themselves, not on a parent of the fixed "add" buttons or sheets. */
+html.staff-app .staff-stagger > *:not(.fixed) {
+  animation: staff-enter-forward 0.22s var(--ease) backwards;
+}
+
+html.staff-app .staff-view[data-dir='back'] .staff-stagger > *:not(.fixed) {
+  animation-name: staff-enter-back;
+}
+
+@keyframes staff-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes staff-sheet-in {
+  from {
+    opacity: 0.6;
+    transform: translate3d(0, 16px, 0);
+  }
+  to { opacity: 1; }
+}
+
+@keyframes staff-enter-forward {
+  from {
+    opacity: 0;
+    transform: translate3d(8px, 6px, 0);
+  }
+  to { opacity: 1; }
+}
+
+@keyframes staff-enter-back {
+  from {
+    opacity: 0;
+    transform: translate3d(-8px, 6px, 0);
+  }
+  to { opacity: 1; }
+}
+
+/* Older phones: a solid bar matches the frosted colour without the blur cost. */
+@media (hover: none) and (pointer: coarse) {
+  html.staff-app .staff-chrome,
+  html.staff-app .staff-sheet {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: #1c1c22;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.staff-app .staff-view,
+  html.staff-app .staff-stagger > *,
+  html.staff-app .staff-sheet,
+  html.staff-app .staff-scrim,
+  html.staff-app .staff-row,
+  html.staff-app button,
+  html.staff-app section.rounded-3xl.bg-card,
+  html.staff-app div.rounded-3xl.bg-card {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  html.staff-app .staff-float:hover,
+  html.staff-app .staff-float:active,
+  html.staff-app .staff-row:active,
+  html.staff-app section.rounded-3xl.bg-card:hover,
+  html.staff-app div.rounded-3xl.bg-card:hover,
+  html.staff-app p.rounded-3xl.bg-card:hover,
+  html.staff-app button:hover,
+  html.staff-app button.rounded-3xl.bg-card:hover,
+  html.staff-app button.rounded-3xl.bg-card:active,
+  html.staff-app button:active,
+  html.staff-app .staff-press:active,
+  html.staff-app .staff-press.is-squish,
+  html.staff-app .staff-press.is-pop {
+    transform: none !important;
+  }
+
+  html.staff-app .staff-press.is-squish:not(.staff-tab-pill),
+  html.staff-app .staff-press.is-pop:not(.staff-tab-pill) {
+    border-color: rgba(255, 168, 114, 0.55);
+  }
+
+  html.staff-app .staff-tab-pill,
+  html.staff-app .staff-tab-pill::before {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  html.staff-app li.staff-press.is-squish,
+  html.staff-app li.staff-press.is-pop {
+    outline: 1px solid rgba(255, 168, 114, 0.5);
+    outline-offset: -1px;
+  }
+
+  html.staff-app .staff-press.is-squish::after,
+  html.staff-app .staff-press.is-pop::after {
+    opacity: 1;
+    transition: none;
+  }
+
+  html.staff-app .staff-chrome,
+  html.staff-app .staff-sheet {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: #1e1e24;
+  }
+}

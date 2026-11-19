@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CloudRain, Snowflake, Sparkles, Sun, TrendingDown, TrendingUp, Wind } from 'lucide-react';
+import { CloudRain, Snowflake, Sun, TrendingDown, TrendingUp, Wind } from 'lucide-react';
 import { FAMILY_LABEL, WEATHER, weekKey, weeklyForecast } from '../lib/forecast';
 import { saveForecastOnce } from '../lib/forecastLog';
 import { nowcast, SERVICE_LEVELS } from '../lib/nowcast';
@@ -57,8 +57,8 @@ export default function ForecastCard({ orders, now, settings, isOwner, onUpdateS
   return (
     <section className="rounded-3xl border border-slate-200 bg-card px-5 pb-4 pt-4 shadow-sm">
       <div className="flex items-center gap-2">
-        <Sparkles size={18} className="text-blue-500" aria-hidden="true" />
-        <h2 className="text-[15px] text-slate-500">Dự báo món tuần này</h2>
+        <TrendingUp size={18} className="text-slate-500" aria-hidden="true" />
+        <h2 className="text-[13px] font-medium text-slate-500">Dự báo món tuần này</h2>
       </div>
 
       <div className="mt-3">
@@ -139,7 +139,7 @@ export default function ForecastCard({ orders, now, settings, isOwner, onUpdateS
                         {down && <TrendingDown size={15} className="text-red-600" aria-label="giảm" />}
                         Làm {it.make}
                       </span>
-                      <span className="block text-[11px] text-slate-500">phần cả tuần</span>
+                      <span className="block text-[13px] text-slate-500">phần cả tuần</span>
                     </span>
                   </button>
                   {open === it.key && (

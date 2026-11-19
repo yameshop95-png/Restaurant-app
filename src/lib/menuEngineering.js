@@ -5,7 +5,7 @@
 //   Món "lãi cao" khi lãi mỗi phần ≥ lãi trung bình mỗi phần (bình quân theo số phần bán)
 // Chỉ món có công thức (biết giá vốn) mới phân loại được; món còn lại trả về trong `unknown`.
 export const CLASSES = {
-  star: { label: 'Ngôi sao', hint: 'Bán chạy, lãi cao: giữ nguyên, đưa lên đầu', tone: 'text-violet-400' },
+  star: { label: 'Ngôi sao', hint: 'Bán chạy, lãi cao: giữ nguyên, đưa lên đầu', tone: 'text-orange-300' },
   plowhorse: { label: 'Bán chạy, lãi thấp', hint: 'Xem lại giá bán hoặc giá vốn', tone: 'text-amber-500' },
   puzzle: { label: 'Lãi cao, ít người mua', hint: 'Giới thiệu nhiều hơn, cho khách thử', tone: 'text-sky-400' },
   dog: { label: 'Ít bán, lãi thấp', hint: 'Cân nhắc làm lại công thức hoặc bỏ', tone: 'text-red-600' },

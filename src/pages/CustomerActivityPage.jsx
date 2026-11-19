@@ -1,6 +1,7 @@
 import { Check, Mail, MessageSquare, Phone, Trash2 } from 'lucide-react';
 import useCustomerActivity from '../hooks/useCustomerActivity';
 import { smsLink } from '../lib/customerMessage';
+import CountUp, { formatCount } from '../components/CountUp';
 import { formatMoney } from '../lib/stats';
 
 const pct = (part, whole) => (whole > 0 ? `${Math.round((part / whole) * 100)}%` : '—');
@@ -17,7 +18,9 @@ function LiveCard({ label, value, hint, tone = '' }) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-card p-4 shadow-sm">
       <p className="text-sm font-semibold text-slate-500">{label}</p>
-      <p className={`mt-1 text-4xl font-extrabold tabular-nums ${tone || 'text-slate-900'}`}>{value ?? 0}</p>
+      <p className={`mt-1 text-4xl font-extrabold tabular-nums ${tone || 'text-slate-900'}`}>
+        <CountUp value={value ?? 0} format={formatCount} />
+      </p>
       <p className="mt-1 text-xs text-slate-500">{hint}</p>
     </div>
   );
@@ -48,7 +51,7 @@ export default function CustomerActivityPage({ settings }) {
 
   if (error?.missing && !data) {
     return (
-      <div className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-card p-6">
+      <div className="staff-stagger mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-card p-6">
         <h2 className="text-lg font-bold text-slate-900">Chưa bật theo dõi khách</h2>
         <p className="mt-2 text-slate-600">
           Máy chủ chưa có phần theo dõi. Mở file <b>sql/customer_activity.sql</b> trong repo, dán vào SQL Editor của
@@ -59,7 +62,7 @@ export default function CustomerActivityPage({ settings }) {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="staff-stagger mx-auto max-w-4xl space-y-6">
       <div className="flex items-center justify-between gap-3">
         <p className="flex items-center gap-2 text-sm text-slate-500">
           <span className={`h-2.5 w-2.5 rounded-full ${error ? 'bg-red-500' : 'animate-pulse bg-emerald-500'}`} />
@@ -72,7 +75,7 @@ export default function CustomerActivityPage({ settings }) {
       </div>
 
       <section aria-label="Khách đang trên website">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <div className="staff-stagger grid grid-cols-2 gap-4 lg:grid-cols-5">
           <LiveCard label="Đang online" value={live.online} hint="đang mở website" tone="text-emerald-600" />
           <LiveCard label="Đang xem menu" value={live.browsing} hint="chưa chọn món" />
           <LiveCard label="Đã chọn món" value={live.cart} hint="có món trong giỏ" />

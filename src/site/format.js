@@ -152,3 +152,8 @@ export function parseDateKey(key) {
 export function isSaturdayKey(key) {
   return parseDateKey(key).getDay() === 6;
 }
+
+// Giá trên website khách: chỉ ký hiệu dollar, không có chữ A (app nhân viên vẫn dùng formatMoney có A-dollar)
+export function formatMoney(n) {
+  return '$' + Number(n).toFixed(2);
+}
