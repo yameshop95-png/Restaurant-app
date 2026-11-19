@@ -16,7 +16,7 @@ export default function BottomNav({ activeTab, counts, onTabChange, onMore }) {
     }`;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-card pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+    <nav className="staff-chrome fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-card pb-[env(safe-area-inset-bottom)] lg:hidden">
       <div className="mx-auto flex max-w-lg">
         {TABS.map(({ id, label, icon: Icon, badgeKey }) => {
           const active = activeTab === id;

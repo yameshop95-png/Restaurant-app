@@ -12,6 +12,7 @@ import AnalyticsExportCard from '../components/AnalyticsExportCard';
 import LanguageCard from '../components/LanguageCard';
 import PairsCard from '../components/PairsCard';
 import { buildReport, PERIODS, reportForAI, shiftPeriod } from '../lib/report';
+import CountUp, { formatCount } from '../components/CountUp';
 import { formatMoney } from '../lib/stats';
 
 const ACCESS_CODE_KEY = 'restaurant-app.ai-code';
@@ -259,7 +260,7 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
   const nextLabel = { week: 'tuần sau', month: 'tháng sau', year: 'năm sau' }[kind];
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 pb-8">
+    <div className="staff-stagger mx-auto max-w-2xl space-y-5 pb-8">
       {/* Chọn kỳ */}
       <div className="flex rounded-2xl bg-card p-1 shadow-sm">
         {Object.entries(PERIODS).map(([k, label]) => (
@@ -301,19 +302,27 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
       <Card>
         <div className="px-5 py-4">
           <p className="text-[15px] text-slate-500">Doanh thu</p>
-          <p className="text-4xl font-bold tracking-tight text-slate-900">{formatMoney(report.revenue)}</p>
+          <p className="text-4xl font-bold tracking-tight text-slate-900">
+            <CountUp value={report.revenue} format={formatMoney} />
+          </p>
           <Change now={report.revenue} before={report.prevRevenue} toDate={report.comparedToDate} />
           <div className="mt-3 grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 text-center">
             <div>
-              <p className="text-xl font-bold text-slate-900">{report.orderCount}</p>
+              <p className="text-xl font-bold text-slate-900">
+                <CountUp value={report.orderCount} format={formatCount} />
+              </p>
               <p className="text-xs text-slate-500">đơn</p>
             </div>
             <div>
-              <p className="text-xl font-bold text-slate-900">{report.totalQty}</p>
+              <p className="text-xl font-bold text-slate-900">
+                <CountUp value={report.totalQty} format={formatCount} />
+              </p>
               <p className="text-xs text-slate-500">phần</p>
             </div>
             <div>
-              <p className="text-xl font-bold text-slate-900">{formatMoney(report.avgOrder)}</p>
+              <p className="text-xl font-bold text-slate-900">
+                <CountUp value={report.avgOrder} format={formatMoney} />
+              </p>
               <p className="text-xs text-slate-500">TB / đơn</p>
             </div>
           </div>

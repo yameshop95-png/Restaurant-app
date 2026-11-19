@@ -43,7 +43,7 @@ export default function TopBar({ activeTab, pendingTotal, onMenuClick, onBellCli
   const current = NAV_ITEMS.find((item) => item.id === activeTab);
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-card px-4 backdrop-blur sm:px-6">
+    <header className="staff-chrome sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-card px-4 sm:px-6">
       <button
         onClick={onMenuClick}
         className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden"

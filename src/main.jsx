@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
+import './staff-motion.css';
 
 // Android / Chrome: giữ lại lời mời "Cài app" để hiện nút cài trong Cài đặt app
 window.addEventListener('beforeinstallprompt', (e) => {

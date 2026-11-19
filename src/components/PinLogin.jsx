@@ -45,7 +45,7 @@ export default function PinLogin({ onLogin, offlineError, onRetry }) {
   });
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-page px-6 py-10 text-white">
+    <div className="staff-stagger flex min-h-screen flex-col items-center justify-center bg-page px-6 py-10 text-white">
       <img src="/logo-round.svg" alt="" className="h-24 w-24" />
       <h1 className="mt-4 text-2xl font-bold">Nhập mã PIN</h1>
       <p className="mt-1 text-sm text-slate-400">Mã 4 số chủ quán cấp cho bạn</p>
@@ -86,7 +86,7 @@ export default function PinLogin({ onLogin, offlineError, onRetry }) {
               onClick={() => press(key)}
               disabled={busy}
               aria-label={key === 'del' ? 'Xoá số' : key}
-              className="flex h-16 items-center justify-center rounded-2xl border border-slate-200 bg-card text-2xl font-semibold active:bg-slate-100 disabled:opacity-50"
+              className="staff-float flex h-16 items-center justify-center rounded-2xl border border-slate-200 bg-card text-2xl font-semibold active:bg-slate-100 disabled:opacity-50"
             >
               {key === 'del' ? <Delete size={24} /> : key}
             </button>

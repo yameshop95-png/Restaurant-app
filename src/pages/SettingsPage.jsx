@@ -438,7 +438,7 @@ export default function SettingsPage({
   onAddMenuItem,
 }) {
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
+    <div className="staff-stagger mx-auto max-w-2xl space-y-5">
       <AccountCard account={account} onLogout={onLogout} />
       {isOwner && dataReady && (
         <MoveLocalData

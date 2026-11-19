@@ -1,0 +1,186 @@
+/* Motion for the staff app only. Loaded from src/main.jsx (index.html), never from the public /order site.
+   Transform and opacity only. Backdrop blur is limited to the top bar, bottom tab bar, and open sheets. */
+
+html.staff-app {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+html.staff-app .staff-count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Floating summary panels: soft layered shadow, slight depth. List rows (li) stay lighter. */
+html.staff-app .rounded-3xl.bg-card {
+  border-radius: 18px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 10px 22px -16px rgba(0, 0, 0, 0.75);
+}
+
+html.staff-app section.rounded-3xl.bg-card,
+html.staff-app div.rounded-3xl.bg-card,
+html.staff-app button.rounded-3xl.bg-card,
+html.staff-app .staff-float {
+  border-radius: 18px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 1px 2px rgba(0, 0, 0, 0.28),
+    0 14px 32px -16px rgba(0, 0, 0, 0.72),
+    0 28px 48px -28px rgba(0, 0, 0, 0.8);
+}
+
+html.staff-app section.rounded-3xl.bg-card,
+html.staff-app div.rounded-3xl.bg-card,
+html.staff-app .staff-float:not(button) {
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Spring press on buttons. Cards and keys that are buttons use the same curve. */
+html.staff-app button {
+  transition:
+    transform 0.42s cubic-bezier(0.34, 1.35, 0.64, 1),
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+html.staff-app button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+html.staff-app .staff-row {
+  transition: transform 0.42s cubic-bezier(0.34, 1.35, 0.64, 1);
+}
+
+html.staff-app .staff-row:active {
+  transform: scale(0.985);
+}
+
+/* One press motion: the row scales, the control inside it does not scale again. */
+html.staff-app .staff-row button:active:not(:disabled) {
+  transform: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html.staff-app section.rounded-3xl.bg-card:hover,
+  html.staff-app div.rounded-3xl.bg-card:hover,
+  html.staff-app button.rounded-3xl.bg-card:hover,
+  html.staff-app .staff-float:hover {
+    transform: translateY(-3px);
+  }
+}
+
+html.staff-app button.rounded-3xl.bg-card:active:not(:disabled),
+html.staff-app button.staff-float:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Frosted chrome. Small strips only — not full-page blur. */
+html.staff-app .staff-chrome {
+  background-color: rgba(30, 30, 36, 0.86);
+  border-color: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(14px) saturate(1.25);
+  backdrop-filter: blur(14px) saturate(1.25);
+}
+
+html.staff-app .staff-sheet {
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  background-color: rgba(30, 30, 36, 0.9);
+  box-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 18px 44px rgba(0, 0, 0, 0.38);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  backdrop-filter: blur(12px) saturate(1.2);
+  animation: staff-sheet-in 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (min-width: 640px) {
+  html.staff-app .staff-sheet {
+    border-radius: 20px;
+  }
+}
+
+html.staff-app .staff-scrim {
+  animation: staff-fade 0.28s ease-out;
+}
+
+/* Tab content arrives with a short slide + rise. Transform sits on the blocks themselves,
+   not on a parent of the fixed "add" buttons or sheets, so those stay pinned to the screen. */
+html.staff-app .staff-stagger > *:not(.fixed) {
+  animation: staff-enter-forward 0.48s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+html.staff-app .staff-view[data-dir='back'] .staff-stagger > *:not(.fixed) {
+  animation-name: staff-enter-back;
+}
+
+html.staff-app .staff-stagger > *:nth-child(2):not(.fixed) { animation-delay: 0.04s; }
+html.staff-app .staff-stagger > *:nth-child(3):not(.fixed) { animation-delay: 0.08s; }
+html.staff-app .staff-stagger > *:nth-child(4):not(.fixed) { animation-delay: 0.12s; }
+html.staff-app .staff-stagger > *:nth-child(5):not(.fixed) { animation-delay: 0.16s; }
+html.staff-app .staff-stagger > *:nth-child(6):not(.fixed) { animation-delay: 0.2s; }
+html.staff-app .staff-stagger > *:nth-child(7):not(.fixed) { animation-delay: 0.24s; }
+html.staff-app .staff-stagger > *:nth-child(8):not(.fixed) { animation-delay: 0.28s; }
+html.staff-app .staff-stagger > *:nth-child(n + 9):not(.fixed) { animation-delay: 0.32s; }
+
+@keyframes staff-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes staff-sheet-in {
+  from {
+    opacity: 0.45;
+    transform: translate3d(0, 22px, 0);
+  }
+  to { opacity: 1; }
+}
+
+@keyframes staff-enter-forward {
+  from {
+    opacity: 0;
+    transform: translate3d(12px, 12px, 0);
+  }
+  to { opacity: 1; }
+}
+
+@keyframes staff-enter-back {
+  from {
+    opacity: 0;
+    transform: translate3d(-12px, 12px, 0);
+  }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.staff-app .staff-view,
+  html.staff-app .staff-stagger > *,
+  html.staff-app .staff-sheet,
+  html.staff-app .staff-scrim,
+  html.staff-app .staff-row,
+  html.staff-app button,
+  html.staff-app section.rounded-3xl.bg-card,
+  html.staff-app div.rounded-3xl.bg-card {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  html.staff-app .staff-float:hover,
+  html.staff-app .staff-float:active,
+  html.staff-app .staff-row:active,
+  html.staff-app section.rounded-3xl.bg-card:hover,
+  html.staff-app div.rounded-3xl.bg-card:hover,
+  html.staff-app button.rounded-3xl.bg-card:hover,
+  html.staff-app button.rounded-3xl.bg-card:active,
+  html.staff-app button:active {
+    transform: none !important;
+  }
+
+  html.staff-app .staff-chrome,
+  html.staff-app .staff-sheet {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: #1e1e24;
+  }
+}

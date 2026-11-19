@@ -39,8 +39,8 @@ function CustomerSheet({ customer, canDelete, onSave, onDelete, onClose }) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4">
-      <div className="w-full rounded-t-3xl bg-card pb-[env(safe-area-inset-bottom)] sm:max-w-lg sm:rounded-3xl">
+    <div className="staff-scrim fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4">
+      <div className="staff-sheet w-full rounded-t-3xl bg-card pb-[env(safe-area-inset-bottom)] sm:max-w-lg sm:rounded-3xl">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h2 className="text-lg font-bold text-slate-900">{customer ? 'Sửa khách hàng' : 'Thêm khách hàng'}</h2>
           <button onClick={onClose} className="rounded-full p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Đóng">
@@ -164,7 +164,7 @@ export default function CustomersPage({
     );
 
   return (
-    <div className="mx-auto max-w-2xl pb-24">
+    <div className="staff-stagger mx-auto max-w-2xl pb-24">
       <div className="relative mb-4">
         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
@@ -221,7 +221,7 @@ export default function CustomersPage({
           {visible.map((c) => {
             const s = statsById.get(c.id);
             return (
-              <li key={c.id} className="flex items-start gap-3 px-4 py-3">
+              <li key={c.id} className="staff-row flex items-start gap-3 px-4 py-3">
                 <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600">
                   <UserRound size={18} />
                 </div>
