@@ -77,6 +77,7 @@ function Shop({ account, onLogout }) {
     addOrder,
     updateOrder,
     setStatus,
+    markOrder,
     setPaid,
     importOrders,
   } = useOrders(account);
@@ -92,6 +93,14 @@ function Shop({ account, onLogout }) {
     const before = order.status;
     setStatus(id, status);
     setToast({ label: `Đơn #${order.number}: ${statusLabel(status, order.type)}`, undo: () => setStatus(id, before) });
+  };
+  // Đơn online: "Đã nhận đơn" rồi "Đã nhắn xác nhận". Mỗi bước có Hoàn tác như đổi trạng thái.
+  const markStep = (id, patch, label) => {
+    const order = orders.find((o) => o.id === id);
+    if (!order) return;
+    const before = Object.fromEntries(Object.keys(patch).map((k) => [k, order[k] ?? null]));
+    markOrder(id, patch);
+    setToast({ label: `Đơn #${order.number}: ${label}`, undo: () => markOrder(id, before) });
   };
   const changePaid = (id, paid, method) => {
     const order = orders.find((o) => o.id === id);
@@ -263,6 +272,7 @@ function Shop({ account, onLogout }) {
             onImportOrders={importOrders}
             onImportCustomers={importCustomers}
             onSetStatus={changeStatus}
+            onMarkStep={markStep}
             onSetPaid={changePaid}
             onNavigate={handleTabChange}
           />
