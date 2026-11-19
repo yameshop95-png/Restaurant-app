@@ -39,9 +39,29 @@ export function unlockAudio() {
   } catch {
     // Không hỗ trợ âm thanh: bỏ qua
   }
+  // Nạp sẵn file chuông ở lần chạm đầu tiên để lúc đơn mới vào kêu ngay, không phải chờ tải.
+  try {
+    getAlertAudio().load();
+  } catch {
+    // Không nạp được: lúc kêu sẽ dùng tiếng bíp dự phòng
+  }
 }
 
-export function alertBeep() {
+// Tiếng chuông báo đơn mới: file ghi âm thật thay cho tiếng bíp tổng hợp.
+// "Bell Chime Alert" của plasterbrain, Freesound, giấy phép CC0 (dùng cho quán được):
+// https://freesound.org/people/plasterbrain/sounds/419493/ — 0,67 giây, chuông cao ~740 Hz.
+// File ở public/sounds/bell-chime-alert.wav, app gọi bằng đường dẫn /sounds/bell-chime-alert.wav.
+const ALERT_SOUND_URL = '/sounds/bell-chime-alert.wav';
+let alertAudio;
+
+function getAlertAudio() {
+  alertAudio ??= new Audio(ALERT_SOUND_URL);
+  return alertAudio;
+}
+
+// Dự phòng khi file chuông không phát được (chưa mở khoá âm thanh, file lỗi…):
+// dùng lại tiếng bíp tổng hợp 4 nốt 880 Hz như trước để nhân viên vẫn nghe thấy.
+function playFallbackBeeps() {
   try {
     audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -59,6 +79,17 @@ export function alertBeep() {
     }
   } catch {
     // Trình duyệt không cho phát âm thanh: bỏ qua
+  }
+}
+
+export function alertBeep() {
+  try {
+    const audio = getAlertAudio();
+    audio.currentTime = 0;
+    const played = audio.play();
+    if (played) played.catch(() => playFallbackBeeps());
+  } catch {
+    playFallbackBeeps();
   }
   navigator.vibrate?.([400, 100, 400, 100, 400]);
 }
