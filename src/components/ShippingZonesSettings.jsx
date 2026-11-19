@@ -50,7 +50,7 @@ export default function ShippingZonesSettings({ settings, onUpdateSettings }) {
                 <input value={z.name} onChange={(e) => update(z.id, { name: e.target.value })} className={inputClass} />
               </label>
               <label className="w-24 shrink-0">
-                <span className="mb-1 block text-xs font-semibold text-slate-500">Phí (A$)</span>
+                <span className="mb-1 block text-xs font-semibold text-slate-500">Phí ($)</span>
                 <input
                   inputMode="decimal"
                   value={z.fee}

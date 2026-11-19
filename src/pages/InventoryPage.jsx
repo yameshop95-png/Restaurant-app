@@ -233,7 +233,7 @@ function InventoryOwner({ tab, setTab, orders, menu, shopName }) {
 
   if (inventory.missingTables) {
     return (
-      <div className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-card p-6">
+      <div className="staff-stagger mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-card p-6">
         <h2 className="text-lg font-bold text-slate-900">Chưa bật Inventory Management</h2>
         <p className="mt-2 text-slate-600">
           Máy chủ chưa có các bảng kho. Mở file <b>sql/inventory.sql</b> trong repo, dán vào SQL Editor của project quán và bấm
@@ -244,7 +244,7 @@ function InventoryOwner({ tab, setTab, orders, menu, shopName }) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 pb-8">
+    <div className="staff-stagger mx-auto max-w-2xl space-y-5 pb-8">
       <div data-no-swipe className="flex gap-2 overflow-x-auto">
         {TABS.map(([id, label]) => (
           <button

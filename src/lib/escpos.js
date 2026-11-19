@@ -85,14 +85,14 @@ export function billBytes(order, shopName = '') {
   text('-'.repeat(WIDTH));
 
   for (const i of order.items ?? []) {
-    text(line(`${i.qty} x ${i.name}`, formatMoney(i.qty * i.price).replace('A$', '')));
+    text(line(`${i.qty} x ${i.name}`, formatMoney(i.qty * i.price).replace('$', '')));
     if (i.note) for (const w of wrap('   ' + i.note)) text(w);
   }
   text('-'.repeat(WIDTH));
   if (isDelivery || order.shippingFee > 0)
-    text(line('Delivery fee', formatMoney(order.shippingFee || 0).replace('A$', '')));
+    text(line('Delivery fee', formatMoney(order.shippingFee || 0).replace('$', '')));
   cmd(ESC, 0x45, 1);
-  text(line('TOTAL', formatMoney(orderTotal(order)).replace('A$', '')));
+  text(line('TOTAL', formatMoney(orderTotal(order)).replace('$', '')));
   cmd(ESC, 0x45, 0);
 
   text('');

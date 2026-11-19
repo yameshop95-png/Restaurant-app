@@ -1,5 +1,6 @@
 import { AlarmClock, BellRing, LogOut, Phone, UserRound, X } from 'lucide-react';
 import { NAV_ITEMS } from './navigation';
+import { ROLE_LABEL } from './StaffSettings';
 
 function Badge({ count, active }) {
   if (!count) return null;
@@ -56,7 +57,7 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
           </button>
           <button
             onClick={onClose}
-            className="ml-auto rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-white lg:hidden"
+            className="ml-auto flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-white lg:hidden"
             aria-label="Đóng menu"
           >
             <X size={20} />
@@ -89,7 +90,7 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
             onClick={() => onTabChange('orders')}
             className="mx-4 mt-3 flex items-center gap-3 rounded-xl border border-red-500/50 bg-slate-50 px-4 py-3 text-left text-white transition hover:bg-slate-100"
           >
-            <BellRing size={22} className="shrink-0 animate-bounce text-red-400" />
+            <BellRing size={22} className="shrink-0 text-red-400" />
             <div className="min-w-0">
               <p className="text-sm font-bold">{totalPending} đơn mới chờ xử lý</p>
               <p className="text-xs text-slate-500">
@@ -108,7 +109,7 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
                 key={id}
                 onClick={() => onTabChange(id)}
                 aria-current={active ? 'page' : undefined}
-                className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                className={`staff-press flex w-full items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-sm font-medium ${
                   active
                     ? 'bg-orange-500 text-white '
                     : 'text-slate-700 hover:bg-slate-100 hover:text-white'
@@ -136,7 +137,7 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
           <UserRound size={18} className="shrink-0 text-slate-500" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-white">{account.name}</p>
-            <p className="text-xs text-slate-500">{account.role === 'owner' ? 'Chủ quán' : 'Nhân viên'}</p>
+            <p className="text-xs text-slate-500">{ROLE_LABEL[account.role] ?? 'Nhân viên'}</p>
           </div>
           <button
             onClick={onLogout}

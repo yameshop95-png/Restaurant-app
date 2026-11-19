@@ -68,7 +68,9 @@ export function dailyCollection(allOrders, now = new Date()) {
   };
 }
 
-export const formatMoney = (n) => `A$${n.toFixed(2)}`;
+// $1,200.50: dấu phẩy ngăn hàng nghìn, luôn 2 số lẻ
+const MONEY = new Intl.NumberFormat('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export const formatMoney = (n) => `$${MONEY.format(Number(n) || 0)}`;
 
 export const formatDay = (d) => d.toLocaleDateString('vi-VN', { weekday: 'long' });
 export const formatDate = (d) =>

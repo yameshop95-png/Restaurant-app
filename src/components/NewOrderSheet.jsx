@@ -213,8 +213,8 @@ export default function NewOrderSheet({ type, order, menu, customers = [], order
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4">
-      <div className="flex max-h-[95vh] w-full flex-col rounded-t-3xl bg-card sm:max-w-lg sm:rounded-3xl">
+    <div className="staff-scrim fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4">
+      <div className="staff-sheet flex max-h-[95vh] w-full flex-col rounded-t-3xl bg-card sm:max-w-lg sm:rounded-3xl">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h2 className="text-lg font-bold text-slate-900">{order ? `Sửa đơn #${order.number}` : TITLE[type]}</h2>
           <button onClick={onClose} className="rounded-full p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Đóng">
@@ -369,7 +369,7 @@ export default function NewOrderSheet({ type, order, menu, customers = [], order
 
           <div className="grid grid-cols-2 gap-3">
             {isDelivery && (
-              <Field label="Phí ship (A$)" error={errors.shippingFee} required={false}>
+              <Field label="Phí ship ($)" error={errors.shippingFee} required={false}>
                 <input
                   inputMode="decimal"
                   value={form.shippingFee}
@@ -404,7 +404,7 @@ export default function NewOrderSheet({ type, order, menu, customers = [], order
                 )}
               </Field>
             )}
-            <Field label="Giảm giá (A$)" error={errors.discount} required={false}>
+            <Field label="Giảm giá ($)" error={errors.discount} required={false}>
               <input
                 inputMode="decimal"
                 value={form.discount}

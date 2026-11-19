@@ -161,6 +161,80 @@ export function canvasToEscpos(canvas) {
   return Uint8Array.from(bytes);
 }
 
+// Phiếu làm hàng của một ngày: tổng phần mỗi món (chữ to) rồi danh sách đơn theo giờ
+export function drawPrepSheet(sheet, label, shopName = '', timeOf = () => '') {
+  const canvas = document.createElement('canvas');
+  canvas.width = WIDTH;
+  canvas.height = 6000;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, WIDTH, canvas.height);
+  ctx.fillStyle = '#000';
+  ctx.textBaseline = 'top';
+  let y = 4;
+  const font = (px, weight = 400, italic = false) => {
+    ctx.font = `${italic ? 'italic ' : ''}${weight} ${px}px ${FONT}`;
+  };
+  const text = (t, px, weight = 400, x = PAD, italic = false) => {
+    font(px, weight, italic);
+    for (const line of wrapLines(ctx, t, WIDTH - x - PAD)) {
+      ctx.fillText(line, x, y);
+      y += px + 8;
+    }
+  };
+  const dashed = () => {
+    ctx.setLineDash([6, 5]);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(PAD, y + 4);
+    ctx.lineTo(WIDTH - PAD, y + 4);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    y += 14;
+  };
+  ctx.fillRect(0, y, WIDTH, 62);
+  ctx.fillStyle = '#fff';
+  font(38, 800);
+  const title = 'PHIẾU LÀM HÀNG';
+  ctx.fillText(title, (WIDTH - ctx.measureText(title).width) / 2, y + 11);
+  ctx.fillStyle = '#000';
+  y += 72;
+  text(label, 32, 800);
+  text(`${sheet.pendingCount} đơn chờ · ${sheet.pickup} đến lấy · ${sheet.delivery} giao · ${sheet.portions} phần`, 22, 500);
+  if (shopName) text(shopName, 20, 400);
+  dashed();
+  for (const it of sheet.items) {
+    font(34, 800);
+    const qty = `${it.qty} ×`;
+    ctx.fillText(qty, PAD, y);
+    const x = PAD + ctx.measureText(qty).width + 12;
+    text(it.name, 34, 800, x);
+    for (const n of it.notes) text(`↳ ${n.qty} phần: ${n.note}`, 22, 400, PAD + 30, true);
+  }
+  if (!sheet.items.length) text('Không còn món nào phải làm', 26, 600);
+  dashed();
+  text('Đơn theo giờ', 24, 800);
+  for (const o of sheet.orders) {
+    const kind = o.type === 'delivery' ? 'Giao' : 'Lấy';
+    const done = o.status === 'pending' ? '' : ' (đã xong)';
+    text(`${timeOf(o)} #${o.number} ${o.customer?.name ?? ''} · ${kind}${done}`, 22, 700);
+    text((o.items ?? []).map((i) => `${i.qty} ${i.name}`).join(', '), 22, 400, PAD + 20);
+  }
+  y += 24;
+  const out = document.createElement('canvas');
+  out.width = WIDTH;
+  out.height = Math.ceil(y / 8) * 8;
+  out.getContext('2d').drawImage(canvas, 0, 0);
+  return out;
+}
+
+export const canvasBase64 = (canvas) => {
+  const bytes = canvasToEscpos(canvas);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x1000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x1000));
+  return btoa(bin);
+};
+
 export function billImageBase64(order, shopName) {
   const bytes = canvasToEscpos(drawBill(order, shopName));
   let bin = '';

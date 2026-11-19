@@ -5,12 +5,14 @@
 //    - Món bán đều: san bằng mũ (simple exponential smoothing) F = α·Y + (1 − α)·F, α = 0,3.
 //    - Món bán thưa (≥ 30% số tuần không bán): Croston, bản hiệu chỉnh SBA:
 //      F = (1 − β/2) · z / p, z = số phần mỗi lần có bán (làm mượt), p = số tuần giữa hai lần bán (làm mượt), β = 0,2.
-// 2. Hệ số nhân theo điều kiện của tuần: tuần trong tháng, mùa, tuần lương (2 tuần một lần), dịp lễ, thời tiết.
+// 2. Hệ số nhân theo điều kiện của tuần: tuần trong tháng, mùa, tuần lương (2 tuần một lần), dịp lễ, thời tiết,
+//    mùng 1 / Rằm âm lịch, ngày nghỉ lễ của NSW / VIC (Albury và Wodonga khác bang).
 //    Hệ số = bán TB trong các tuần cùng điều kiện ÷ bán TB mọi tuần, co rút về 1: (n·hệ số + K) ÷ (n + K).
 // 3. Tự chọn hệ số: thử dự báo lại các tuần đã qua (chỉ dùng dữ liệu trước tuần đó), đo sai số
 //    WAPE = Σ|thực − dự báo| ÷ Σ thực, và chỉ giữ nhóm hệ số nào làm WAPE giảm rõ.
 import { normalizeText } from './text';
 import { periodRange } from './report';
+import { lunarEventsOfYear, moonDays } from './lunar';
 
 export const WEATHER = [
   { id: 'hot', label: 'Nóng' },
@@ -25,8 +27,10 @@ export const FAMILY_LABEL = {
   payday: 'tuần lương',
   holiday: 'dịp lễ',
   weather: 'thời tiết',
+  moon: 'mùng 1 / Rằm',
+  publicHol: 'nghỉ lễ NSW / VIC',
 };
-const FAMILIES = ['wom', 'season', 'payday', 'holiday', 'weather'];
+const FAMILIES = ['wom', 'season', 'payday', 'holiday', 'weather', 'moon', 'publicHol'];
 
 export const PARAMS = {
   alpha: 0.3, // san bằng mũ
@@ -39,8 +43,6 @@ export const PARAMS = {
   keepIfBetter: 0.02, // giữ nhóm hệ số nếu WAPE giảm ít nhất 2 điểm % (chặt để tránh học nhầm từ nhiễu)
 };
 
-// Tết Nguyên Đán (mùng 1)
-const TET = ['2027-02-06', '2028-01-26', '2029-02-13', '2030-02-03', '2031-01-23', '2032-02-11'];
 const DAY = 86400000;
 const pad = (n) => String(n).padStart(2, '0');
 const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -85,8 +87,60 @@ export function eventsOfYear(y) {
     { id: 'father', label: 'Ngày của Cha', date: nthSunday(y, 8, 1) },
     { id: 'christmas', label: 'Giáng sinh', date: new Date(y, 11, 25) },
   ];
-  for (const t of TET) if (t.startsWith(String(y))) list.push({ id: 'tet', label: 'Tết', date: keyDate(t) });
+  // Tết, Rằm tháng 7 (Vu Lan), Trung thu: tính theo âm lịch Việt Nam (giờ UTC+7), không cần cập nhật tay
+  list.push(...lunarEventsOfYear(y));
   return list;
+}
+
+// ---------- Âm lịch: mùng 1 và Rằm ----------
+// Nhiều gia đình Việt mua giò chả để cúng mùng 1 / Rằm. Quán bán đặt trước và giao thứ 7, nên tính cả mùng 1 / Rằm
+// rơi vào thứ Hai, thứ Ba ngay sau tuần (khách mua từ thứ 7 trước đó).
+export function moonWeek(start) {
+  return moonDays(start, addDays(start, 9)).length ? 'yes' : 'no';
+}
+
+// ---------- Ngày nghỉ lễ NSW / VIC ----------
+// Albury (NSW) và Wodonga (VIC) nghỉ lễ khác nhau. Lễ rơi vào cuối tuần thì nghỉ bù thứ Hai (gần đúng).
+const nthWeekday = (y, month, weekday, n) => {
+  const first = new Date(y, month, 1);
+  return addDays(first, ((weekday - first.getDay() + 7) % 7) + 7 * (n - 1));
+};
+const lastWeekday = (y, month, weekday) => {
+  const last = new Date(y, month + 1, 0);
+  return addDays(last, -((last.getDay() - weekday + 7) % 7));
+};
+const observed = (d) => (d.getDay() === 6 ? addDays(d, 2) : d.getDay() === 0 ? addDays(d, 1) : d);
+// Giáng sinh / Boxing Day rơi vào cuối tuần thì nghỉ bù thứ Hai, thứ Ba
+function christmasDays(y) {
+  const day = new Date(y, 11, 25).getDay();
+  if (day === 6) return [new Date(y, 11, 27), new Date(y, 11, 28)]; // thứ 7 → nghỉ bù thứ 2, thứ 3
+  if (day === 0) return [new Date(y, 11, 27), new Date(y, 11, 26)]; // Chủ nhật → Giáng sinh bù thứ 3, Boxing thứ 2
+  if (day === 5) return [new Date(y, 11, 25), new Date(y, 11, 28)]; // Boxing Day thứ 7 → bù thứ 2
+  return [new Date(y, 11, 25), new Date(y, 11, 26)];
+}
+export function publicHolidays(y) {
+  const easter = easterSunday(y);
+  const [xmas, boxing] = christmasDays(y);
+  return [
+    { label: 'Năm mới', date: observed(new Date(y, 0, 1)), state: 'both' },
+    { label: 'Quốc khánh Úc', date: observed(new Date(y, 0, 26)), state: 'both' },
+    { label: 'Labour Day VIC', date: nthWeekday(y, 2, 1, 2), state: 'vic' },
+    { label: 'Thứ Sáu Tuần Thánh', date: addDays(easter, -2), state: 'both' },
+    { label: 'Thứ Hai Phục Sinh', date: addDays(easter, 1), state: 'both' },
+    { label: 'Anzac Day', date: new Date(y, 3, 25), state: 'both' },
+    { label: "King's Birthday", date: nthWeekday(y, 5, 1, 2), state: 'both' },
+    { label: 'AFL Grand Final (VIC)', date: addDays(lastWeekday(y, 8, 6), -1), state: 'vic' },
+    { label: 'Labour Day NSW', date: nthWeekday(y, 9, 1, 1), state: 'nsw' },
+    { label: 'Melbourne Cup (VIC)', date: nthWeekday(y, 10, 2, 1), state: 'vic' },
+    { label: 'Giáng sinh', date: xmas, state: 'both' },
+    { label: 'Boxing Day', date: boxing, state: 'both' },
+  ];
+}
+// Tuần (thứ Hai → Chủ nhật) có ngày nghỉ lễ của NSW hoặc VIC rơi vào ngày thường
+export function publicHolidayWeek(start) {
+  const end = addDays(start, 7);
+  const hit = publicHolidays(start.getFullYear()).find((h) => h.date >= start && h.date < end && h.date.getDay() % 6 !== 0);
+  return hit ? 'yes' : 'no';
 }
 // Dịp lễ của tuần (bắt đầu `start`): ngày lễ rơi vào tuần này hoặc tuần sau
 export function holidayOf(start) {
@@ -106,7 +160,21 @@ function conditions(start, weatherLog) {
     payday: payWeek(start),
     holiday: h ? h.id : null,
     weather: weatherLog[key] ?? null,
+    moon: moonWeek(start),
+    publicHol: publicHolidayWeek(start),
+    tetPeak: tetPeakWeek(start),
   };
+}
+
+// Tuần cao điểm Tết: tuần có thứ 7 giao hàng cuối cùng trước (hoặc đúng) mùng 1 Tết
+export function tetPeakWeek(start) {
+  for (const y of [start.getFullYear(), start.getFullYear() + 1]) {
+    const tet = lunarEventsOfYear(y).find((e) => e.id === 'tet')?.date;
+    if (!tet) continue;
+    const days = Math.round((tet - start) / DAY);
+    if (days >= 5 && days < 12) return 'yes';
+  }
+  return 'no';
 }
 
 // ---------- Dữ liệu theo tuần ----------
@@ -253,6 +321,16 @@ function reasonOf(part, label) {
       return `Dịp ${label ?? 'lễ'} thường bán ${pct(part.f)} (${part.n} lần)`;
     case 'weather':
       return `Khi trời ${WEATHER_TEXT[part.value]} thường bán ${pct(part.f)} (${part.n} tuần)`;
+    case 'moon':
+      return part.value === 'yes'
+        ? `Tuần có mùng 1 / Rằm âm lịch thường bán ${pct(part.f)} (${part.n} tuần)`
+        : `Tuần không có mùng 1 / Rằm thường bán ${pct(part.f)}`;
+    case 'publicHol':
+      return part.value === 'yes'
+        ? `Tuần có ngày nghỉ lễ NSW / VIC thường bán ${pct(part.f)} (${part.n} tuần)`
+        : null;
+    case 'tetPeak':
+      return `Tuần sát Tết năm trước bán ${part.f >= 1 ? `gấp ${part.f.toFixed(1)} lần` : pct(part.f)} tuần thường`;
     default:
       return null;
   }
@@ -267,9 +345,22 @@ export function weeklyForecast({ orders, now, weatherLog = {} }) {
     cond: conditions(keyDate(thisKey), weatherLog),
     current: true,
   };
-  const done = weeks.filter((w) => !w.current);
+  // Tuần cả quán không có đơn nào = quán nghỉ (VD tháng 6–11/2026): bỏ qua, không tính là bán 0 phần
+  const done = weeks.filter((w) => !w.current && w.qty.size > 0);
   const notes = [];
-  const tet = TET.map(keyDate).find((t) => t >= target.start && t - target.start <= 28 * DAY);
+  const tet = [target.start.getFullYear(), target.start.getFullYear() + 1]
+    .flatMap((y) => lunarEventsOfYear(y))
+    .filter((e) => e.id === 'tet')
+    .map((e) => e.date)
+    .find((t) => t >= target.start && t - target.start <= 28 * DAY);
+  const moon = moonDays(target.start, addDays(target.start, 9));
+  if (moon.length) {
+    notes.push(
+      `${moon.map((m) => `${m.kind === 'ram' ? 'Rằm' : 'Mùng 1'} tháng ${m.lunarMonth} âm lịch là ${['Chủ nhật', 'thứ 2', 'thứ 3', 'thứ 4', 'thứ 5', 'thứ 6', 'thứ 7'][m.date.getDay()]} ${m.date.getDate()}/${m.date.getMonth() + 1}`).join('; ')}: khách Việt hay mua giò chả để cúng.`,
+    );
+  }
+  const ph = publicHolidays(target.start.getFullYear()).filter((h) => h.date >= target.start && h.date < addDays(target.start, 7));
+  if (ph.length) notes.push(`Tuần này có ngày nghỉ: ${ph.map((h) => `${h.label} ${h.date.getDate()}/${h.date.getMonth() + 1}`).join(', ')}.`);
   if (tet) notes.push(`Còn ${Math.max(0, Math.round((tet - now) / DAY))} ngày nữa là Tết (${tet.getDate()}/${tet.getMonth() + 1}): nhớ chuẩn bị bánh chưng, bánh tét.`);
   const holiday = holidayOf(target.start);
   if (holiday && holiday.id !== 'tet') notes.push(`Tuần này hoặc tuần sau có ${holiday.label} (${holiday.date.getDate()}/${holiday.date.getMonth() + 1}).`);
@@ -282,6 +373,26 @@ export function weeklyForecast({ orders, now, weatherLog = {} }) {
   const dishKeys = [...names.keys()];
   const sel = selectFamilies(done, dishKeys);
   const pred = predictWeek(done, target, dishKeys, sel.chosen);
+  // Tết mỗi năm chỉ 1 tuần nên backtest không kịp học: có tuần Tết năm trước thì áp thẳng tỉ lệ bán của tuần đó
+  const tetWeeks = done.filter((w) => w.cond.tetPeak === 'yes');
+  if (target.cond.tetPeak === 'yes' && tetWeeks.length) {
+    let before = 0;
+    let after = 0;
+    for (const k of dishKeys) {
+      const r = pred.get(k);
+      const normal = done.filter((w) => w.cond.tetPeak !== 'yes');
+      const avg = normal.reduce((a, w) => a + (w.qty.get(k) ?? 0), 0) / Math.max(1, normal.length);
+      const tet = tetWeeks.reduce((a, w) => a + (w.qty.get(k) ?? 0), 0) / tetWeeks.length;
+      const f = avg > 0 ? (tetWeeks.length * (tet / avg) + 1) / (tetWeeks.length + 1) : 1;
+      before += r.expected;
+      if (avg > 0 || tet > 0) {
+        r.expected = avg > 0 ? r.expected * f : (r.expected + tet) / 2;
+        r.parts.push({ family: 'tetPeak', value: 'yes', f, n: tetWeeks.length });
+      }
+      after += r.expected;
+    }
+    if (before > 0) notes.push(`Tuần sát Tết: năm trước tuần này bán gấp khoảng ${(after / before).toFixed(1)} lần tuần thường, số dự báo đã tính thêm.`);
+  }
   const items = [];
   for (const k of dishKeys) {
     const r = pred.get(k);

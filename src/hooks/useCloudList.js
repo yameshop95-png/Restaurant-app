@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { cacheGet, cacheSet } from '../lib/listCache';
 import { supabase } from '../lib/supabase';
 import { enqueue, hasPending, onDrained } from '../lib/sync';
 
+const PAGE = 1000; // máy chủ trả tối đa 1000 dòng mỗi lần: đọc nối tiếp cho đủ
+const FULL_EVERY = 6 * 3600 * 1000; // tải lại toàn bộ ít nhất 6 giờ một lần (để biết dòng nào đã bị xoá)
+const HIDDEN_MIN = 15 * 1000; // app ẩn dưới 15 giây thì quay lại không cần hỏi máy chủ
+
 // Một bảng trên máy chủ, dùng như một mảng state của React:
-// - tải hết khi mở app, nhận thay đổi từ máy khác ngay lập tức (realtime);
+// - mở app là hiện ngay bản lưu tạm trên máy (IndexedDB), rồi hỏi máy chủ: bảng có cột updated_at
+//   (xem sql/updated_at.sql) thì chỉ tải các dòng đổi từ lần trước, không thì tải lại cả bảng;
+// - nhận thay đổi từ máy khác ngay lập tức (realtime);
 // - setList(...) đổi trên máy này ngay, rồi gửi phần khác biệt lên máy chủ qua hàng đợi (lib/sync).
 //
 // fromRow(row) -> item; sort(list) -> list đã sắp xếp;
@@ -14,11 +21,35 @@ export default function useCloudList(table, { fromRow, sort = (list) => list, wr
   const [loadError, setLoadError] = useState(null);
   const listRef = useRef(list);
   const alive = useRef(true);
+  // maxUpdated: updated_at mới nhất đã thấy; hasUpdated: bảng có cột updated_at; lastFull: lần tải toàn bộ gần nhất
+  const meta = useRef({ maxUpdated: null, hasUpdated: false, lastFull: 0, fromServer: false });
+  const saveTimer = useRef(null);
 
-  const commit = useCallback((next) => {
-    listRef.current = next;
-    setListState(next);
-  }, []);
+  const saveCache = useCallback(() => {
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      const { maxUpdated, hasUpdated, lastFull, fromServer } = meta.current;
+      if (fromServer) cacheSet(`list:${table}`, { items: listRef.current, maxUpdated, hasUpdated, lastFull });
+    }, 1500);
+  }, [table]);
+
+  const commit = useCallback(
+    (next) => {
+      listRef.current = next;
+      setListState(next);
+      saveCache();
+    },
+    [saveCache],
+  );
+
+  const track = (rows) => {
+    const m = meta.current;
+    for (const r of rows ?? []) {
+      if (r?.updated_at == null) continue;
+      m.hasUpdated = true;
+      if (!m.maxUpdated || r.updated_at > m.maxUpdated) m.maxUpdated = r.updated_at;
+    }
+  };
 
   // Gộp các dòng máy chủ trả về vào danh sách trên máy (theo id)
   const merge = useCallback(
@@ -33,25 +64,71 @@ export default function useCloudList(table, { fromRow, sort = (list) => list, wr
     [commit],
   );
 
-  const refetch = useCallback(async () => {
-    // Còn thay đổi chưa gửi được thì giữ nguyên dữ liệu trên máy, tránh mất thay đổi đó
-    if (hasPending(table)) return;
-    const { data, error } = await supabase.from(table).select('*');
-    if (error) {
-      setLoadError(error.message);
-      if (alive.current) setTimeout(() => alive.current && refetch(), 5000);
-      return;
-    }
-    if (hasPending(table)) return;
-    setLoadError(null);
-    commit(sort(data.map(fromRow)));
-    setReady(true);
+  // Đọc các dòng (từ `since` nếu có), đủ mọi trang
+  const fetchRows = useCallback(
+    async (since) => {
+      const rows = [];
+      for (let from = 0; ; from += PAGE) {
+        let q = supabase.from(table).select('*');
+        if (since) q = q.gt('updated_at', since);
+        q = meta.current.hasUpdated ? q.order('updated_at').order('id') : q.order('id');
+        const { data, error } = await q.range(from, from + PAGE - 1);
+        if (error) return { error };
+        rows.push(...data);
+        if (data.length < PAGE) return { rows };
+      }
+    },
+    [table],
+  );
+
+  const refetch = useCallback(
+    async ({ full = false } = {}) => {
+      // Còn thay đổi chưa gửi được thì giữ nguyên dữ liệu trên máy, tránh mất thay đổi đó
+      if (hasPending(table)) return;
+      const m = meta.current;
+      const incremental = !full && m.fromServer && m.hasUpdated && m.maxUpdated && Date.now() - m.lastFull < FULL_EVERY;
+      // Lùi 5 giây cho chắc khỏi sót dòng ghi cùng lúc
+      const since = incremental ? new Date(new Date(m.maxUpdated).getTime() - 5000).toISOString() : null;
+      const { rows, error } = await fetchRows(since);
+      if (error) {
+        setLoadError(error.message);
+        if (alive.current) setTimeout(() => alive.current && refetch(), 5000);
+        return;
+      }
+      if (hasPending(table)) return;
+      setLoadError(null);
+      track(rows);
+      m.fromServer = true;
+      if (incremental) {
+        merge(rows);
+        saveCache();
+      } else {
+        m.lastFull = Date.now();
+        commit(sort(rows.map(fromRow)));
+      }
+      setReady(true);
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [table, commit]);
+    [table, commit, fetchRows],
+  );
 
   useEffect(() => {
     alive.current = true;
-    refetch();
+    // Hiện bản lưu tạm trước (nếu máy chủ chưa kịp trả), rồi hỏi máy chủ
+    cacheGet(`list:${table}`).then((cached) => {
+      if (alive.current && cached?.items && !meta.current.fromServer && !hasPending(table)) {
+        Object.assign(meta.current, {
+          maxUpdated: cached.maxUpdated ?? null,
+          hasUpdated: Boolean(cached.hasUpdated),
+          lastFull: cached.lastFull ?? 0,
+          fromServer: true,
+        });
+        listRef.current = cached.items;
+        setListState(cached.items);
+        setReady(true);
+      }
+      if (alive.current) refetch();
+    });
     const channel = supabase
       .channel(`${table}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table }, (payload) => {
@@ -59,13 +136,19 @@ export default function useCloudList(table, { fromRow, sort = (list) => list, wr
           const id = payload.old?.id;
           if (id != null && !hasPending(table, id)) commit(listRef.current.filter((x) => x.id !== id));
         } else if (!hasPending(table, payload.new.id)) {
+          track([payload.new]);
           merge([payload.new]);
         }
       })
       // Kết nối lại sau khi mất mạng / máy ngủ: tải lại để không sót thay đổi
       .subscribe((status) => status === 'SUBSCRIBED' && refetch());
 
-    const onVisible = () => document.visibilityState === 'visible' && refetch();
+    // Quay lại app sau khi ẩn đủ lâu (máy ngủ, chuyển app): hỏi máy chủ phần thay đổi
+    let hiddenAt = 0;
+    const onVisible = () => {
+      if (document.visibilityState === 'hidden') hiddenAt = Date.now();
+      else if (!hiddenAt || Date.now() - hiddenAt >= HIDDEN_MIN) refetch();
+    };
     document.addEventListener('visibilitychange', onVisible);
     const offDrained = onDrained(refetch);
     return () => {
@@ -73,6 +156,7 @@ export default function useCloudList(table, { fromRow, sort = (list) => list, wr
       supabase.removeChannel(channel);
       document.removeEventListener('visibilitychange', onVisible);
       offDrained();
+      clearTimeout(saveTimer.current);
     };
   }, [table, refetch, merge, commit]);
 

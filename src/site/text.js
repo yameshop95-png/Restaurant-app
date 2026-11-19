@@ -107,7 +107,7 @@ export const SITE_TEXT = {
     defaultName: 'Bánh Cuốn & Giò Chả',
     heroTitle: 'Bánh cuốn & giò chả tại Albury–Wodonga',
     heroText:
-      'Bánh cuốn, giò chả và các món quê nhà, làm mới mỗi tuần từ nguyên liệu tươi, bếp sạch, đảm bảo vệ sinh an toàn thực phẩm. Đặt trước online, nhận hàng thứ 7, 6 giờ sáng đến 9 giờ tối, ngày khác theo yêu cầu, hoặc giao sáng thứ 7.',
+      'Bánh cuốn, giò chả và các món Việt nhà làm, làm mới mỗi tuần từ nguyên liệu tươi, bếp sạch, đảm bảo vệ sinh an toàn thực phẩm. Đặt trước online, nhận hàng thứ 7, 6 giờ sáng đến 9 giờ tối, ngày khác theo yêu cầu, hoặc giao sáng thứ 7.',
     seeMenu: 'Xem thực đơn',
     heroKicker: 'Old Roots, Fresh Flavour',
     freshBadge: 'Tươi · Mới mỗi tuần · An toàn',

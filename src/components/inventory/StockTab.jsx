@@ -77,7 +77,7 @@ function IngredientSheet({ level, ingredients, adjustments, weeks = [], onSave, 
       </div>
 
       <Field
-        label={`Giá chuẩn (A$ / ${unit})`}
+        label={`Giá chuẩn ($ / ${unit})`}
         hint="Giá mua thường ngày, không tính sale. Dùng để xem lãi mỗi món và ước tính tiền đi chợ. Để trống thì dùng giá nhập gần nhất."
       >
         <input inputMode="decimal" value={standard} onChange={(e) => setStandard(e.target.value)} placeholder="VD: 10.50" className={inputClass(false)} />

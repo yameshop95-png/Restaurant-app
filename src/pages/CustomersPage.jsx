@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { CircleDollarSign, MapPin, Pencil, Phone, Plus, Search, Trash2, UserRound, X } from 'lucide-react';
+import { BellRing, CircleDollarSign, MapPin, MessageSquare, Pencil, Phone, Plus, Search, Trash2, UserRound, X } from 'lucide-react';
 import { matchesCustomer, sameCustomer } from '../hooks/useCustomers';
+import { customerProfile } from '../lib/customerInsights';
+import { reminderMessage, smsLink } from '../lib/customerMessage';
 import { formatMoney, orderTotal } from '../lib/stats';
 
 const inputClass = (error) =>
@@ -13,6 +15,7 @@ function CustomerSheet({ customer, canDelete, onSave, onDelete, onClose }) {
     name: customer?.name ?? '',
     phone: customer?.phone ?? '',
     address: customer?.address ?? '',
+    marketingConsent: Boolean(customer?.marketingConsent),
   });
   const [submitted, setSubmitted] = useState(false);
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -36,8 +39,8 @@ function CustomerSheet({ customer, canDelete, onSave, onDelete, onClose }) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4">
-      <div className="w-full rounded-t-3xl bg-card pb-[env(safe-area-inset-bottom)] sm:max-w-lg sm:rounded-3xl">
+    <div className="staff-scrim fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4">
+      <div className="staff-sheet w-full rounded-t-3xl bg-card pb-[env(safe-area-inset-bottom)] sm:max-w-lg sm:rounded-3xl">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h2 className="text-lg font-bold text-slate-900">{customer ? 'Sửa khách hàng' : 'Thêm khách hàng'}</h2>
           <button onClick={onClose} className="rounded-full p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Đóng">
@@ -59,6 +62,23 @@ function CustomerSheet({ customer, canDelete, onSave, onDelete, onClose }) {
               {shown[key] && <span className="mt-1 block text-sm text-red-600">{shown[key]}</span>}
             </label>
           ))}
+          <label className="flex items-start gap-3 rounded-2xl border border-slate-200 p-3">
+            <input
+              type="checkbox"
+              checked={form.marketingConsent}
+              onChange={(e) => setForm((f) => ({ ...f, marketingConsent: e.target.checked }))}
+              className="mt-1 h-5 w-5 shrink-0"
+            />
+            <span className="text-sm text-slate-700">
+              <b className="block text-slate-900">Khách đồng ý nhận tin nhắn của quán</b>
+              Món mới, nhắc đặt hàng, ưu đãi. Chỉ đánh dấu khi khách đã đồng ý (luật Spam Act của Úc). Khách nhắn STOP thì bỏ đánh dấu.
+              {customer?.consentAt && form.marketingConsent && (
+                <span className="block text-xs text-slate-500">
+                  Đồng ý từ {new Date(customer.consentAt).toLocaleDateString('vi-VN')}
+                </span>
+              )}
+            </span>
+          </label>
         </div>
 
         <div className="flex gap-2 border-t border-slate-200 px-5 py-4">
@@ -87,11 +107,21 @@ function CustomerSheet({ customer, canDelete, onSave, onDelete, onClose }) {
   );
 }
 
-export default function CustomersPage({ customers, orders, isOwner, onAddCustomer, onUpdateCustomer, onDeleteCustomer }) {
+export default function CustomersPage({
+  customers,
+  orders,
+  now,
+  settings,
+  isOwner,
+  onAddCustomer,
+  onUpdateCustomer,
+  onDeleteCustomer,
+}) {
   const [query, setQuery] = useState('');
   // undefined: đóng · null: thêm khách mới · object: sửa khách đó
   const [editing, setEditing] = useState(undefined);
   const [debtOnly, setDebtOnly] = useState(false);
+  const [dueOnly, setDueOnly] = useState(false);
 
   // Số đơn, tổng tiền và tiền còn nợ (đơn chưa thanh toán, không tính đơn huỷ) của từng khách
   const statsById = new Map(
@@ -105,6 +135,8 @@ export default function CustomersPage({ customers, orders, isOwner, onAddCustome
           total: list.reduce((sum, o) => sum + orderTotal(o), 0),
           debt: unpaid.reduce((sum, o) => sum + orderTotal(o), 0),
           debtCount: unpaid.length,
+          profile: customerProfile(list, now ?? new Date()),
+          lang: list.find((o) => o.lang)?.lang ?? 'vi',
         },
       ];
     })
@@ -112,15 +144,27 @@ export default function CustomersPage({ customers, orders, isOwner, onAddCustome
   const debtors = customers.filter((c) => statsById.get(c.id).debt > 0);
   const totalDebt = debtors.reduce((sum, c) => sum + statsById.get(c.id).debt, 0);
 
+  // Khách quen đến hạn đặt lại: đã ≥ 2 lần đặt và đã quá khoảng cách thường lệ giữa hai lần
+  const isDue = (c) => {
+    const p = statsById.get(c.id).profile;
+    return Boolean(p && p.count >= 2 && p.due && c.phone);
+  };
+  const dueList = customers.filter(isDue);
+
   const visible = customers
     .filter((c) => !query.trim() || matchesCustomer(c, query))
     .filter((c) => !debtOnly || statsById.get(c.id).debt > 0)
+    .filter((c) => !dueOnly || isDue(c))
     .sort((a, b) =>
-      debtOnly ? statsById.get(b.id).debt - statsById.get(a.id).debt : a.name.localeCompare(b.name, 'vi')
+      debtOnly
+        ? statsById.get(b.id).debt - statsById.get(a.id).debt
+        : dueOnly
+          ? (statsById.get(b.id).profile?.next7 ?? 0) - (statsById.get(a.id).profile?.next7 ?? 0)
+          : a.name.localeCompare(b.name, 'vi')
     );
 
   return (
-    <div className="mx-auto max-w-2xl pb-24">
+    <div className="staff-stagger mx-auto max-w-2xl pb-24">
       <div className="relative mb-4">
         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
@@ -148,6 +192,26 @@ export default function CustomersPage({ customers, orders, isOwner, onAddCustome
         </button>
       )}
 
+      {dueList.length > 0 && (
+        <button
+          onClick={() => {
+            setDueOnly((v) => !v);
+            setDebtOnly(false);
+          }}
+          className={`mb-4 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left ${
+            dueOnly ? 'bg-blue-50 text-blue-600 ring-1 ring-blue-500' : 'bg-card text-blue-600 ring-1 ring-slate-200'
+          }`}
+        >
+          <BellRing size={22} className="shrink-0" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold">{dueList.length} khách quen đến hạn đặt lại</span>
+            <span className="text-sm">
+              {dueOnly ? 'Đang xem khách đến hạn, bấm để xem tất cả' : 'Bấm để xem và nhắn nhắc (khách đã đồng ý nhận tin)'}
+            </span>
+          </span>
+        </button>
+      )}
+
       {visible.length === 0 ? (
         <p className="rounded-3xl bg-card px-5 py-12 text-center text-slate-400">
           {customers.length ? 'Không tìm thấy khách nào' : 'Chưa có khách hàng. Khách sẽ tự được lưu khi tạo đơn.'}
@@ -157,7 +221,7 @@ export default function CustomersPage({ customers, orders, isOwner, onAddCustome
           {visible.map((c) => {
             const s = statsById.get(c.id);
             return (
-              <li key={c.id} className="flex items-start gap-3 px-4 py-3">
+              <li key={c.id} className="staff-row flex items-start gap-3 px-4 py-3">
                 <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600">
                   <UserRound size={18} />
                 </div>
@@ -177,6 +241,41 @@ export default function CustomersPage({ customers, orders, isOwner, onAddCustome
                     <p className="mt-0.5 text-xs text-slate-400">
                       {s.count} đơn · {formatMoney(s.total)}
                     </p>
+                  )}
+                  {s.profile && s.profile.count >= 2 && (
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      Hay mua:{' '}
+                      {s.profile.dishes
+                        .filter((d) => d.p >= 0.4)
+                        .slice(0, 3)
+                        .map((d) => `${d.name} ${Math.round(d.p * 100)}%`)
+                        .join(' · ') || 'chưa rõ'}
+                      {s.profile.next7 != null && (
+                        <>
+                          {' · '}
+                          <span className={s.profile.next7 >= 0.5 ? 'font-semibold text-emerald-600' : ''}>
+                            khả năng đặt trong 7 ngày {Math.round(s.profile.next7 * 100)}%
+                          </span>{' '}
+                          (thường {Math.round(s.profile.typical)} ngày/lần, lần cuối {s.profile.since} ngày trước)
+                        </>
+                      )}
+                    </p>
+                  )}
+                  {dueOnly && (
+                    <div className="mt-2">
+                      {c.marketingConsent ? (
+                        <a
+                          href={smsLink(c.phone, reminderMessage(c, s.profile, s.lang, settings?.shopName))}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-blue-500 px-3 py-2 text-sm font-semibold text-white active:bg-blue-600"
+                        >
+                          <MessageSquare size={15} /> Nhắn nhắc đặt
+                        </a>
+                      ) : (
+                        <p className="text-xs text-slate-500">
+                          Chưa có đồng ý nhận tin nhắn quảng cáo. Hỏi khách khi họ tới lấy hàng, rồi bấm Sửa để đánh dấu.
+                        </p>
+                      )}
+                    </div>
                   )}
                   {s.debt > 0 && (
                     <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-bold text-red-600">

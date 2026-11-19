@@ -90,3 +90,9 @@ Tab **Inventory Management** trong menu: lãi lỗ theo tuần / tháng / năm, 
 ## Sao lưu email hằng tuần
 
 `api/backup.js` chạy mỗi sáng chủ nhật (Vercel cron), gửi file Excel + JSON qua Resend. Cần biến môi trường `CRON_SECRET`, `SUPABASE_SERVICE_KEY`, `RESEND_API_KEY`, `BACKUP_EMAIL_TO` (xem đầu file `api/backup.js`).
+
+## Tải dữ liệu nhanh (lưu tạm trên máy + chỉ tải phần thay đổi)
+
+- Mỗi bảng (`src/hooks/useCloudList.js`) lưu tạm trên máy bằng IndexedDB (`src/lib/listCache.js`): mở app là hiện ngay, rồi mới hỏi máy chủ. Đăng xuất thì xoá bản lưu tạm.
+- Đọc theo trang 1000 dòng (máy chủ chỉ trả tối đa 1000 dòng mỗi lần), nên quán có hơn 1000 đơn vẫn đủ.
+- Chạy `sql/updated_at.sql` một lần để các bảng có cột `updated_at`: từ đó app chỉ tải các dòng đổi từ lần trước, và tải lại toàn bộ 6 giờ một lần.

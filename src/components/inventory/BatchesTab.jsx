@@ -167,7 +167,7 @@ function BatchSheet({ menu, ingredients, recipesById, costsForWeek, onSave, onCl
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Chi phí khác cả mẻ (A$)" hint="VD: gas, lá chuối">
+        <Field label="Chi phí khác cả mẻ ($)" hint="VD: gas, lá chuối">
           <input inputMode="decimal" value={extraCost} onChange={(e) => setExtraCost(e.target.value)} placeholder="0" className={inputClass(false)} />
         </Field>
         <Field label="Ghi chú">

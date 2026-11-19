@@ -17,8 +17,13 @@ Cho từng món:
    - Mùa ở Úc (hè 12–2, thu 3–5, đông 6–8, xuân 9–11)
    - Tuần lương: tuần chia 2 nhóm xen kẽ A/B (lương ở Úc thường trả 2 tuần một lần), mốc thứ Hai 1/1/2024 là nhóm A
    - Dịp lễ: tuần chứa ngày lễ hoặc tuần ngay trước (khách đặt trước). Năm mới, Quốc khánh Úc 26/1, Phục Sinh, Ngày của Mẹ
-     (Chủ nhật thứ 2 tháng 5), Ngày của Cha (Chủ nhật đầu tháng 9), Giáng sinh, Tết (danh sách `TET`, cần bổ sung sau 2032)
+     (Chủ nhật thứ 2 tháng 5), Ngày của Cha (Chủ nhật đầu tháng 9), Giáng sinh, và theo âm lịch: Tết, Rằm tháng 7 (Vu Lan), Trung thu (tự tính mọi năm).
+     Lưu ý: Tết 2030 theo giờ Việt Nam là 2/2/2030 (lịch Trung Quốc là 3/2).
    - Thời tiết: chủ quán chọn mỗi tuần (Nóng / Mát / Lạnh / Mưa), lưu chung trong thông tin quán (`weatherLog`)
+   - Mùng 1 / Rằm âm lịch (`src/lib/lunar.js`, thuật toán Hồ Ngọc Đức, giờ UTC+7): tuần có mùng 1 hoặc Rằm, tính cả thứ Hai,
+     thứ Ba ngay sau tuần (khách mua từ thứ 7 trước). Nhiều gia đình Việt mua giò chả để cúng.
+   - Nghỉ lễ NSW / VIC: tuần có ngày nghỉ lễ rơi vào ngày thường (Albury NSW và Wodonga VIC nghỉ khác nhau: Melbourne Cup,
+     AFL Grand Final, Labour Day hai bang...). Lễ rơi vào cuối tuần tính nghỉ bù gần đúng.
 3. **Tự chọn hệ số**: dự báo lại tối đa 16 tuần gần nhất (mỗi tuần chỉ dùng dữ liệu trước nó, cần ≥ 4 tuần trước),
    đo `WAPE = Σ|thực − dự báo| ÷ Σ thực` trên tổng số phần. Thêm dần từng nhóm hệ số, chỉ giữ nhóm làm WAPE giảm ≥ 2 điểm %.
    Kiểm thử với dữ liệu giả: tìm đúng nhóm có thật (tuần lương, thời tiết), không chọn nhóm nào khi dữ liệu chỉ có nhiễu.
@@ -70,3 +75,21 @@ Theo thứ tự, mỗi bước kiểm bằng WAPE trên file "Kiểm tra dự b�
 - [ ] Nếu quán muốn thời tiết tự động: mua gói thương mại của một nhà cung cấp thời tiết (đọc kỹ điều khoản), lưu nhiệt độ
       trung bình tuần thay cho lựa chọn tay, rồi so WAPE trước và sau.
 - [ ] Khách theo ngôn ngữ: khi đủ vài tháng, xem món nào khách tiếng Anh mua nhiều để viết mô tả / ảnh tiếng Anh cho món đó.
+
+## 5. Dự báo trong tuần từ đơn đã đặt và số nên làm (`src/lib/nowcast.js`, ô "Dự báo món tuần này")
+
+Quán nhận đặt trước trong tuần, nên giữa tuần đã biết một phần nhu cầu thật.
+
+1. **Đường nhận đơn**: 8 tuần gần nhất, tới cùng thời điểm này trong tuần (tính từ 0 giờ thứ Hai) thường đã có bao nhiêu %
+   số phần của cả tuần → `f` (cần ít nhất 2 tuần có đơn).
+2. **Phần còn lại** của tuần cho mỗi món, trộn hai cách theo trọng số `f`:
+   - theo đơn đã đặt `S`: `S·(1 − f) / f`
+   - theo mô hình (mục 1): `dự báo · (1 − f)`
+   - `còn lại = f · theo đơn + (1 − f) · theo mô hình`; chưa đủ tuần cho mô hình thì chỉ dùng theo đơn.
+   Dự kiến cả tuần = `S + còn lại`.
+3. **Khoảng 80%** và **số nên làm**: phần còn lại theo phân phối nhị thức âm, phương sai = max(1,5 × trung bình,
+   độ lệch chuẩn 8 tuần² × (1 − f)). Số nên làm = `S +` phân vị ở mức đủ hàng chủ quán chọn (60%, 75%, 90%).
+   Cách chọn mức (bài toán người bán báo): mức = lãi mỗi phần ÷ (lãi mỗi phần + tiền mất khi phải bỏ phần dư).
+   Ví dụ giò lụa bán A$13, vốn A$4, dư phải bỏ: 9 ÷ 13 ≈ 69%, chọn "Cân bằng 75%" hoặc "Ít dư 60%".
+
+Mức đủ hàng lưu trên từng máy (`localStorage`, khoá `restaurant-app.service-level`).

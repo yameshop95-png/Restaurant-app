@@ -17,12 +17,19 @@ export function mergeInto(list, incoming) {
     if (!c.name?.trim()) continue;
     const key = customerKey(c);
     const prev = map.get(key);
+    // Giữ các thông tin khác đã có của khách (VD: đồng ý nhận tin nhắn), chỉ cập nhật tên / SĐT / địa chỉ
     map.set(key, {
+      ...prev,
       id: prev?.id ?? newId(),
       name: c.name.trim(),
       phone: (c.phone ?? '').trim(),
       address: (c.address || prev?.address || '').trim(),
       lastOrderAt: [prev?.lastOrderAt, c.lastOrderAt].filter(Boolean).sort().pop() ?? null,
+      // Thêm khách mới có đánh dấu đồng ý nhận tin: ghi lại thời điểm đồng ý
+      ...(c.marketingConsent != null && {
+        marketingConsent: c.marketingConsent,
+        consentAt: c.marketingConsent ? (prev?.consentAt ?? new Date().toISOString()) : null,
+      }),
     });
   }
   return [...map.values()];
@@ -63,7 +70,16 @@ export default function useCustomers() {
     setCustomers((prev) =>
       prev.map((c) =>
         c.id === id
-          ? { ...c, name: data.name.trim(), phone: data.phone.trim(), address: data.address.trim() }
+          ? {
+              ...c,
+              name: data.name.trim(),
+              phone: data.phone.trim(),
+              address: data.address.trim(),
+              ...(data.marketingConsent != null && {
+                marketingConsent: data.marketingConsent,
+                consentAt: data.marketingConsent ? (c.marketingConsent ? c.consentAt : new Date().toISOString()) : null,
+              }),
+            }
           : c
       )
     );

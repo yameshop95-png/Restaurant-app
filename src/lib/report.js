@@ -1,7 +1,7 @@
 // Tính báo cáo theo tuần / tháng / năm từ danh sách đơn. Đơn đã huỷ không tính.
 // Thời điểm bán = lúc tạo đơn (giống Màn hình chính).
 import { normalizeText } from '../hooks/useCustomers';
-import { orderTotal, startOfWeek } from './stats';
+import { formatMoney, orderTotal, startOfWeek } from './stats';
 
 export const PERIODS = { week: 'Tuần', month: 'Tháng', year: 'Năm' };
 const WEEKDAYS = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ nhật'];
@@ -207,7 +207,7 @@ export function buildReport(allOrders, kind, anchor, menu = [], now = new Date()
 }
 
 const pct = (v) => `${v >= 0 ? '+' : ''}${Math.round(v * 100)}%`;
-const money = (n) => `A$${n.toFixed(2)}`;
+const money = (n) => formatMoney(n);
 
 // Nhận xét tự động bằng quy tắc (không cần AI)
 function buildInsights(r) {

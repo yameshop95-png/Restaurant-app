@@ -75,6 +75,29 @@ export function customerMessage(order, kind, lang, shopName, shopAddress = '') {
     : `${shop}: Chào ${name}, đơn #${order.number} đã sẵn sàng, mời bạn ghé lấy. ${where ? where + ' ' : ''}Tổng ${total}. ${pay} Cảm ơn bạn!`;
 }
 
+// Tin nhắc khách quen đặt lại (chỉ gửi cho khách đã đồng ý nhận tin). Luật Spam Act 2003 của Úc: ghi rõ tên quán
+// và cho cách từ chối nhận (trả lời STOP).
+export function reminderMessage(customer, profile, lang, shopName) {
+  const shop = shopName?.trim() || DEFAULT_SHOP;
+  const name = customer.name?.trim() || '';
+  const fav = profile?.dishes?.[0]?.name;
+  const link = typeof window !== 'undefined' ? `${window.location.origin}/order` : '';
+  if (lang === 'en') {
+    return [
+      `${shop}: Hi ${name}, it's been a while!`,
+      fav ? `Your favourite ${fav} is made fresh this week.` : 'Fresh batches are being made this week.',
+      `Pre-order at ${link} or reply to this message.`,
+      'Reply STOP to opt out.',
+    ].join(' ');
+  }
+  return [
+    `${shop}: Chào ${name}, lâu rồi chưa thấy bạn ghé!`,
+    fav ? `Tuần này quán làm mới ${fav} bạn hay mua.` : 'Tuần này quán làm mẻ mới.',
+    `Đặt trước tại ${link} hoặc nhắn lại tin này.`,
+    'Trả lời STOP để không nhận tin nữa.',
+  ].join(' ');
+}
+
 // Link mở app Tin nhắn với số và nội dung soạn sẵn. iPhone dùng "&body=", Android dùng "?body=".
 export function smsLink(phone, text) {
   const to = String(phone ?? '').replace(/[^\d+]/g, '');
