@@ -4,7 +4,6 @@ import {
   ChevronRight,
   Lightbulb,
   Loader2,
-  Sparkles,
   TrendingDown,
   TrendingUp,
 } from 'lucide-react';
@@ -12,6 +11,7 @@ import AnalyticsExportCard from '../components/AnalyticsExportCard';
 import LanguageCard from '../components/LanguageCard';
 import PairsCard from '../components/PairsCard';
 import { buildReport, PERIODS, reportForAI, shiftPeriod } from '../lib/report';
+import CountUp, { formatCount } from '../components/CountUp';
 import { formatMoney } from '../lib/stats';
 
 const ACCESS_CODE_KEY = 'restaurant-app.ai-code';
@@ -177,14 +177,10 @@ function AIAnalysis({ report }) {
 
   return (
     <Card
-      title={
-        <span className="flex items-center gap-2">
-          <Sparkles size={18} className="text-violet-500" /> Phân tích bằng AI
-        </span>
-      }
+      title="Phân tích bằng AI"
     >
       <div className="space-y-3 px-5 pb-5 pt-2">
-        <p className="text-sm text-slate-500">
+        <p className="text-base leading-relaxed text-slate-600">
           Claude đọc số liệu của {report.range.label.toLowerCase()} và nhận xét món bán chạy, giá bán, thời điểm bán và
           dự báo kỳ tới. Chỉ gửi số liệu tổng hợp, không gửi tên, SĐT hay địa chỉ khách.
         </p>
@@ -194,14 +190,14 @@ function AIAnalysis({ report }) {
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="Nhập mã truy cập AI"
-            className="w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+            className="w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
           />
         )}
 
         <button
           onClick={run}
           disabled={state.status === 'loading' || !report.orderCount}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 py-3.5 font-semibold text-white active:bg-violet-700 disabled:bg-slate-300"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600 disabled:bg-slate-300 disabled:text-slate-500"
         >
           {state.status === 'loading' ? (
             <>
@@ -209,7 +205,7 @@ function AIAnalysis({ report }) {
             </>
           ) : (
             <>
-              <Sparkles size={19} /> {state.status === 'done' ? 'Phân tích lại' : 'Phân tích'} {report.range.label.toLowerCase()}
+              {state.status === 'done' ? 'Phân tích lại' : 'Phân tích'} {report.range.label.toLowerCase()}
             </>
           )}
         </button>
@@ -223,13 +219,13 @@ function AIAnalysis({ report }) {
             {stale && <p className="text-sm font-semibold text-amber-700">Kết quả dưới đây là của {state.label}.</p>}
             {AI_SECTIONS.map(([key, title]) => (
               <div key={key}>
-                <h3 className="text-sm font-bold text-violet-700">{title}</h3>
-                <p className="text-[15px] leading-relaxed text-slate-700">{state.analysis[key]}</p>
+                <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+                <p className="text-base leading-relaxed text-slate-700">{state.analysis[key]}</p>
               </div>
             ))}
             <div>
-              <h3 className="text-sm font-bold text-violet-700">Nên làm ngay</h3>
-              <ul className="list-disc space-y-1 pl-5 text-[15px] text-slate-700">
+              <h3 className="text-sm font-semibold text-slate-800">Nên làm ngay</h3>
+              <ul className="list-disc space-y-1 pl-5 text-base text-slate-700">
                 {state.analysis.de_xuat.map((t, i) => (
                   <li key={i}>{t}</li>
                 ))}
@@ -259,7 +255,7 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
   const nextLabel = { week: 'tuần sau', month: 'tháng sau', year: 'năm sau' }[kind];
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 pb-8">
+    <div className="staff-stagger mx-auto max-w-2xl space-y-5 pb-8">
       {/* Chọn kỳ */}
       <div className="flex rounded-2xl bg-card p-1 shadow-sm">
         {Object.entries(PERIODS).map(([k, label]) => (
@@ -301,19 +297,27 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
       <Card>
         <div className="px-5 py-4">
           <p className="text-[15px] text-slate-500">Doanh thu</p>
-          <p className="text-4xl font-bold tracking-tight text-slate-900">{formatMoney(report.revenue)}</p>
+          <p className="text-4xl font-bold tracking-tight text-slate-900">
+            <CountUp value={report.revenue} format={formatMoney} />
+          </p>
           <Change now={report.revenue} before={report.prevRevenue} toDate={report.comparedToDate} />
           <div className="mt-3 grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 text-center">
             <div>
-              <p className="text-xl font-bold text-slate-900">{report.orderCount}</p>
+              <p className="text-xl font-bold text-slate-900">
+                <CountUp value={report.orderCount} format={formatCount} />
+              </p>
               <p className="text-xs text-slate-500">đơn</p>
             </div>
             <div>
-              <p className="text-xl font-bold text-slate-900">{report.totalQty}</p>
+              <p className="text-xl font-bold text-slate-900">
+                <CountUp value={report.totalQty} format={formatCount} />
+              </p>
               <p className="text-xs text-slate-500">phần</p>
             </div>
             <div>
-              <p className="text-xl font-bold text-slate-900">{formatMoney(report.avgOrder)}</p>
+              <p className="text-xl font-bold text-slate-900">
+                <CountUp value={report.avgOrder} format={formatMoney} />
+              </p>
               <p className="text-xs text-slate-500">TB / đơn</p>
             </div>
           </div>

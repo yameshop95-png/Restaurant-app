@@ -5,6 +5,7 @@ import PinLogin from './components/PinLogin';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import UndoToast from './components/UndoToast';
+import { NAV_ITEMS } from './components/navigation';
 import useAlwaysOn from './hooks/useAlwaysOn';
 import useAuth from './hooks/useAuth';
 import useCustomers from './hooks/useCustomers';
@@ -68,6 +69,7 @@ function Shop({ account, onLogout }) {
   const isManager = account.role === 'manager';
   const [activeTab, setActiveTab] = useState('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const viewDir = useRef('forward');
   const {
     orders,
     ready: ordersReady,
@@ -190,6 +192,9 @@ function Shop({ account, onLogout }) {
   };
 
   const handleTabChange = (tab) => {
+    const from = Math.max(0, NAV_ITEMS.findIndex((item) => item.id === activeTab));
+    const to = Math.max(0, NAV_ITEMS.findIndex((item) => item.id === tab));
+    viewDir.current = to >= from ? 'forward' : 'back';
     setActiveTab(tab);
     setSidebarOpen(false);
   };
@@ -200,6 +205,9 @@ function Shop({ account, onLogout }) {
 
   return (
     <div className="min-h-screen">
+      <a className="staff-skip" href="#noi-dung">
+        Vào nội dung
+      </a>
       <Sidebar
         activeTab={activeTab}
         onTabChange={handleTabChange}
@@ -221,12 +229,13 @@ function Shop({ account, onLogout }) {
           onBellClick={() => handleTabChange('orders')}
         />
 
-        <main className="mx-auto max-w-7xl p-4 pb-28 sm:p-6 sm:pb-28 lg:pb-6">
+        <main id="noi-dung" tabIndex={-1} className="mx-auto max-w-7xl p-4 pb-28 outline-none sm:p-6 sm:pb-28 lg:pb-6">
           {!ordersReady && (
             <p className="mx-auto mb-4 max-w-2xl rounded-2xl bg-card px-4 py-3 text-center text-sm text-slate-500">
               {loadError ? `Chưa tải được dữ liệu: ${loadError}. Đang thử lại…` : 'Đang tải dữ liệu…'}
             </p>
           )}
+          <div key={activeTab} className="staff-view" data-dir={viewDir.current}>
           <ActivePage
             account={account}
             isOwner={isOwner}
@@ -257,6 +266,7 @@ function Shop({ account, onLogout }) {
             onSetPaid={changePaid}
             onNavigate={handleTabChange}
           />
+          </div>
         </main>
         <BottomNav
           activeTab={activeTab}

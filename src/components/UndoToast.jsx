@@ -16,7 +16,7 @@ export default function UndoToast({ toast, onUndo, onDismiss }) {
     <div className="fixed inset-x-0 bottom-[calc(9.5rem+env(safe-area-inset-bottom))] lg:bottom-24 z-40 flex justify-center px-4 lg:pl-72">
       <div
         role="status"
-        className="flex w-full max-w-md items-center gap-3 rounded-2xl border border-slate-300 bg-slate-100 py-2 pl-4 pr-2 text-white shadow-xl shadow-black/40"
+        className="staff-float flex w-full max-w-md items-center gap-3 rounded-2xl border border-slate-300 bg-slate-100 py-2 pl-4 pr-2 text-white"
       >
         <span className="min-w-0 flex-1 text-sm">{toast.label}</span>
         <button

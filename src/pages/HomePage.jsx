@@ -3,6 +3,7 @@ import { Archive, ChevronRight, Loader2, Send } from 'lucide-react';
 import { NAV_ITEMS } from '../components/navigation';
 import WeeklyProfitChart from '../components/WeeklyProfitChart';
 import ForecastCard from '../components/ForecastCard';
+import CountUp, { formatCount } from '../components/CountUp';
 import { BACKUP_REMINDER_DAYS, daysSinceBackup } from '../lib/backup';
 import { dueInfo, upcomingOrders } from '../lib/due';
 import { shareText } from '../lib/shareOrder';
@@ -11,9 +12,9 @@ import { dailyCollection, formatDate, formatDay, formatMoney, summarize } from '
 function Card({ title, children, className = '' }) {
   return (
     <section
-      className={`overflow-hidden rounded-3xl border border-slate-200 bg-card shadow-sm backdrop-blur ${className}`}
+      className={`flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-card shadow-sm ${className}`}
     >
-      {title && <h2 className="px-5 pt-4 text-[15px] text-slate-500">{title}</h2>}
+      {title && <h2 className="px-5 pt-4 text-[13px] font-medium text-slate-500">{title}</h2>}
       {children}
     </section>
   );
@@ -46,12 +47,12 @@ function BackupReminder({ lastBackupAt, onBackupNow }) {
   };
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-card px-5 py-4 text-slate-800">
+    <section className="rounded-3xl border border-slate-200 bg-card px-5 py-5 text-slate-800">
       <p className="flex items-center gap-2 font-bold">
         <Archive size={18} className="shrink-0" />
         {days == null ? 'Chưa sao lưu dữ liệu lần nào' : `Đã ${days} ngày chưa sao lưu dữ liệu`}
       </p>
-      <p className="mt-1 text-sm">
+      <p className="mt-1 text-base leading-relaxed">
         Dữ liệu đã lưu trên máy chủ, nhưng vẫn nên giữ 1 file Excel dự phòng trong Drive / Zalo phòng khi có sự cố.
       </p>
       <button
@@ -97,7 +98,9 @@ function ShiftClose({ orders, now, shopName }) {
     <Card title="Chốt ca hôm nay">
       <div className="px-5 pb-4 pt-1">
         <div className="flex items-baseline justify-between gap-3">
-          <p className="text-2xl font-bold tracking-tight text-emerald-600">{formatMoney(day.total)}</p>
+          <p className="text-2xl font-bold tracking-tight text-emerald-600">
+            <CountUp value={day.total} format={formatMoney} />
+          </p>
           <span className="text-sm text-slate-500">đã thu hôm nay</span>
         </div>
         <ul className="mt-3 grid gap-2" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))` }}>
@@ -105,7 +108,7 @@ function ShiftClose({ orders, now, shopName }) {
             <li key={key} title={hint ?? undefined} className="min-w-0 rounded-2xl bg-slate-100 px-3 py-2">
               <span className="block text-xs leading-tight text-slate-500">{label}</span>
               <span className="block truncate font-bold text-slate-900">{formatMoney(day[key].total)}</span>
-              <span className="block text-[11px] text-slate-500">{day[key].count} đơn</span>
+              <span className="block text-[13px] text-slate-500">{day[key].count} đơn</span>
             </li>
           ))}
         </ul>
@@ -139,12 +142,12 @@ function DashTile({ item, value, note, tone = 'normal', onOpen }) {
     <button
       type="button"
       onClick={() => onOpen(item.id)}
-      className="group flex min-h-24 flex-col justify-between gap-2 rounded-3xl border border-slate-200 bg-card p-4 text-left shadow-sm transition hover:border-blue-500/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:scale-[0.98]"
+      className="staff-press group flex min-h-[6.75rem] flex-col justify-between gap-3 rounded-3xl border border-slate-200 bg-card p-4 text-left shadow-sm"
     >
-      <span className="flex items-center gap-2 text-sm font-semibold text-slate-500">
-        <Icon size={18} className="shrink-0 text-blue-500" aria-hidden="true" />
+      <span className="flex items-center gap-2 text-sm font-medium text-slate-500">
+        <Icon size={20} strokeWidth={2} className="shrink-0 text-slate-600" aria-hidden="true" />
         <span className="min-w-0 flex-1 leading-tight">{item.label}</span>
-        <ChevronRight size={16} className="shrink-0 opacity-40 transition group-hover:translate-x-0.5 group-hover:opacity-100" aria-hidden="true" />
+        <ChevronRight size={16} className="shrink-0 opacity-40 transition group-hover:translate-x-[3px] group-hover:opacity-100" aria-hidden="true" />
       </span>
       <span className="block">
         {value != null && <span className={`block text-lg font-bold leading-tight tracking-tight sm:text-xl ${valueColor}`}>{value}</span>}
@@ -184,7 +187,7 @@ function DashTiles({ orders, counts, customers, menu, settings, now, isOwner, we
 
   const items = NAV_ITEMS.filter((it) => it.id !== 'home' && (isOwner || !it.ownerOnly));
   return (
-    <nav aria-label="Các mục chính" className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+    <nav aria-label="Các mục chính" className="staff-stagger grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-6 xl:grid-cols-4">
       {items.map((it) => (
         <DashTile key={it.id} item={it} {...(info[it.id] ?? {})} onOpen={onNavigate} />
       ))}
@@ -201,9 +204,10 @@ export default function HomePage({ orders, now, settings, isOwner, isManager, on
 
   return (
     // Điện thoại / máy tính thường: một cột. Màn hình rộng (xl): hai cột, trái là tổng tiền, phải là món bán trong tuần.
-    <div className="mx-auto max-w-2xl space-y-4 xl:grid xl:max-w-6xl xl:grid-cols-2 xl:items-start xl:gap-6 xl:space-y-0">
+    <div className="mx-auto max-w-2xl space-y-6 xl:grid xl:max-w-6xl xl:grid-cols-2 xl:items-start xl:gap-8 xl:space-y-0">
       {/* Hàng trên cùng (trải hết bề ngang): nhắc sao lưu, tên quán, các ô bảng điều khiển */}
-      <div className="space-y-4 xl:col-span-2">
+      <div className="space-y-6 xl:col-span-2">
+      <div className="staff-stagger space-y-6">
       {isOwner && needsBackup(orders, settings.lastBackupAt, now) && (
         <BackupReminder lastBackupAt={settings.lastBackupAt} onBackupNow={onBackupNow} />
       )}
@@ -222,6 +226,7 @@ export default function HomePage({ orders, now, settings, isOwner, isManager, on
           </p>
         </div>
       </div>
+      </div>
 
       <DashTiles
         orders={orders}
@@ -236,29 +241,31 @@ export default function HomePage({ orders, now, settings, isOwner, isManager, on
       />
       </div>
 
-      <div className="space-y-4">
+      <div className="staff-stagger space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Tổng tuần này</h1>
-        <p className="mt-1 text-sm text-slate-500">Từ thứ Hai {formatDate(stats.weekStart)}</p>
+        <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Tổng tuần này</h2>
+        <p className="mt-1 text-base text-slate-500">Từ thứ Hai {formatDate(stats.weekStart)}</p>
       </div>
 
       {seeWeekMoney ? (
         <>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:gap-6">
             <Card title="Đã thanh toán">
-              <div className="px-5 pb-4 pt-1">
-                <p className="text-2xl font-bold tracking-tight text-emerald-600">{formatMoney(stats.weekPaid.total)}</p>
+              <div className="px-5 pb-5 pt-1">
+                <p className="text-2xl font-bold tracking-tight text-emerald-600">
+                  <CountUp value={stats.weekPaid.total} format={formatMoney} />
+                </p>
                 <p className="text-sm text-slate-500">{stats.weekPaid.count} đơn</p>
               </div>
             </Card>
             <section
-              className={`rounded-3xl px-5 pb-4 pt-4 shadow-sm ${
+              className={`rounded-3xl px-5 pb-5 pt-4 shadow-sm ${
                 stats.weekUnpaid.count ? 'border border-red-500/60 bg-card text-red-600' : 'border border-slate-200 bg-card text-slate-500'
               }`}
             >
-              <h2 className="text-[15px] text-slate-500">Chưa thanh toán</h2>
+              <h2 className="text-[13px] font-medium text-slate-500">Chưa thanh toán</h2>
               <p className={`mt-1 text-2xl font-bold tracking-tight ${stats.weekUnpaid.count ? 'text-red-600' : 'text-slate-900'}`}>
-                {formatMoney(stats.weekUnpaid.total)}
+                <CountUp value={stats.weekUnpaid.total} format={formatMoney} />
               </p>
               <p className="text-sm text-slate-500">{stats.weekUnpaid.count} đơn</p>
             </section>
@@ -272,11 +279,13 @@ export default function HomePage({ orders, now, settings, isOwner, isManager, on
           )}
 
           <section className="rounded-3xl border border-gold/40 bg-card px-5 pb-5 pt-4 text-white">
-            <h2 className="text-[15px] text-slate-500">Tiền tuần này</h2>
+            <h2 className="text-[13px] font-medium text-slate-500">Tiền tuần này</h2>
             <div className="mt-1 flex items-end justify-between gap-3">
-              <p className="text-4xl font-bold tracking-tight text-gold sm:text-5xl">{formatMoney(stats.weekRevenue)}</p>
+              <p className="text-4xl font-bold tracking-tight text-gold sm:text-5xl">
+                <CountUp value={stats.weekRevenue} format={formatMoney} />
+              </p>
               <span className="shrink-0 rounded-full bg-slate-100 px-4 py-1.5 font-semibold text-slate-800">
-                {stats.weekOrderCount} đơn
+                <CountUp value={stats.weekOrderCount} format={formatCount} /> đơn
               </span>
             </div>
           </section>
@@ -286,7 +295,9 @@ export default function HomePage({ orders, now, settings, isOwner, isManager, on
           {isOwner && (
           <Card title="Tổng cộng dồn">
             <div className="flex items-end justify-between px-5 pb-5 pt-1">
-              <p className="text-3xl font-bold tracking-tight text-slate-900">{formatMoney(stats.allTimeRevenue)}</p>
+              <p className="text-3xl font-bold tracking-tight text-slate-900">
+                <CountUp value={stats.allTimeRevenue} format={formatMoney} />
+              </p>
               <span className="text-sm text-slate-500">{stats.allTimeOrderCount} đơn từ trước tới nay</span>
             </div>
           </Card>
@@ -295,7 +306,9 @@ export default function HomePage({ orders, now, settings, isOwner, isManager, on
       ) : (
         <Card title="Đơn tuần này">
           <div className="flex items-end justify-between px-5 pb-5 pt-1">
-            <p className="text-4xl font-bold tracking-tight text-slate-900">{stats.weekOrderCount} đơn</p>
+            <p className="text-4xl font-bold tracking-tight text-slate-900">
+              <CountUp value={stats.weekOrderCount} format={formatCount} /> đơn
+            </p>
             {stats.weekUnpaid.count > 0 && (
               <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-600">
                 {stats.weekUnpaid.count} đơn chưa thanh toán
@@ -308,7 +321,7 @@ export default function HomePage({ orders, now, settings, isOwner, isManager, on
       </div>
 
       {/* Cột phải: lợi nhuận theo tuần (chủ quán) và món bán trong tuần */}
-      <div className="space-y-4">
+      <div className="staff-stagger space-y-6">
       {isOwner && (
         <WeeklyProfitChart
           orders={orders}
