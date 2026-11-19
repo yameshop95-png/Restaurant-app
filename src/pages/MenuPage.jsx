@@ -124,11 +124,11 @@ export default function MenuPage({ menu, isOwner, onAddMenuItem, onUpdateMenuIte
       {menu.length === 0 ? (
         <p className="rounded-3xl bg-card px-5 py-12 text-center text-slate-400">Chưa có món nào</p>
       ) : (
-        <ul className="divide-y divide-slate-100 overflow-hidden rounded-3xl border border-slate-200 bg-card shadow-sm">
+        <ul className="staff-menu divide-y divide-slate-100 rounded-3xl border border-slate-200 bg-card shadow-sm">
           {menu.map((m, i) => {
             const available = m.available !== false;
             return (
-              <li key={m.id} className={`staff-row flex items-center gap-2 px-3 py-3 ${available ? '' : 'bg-slate-50'}`}>
+              <li key={m.id} className={`staff-press flex items-center gap-2 px-3 py-3 ${available ? '' : 'bg-slate-50'}`}>
                 {isOwner && (
                   <div className="flex flex-col">
                     <button

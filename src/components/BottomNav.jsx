@@ -11,7 +11,7 @@ const TABS = [
 export default function BottomNav({ activeTab, counts, onTabChange, onMore }) {
   const inTabs = TABS.some((t) => t.id === activeTab);
   const item = (active) =>
-    `relative flex flex-1 flex-col items-center gap-0.5 pb-1.5 pt-2 text-[11px] font-semibold ${
+    `staff-press relative flex flex-1 flex-col items-center gap-0.5 border border-transparent pb-1.5 pt-2 text-[11px] font-semibold ${
       active ? 'text-orange-600' : 'text-slate-500'
     }`;
 

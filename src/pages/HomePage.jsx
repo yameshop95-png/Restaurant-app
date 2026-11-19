@@ -142,7 +142,7 @@ function DashTile({ item, value, note, tone = 'normal', onOpen }) {
     <button
       type="button"
       onClick={() => onOpen(item.id)}
-      className="group flex min-h-[6.5rem] flex-col justify-between gap-3 rounded-3xl border border-slate-200 bg-card p-4 text-left shadow-sm hover:border-blue-500/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+      className="staff-press group flex min-h-[6.5rem] flex-col justify-between gap-3 rounded-3xl border border-slate-200 bg-card p-4 text-left shadow-sm hover:border-blue-500/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
     >
       <span className="flex items-center gap-2 text-sm font-semibold text-slate-500">
         <Icon size={18} className="shrink-0 text-blue-500" aria-hidden="true" />

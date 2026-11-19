@@ -44,7 +44,7 @@ html.staff-app button {
     color 0.18s ease;
 }
 
-html.staff-app button:active:not(:disabled) {
+html.staff-app button:active:not(:disabled):not(.staff-press) {
   transform: scale(0.97);
 }
 
@@ -70,9 +70,56 @@ html.staff-app .staff-row button:active:not(:disabled) {
   }
 }
 
-html.staff-app button.rounded-3xl.bg-card:active:not(:disabled),
+html.staff-app button.rounded-3xl.bg-card:active:not(:disabled):not(.staff-press),
 html.staff-app button.staff-float:active:not(:disabled) {
   transform: scale(0.97);
+}
+
+/* Dashboard tiles and menu rows: a quick lift plus an orange glow.
+   The transition is short so a phone tap reaches the full state before the finger lifts.
+   .is-pressed is held briefly after pointerup (see main.jsx) so the glow stays visible. */
+html.staff-app .staff-press {
+  position: relative;
+  z-index: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.1s cubic-bezier(0.2, 0.85, 0.2, 1),
+    box-shadow 0.1s ease,
+    border-color 0.08s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+html.staff-app .staff-press button:active:not(:disabled) {
+  transform: none;
+}
+
+html.staff-app button.staff-press:active:not(:disabled),
+html.staff-app button.staff-press.is-pressed:not(:disabled),
+html.staff-app li.staff-press:active,
+html.staff-app li.staff-press.is-pressed {
+  z-index: 5;
+  transform: translateY(-6px) scale(1.06);
+  border-color: #ff7a33;
+  box-shadow:
+    inset 0 0 0 3px #ff6a22,
+    0 0 0 2px #ff5722,
+    0 0 22px 5px rgba(255, 94, 20, 0.95),
+    0 18px 34px rgba(0, 0, 0, 0.55);
+}
+
+html.staff-app .staff-menu {
+  overflow: visible;
+}
+
+html.staff-app .staff-menu > li:first-child {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+html.staff-app .staff-menu > li:last-child {
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
 }
 
 /* Frosted chrome. Small strips only — not full-page blur. */
@@ -173,7 +220,9 @@ html.staff-app .staff-stagger > *:nth-child(n + 9):not(.fixed) { animation-delay
   html.staff-app div.rounded-3xl.bg-card:hover,
   html.staff-app button.rounded-3xl.bg-card:hover,
   html.staff-app button.rounded-3xl.bg-card:active,
-  html.staff-app button:active {
+  html.staff-app button:active,
+  html.staff-app .staff-press:active,
+  html.staff-app .staff-press.is-pressed {
     transform: none !important;
   }
 
