@@ -37,7 +37,7 @@ function Stepper({ qty, name, t, onChange, disabled }) {
           <button
             onClick={() => onChange(qty - 1)}
             aria-label={t.remove(name)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-800 active:bg-slate-200"
+            className="press flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-800 active:bg-slate-200"
           >
             <Minus size={18} />
           </button>
@@ -48,7 +48,7 @@ function Stepper({ qty, name, t, onChange, disabled }) {
         onClick={() => onChange(qty + 1)}
         disabled={disabled}
         aria-label={t.add(name)}
-        className={`flex h-10 w-10 items-center justify-center rounded-full ${
+        className={`press flex h-10 w-10 items-center justify-center rounded-full ${
           qty > 0
             ? 'bg-blue-500 text-white active:bg-blue-600'
             : 'border border-slate-300 text-slate-900 active:bg-slate-100'
@@ -320,7 +320,7 @@ export default function Checkout() {
     return (
       <div className={page}>
         <div className="mx-auto max-w-xl space-y-5">
-          <section className="space-y-4 rounded-3xl border border-slate-200 bg-card p-6 text-center">
+          <section className="soft-shadow rise-in space-y-4 rounded-[28px] border border-slate-200 bg-card p-6 text-center">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
               <Check size={30} />
             </div>
@@ -356,7 +356,7 @@ export default function Checkout() {
                 setForm((f) => ({ ...f, date: '', time: '', note: '' }));
                 load();
               }}
-              className="w-full rounded-xl border border-slate-300 py-3 font-semibold text-slate-800 active:bg-slate-100"
+              className="press w-full rounded-2xl border border-slate-300 py-3 font-semibold text-slate-800 active:bg-slate-100"
             >
               {t.newOrder}
             </button>
@@ -369,7 +369,7 @@ export default function Checkout() {
   return (
     <div className={page}>
       <div className="mx-auto max-w-6xl space-y-5">
-        <h1 className="font-serif text-4xl font-bold text-ink">{t.title}</h1>
+        <h1 className="rise-in font-serif text-4xl font-bold text-ink">{t.title}</h1>
 
         <div className="flex flex-wrap gap-2 text-sm">
           <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-slate-800">
@@ -391,13 +391,13 @@ export default function Checkout() {
         </div>
 
         {closed ? (
-          <section className="rounded-3xl border border-slate-200 bg-card p-6 text-center">
+          <section className="soft-shadow rise-in rounded-[28px] border border-slate-200 bg-card p-6 text-center">
             <h2 className="text-xl font-bold text-slate-900">{t.closedTitle}</h2>
             <p className="mt-2 text-slate-600">{t.errors.closed}</p>
             {shop.shopPhone && (
               <a
                 href={`tel:${formatPhoneTel(shop.shopPhone)}`}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-500 px-5 py-3 font-semibold text-white"
+                className="press mt-4 inline-flex items-center gap-2 rounded-2xl bg-blue-500 px-5 py-3 font-semibold text-white"
               >
                 <Phone size={18} /> {t.callUs} {formatPhoneDisplay(shop.shopPhone)}
               </a>
@@ -413,12 +413,12 @@ export default function Checkout() {
                   {t.emptyMenu}
                 </p>
               ) : (
-                <ul className="divide-y divide-slate-200 overflow-hidden rounded-3xl border border-slate-200 bg-card">
+                <ul className="soft-shadow stagger divide-y divide-slate-200 overflow-hidden rounded-[28px] border border-slate-200 bg-card">
                   {menu.map((m) => {
                     const out = m.available === false;
                     const label = out ? checkoutName(m, lang) : checkoutLine(m, lang);
                     return (
-                      <li key={m.id} className={`flex items-center gap-3 px-4 py-3.5 ${out ? 'opacity-50' : ''}`}>
+                      <li key={m.id} className={`rise-in flex items-center gap-3 px-4 py-3.5 ${out ? 'opacity-50' : ''}`}>
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-slate-900">{label}</p>
                           {out && <p className="text-sm text-slate-500">{t.soldOut}</p>}
@@ -442,7 +442,7 @@ export default function Checkout() {
             {/* Thông tin nhận món + tổng tiền */}
             <section
               ref={checkoutRef}
-              className="min-w-0 scroll-mt-4 space-y-4 rounded-3xl border border-slate-200 bg-card p-5 lg:sticky lg:top-4"
+              className="soft-shadow rise-in min-w-0 scroll-mt-28 space-y-4 rounded-[28px] border border-slate-200 bg-card p-5 lg:sticky lg:top-28"
             >
               <h2 className="text-lg font-bold text-slate-900">{t.yourOrder}</h2>
 
@@ -455,7 +455,7 @@ export default function Checkout() {
                     key={id}
                     onClick={() => setForm((f) => ({ ...f, type: id }))}
                     aria-pressed={form.type === id}
-                    className={`flex items-center justify-center gap-2 rounded-xl py-3 font-semibold ${
+                    className={`press flex items-center justify-center gap-2 rounded-2xl py-3 font-semibold ${
                       form.type === id ? 'bg-blue-500 text-white' : 'border border-slate-300 text-slate-800'
                     }`}
                   >
@@ -647,7 +647,7 @@ export default function Checkout() {
                           key={m.id}
                           type="button"
                           onClick={() => setCartQty(m.id, 1)}
-                          className="rounded-full border border-blue-500 px-3 py-1.5 text-sm font-semibold text-blue-500 active:bg-blue-50"
+                          className="press rounded-full border border-blue-500 px-3 py-1.5 text-sm font-semibold text-blue-500 active:bg-blue-50"
                         >
                           + {checkoutName(m, lang)} · {formatMoney(Number(m.price))}
                         </button>
@@ -675,7 +675,7 @@ export default function Checkout() {
                 ref={submitRef}
                 onClick={submit}
                 disabled={sending}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-4 text-base font-bold text-white active:bg-blue-600 disabled:opacity-60"
+                className="press flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-500 py-4 text-base font-bold text-white shadow-[0_14px_28px_-14px_rgba(234,109,39,0.85)] active:bg-blue-600 disabled:opacity-60"
               >
                 {sending ? (
                   <>
@@ -692,10 +692,10 @@ export default function Checkout() {
 
       {/* Điện thoại: thanh giỏ hàng dưới đáy, bấm để xuống phần đặt */}
       {!closed && count > 0 && !checkoutVisible && (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-card/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:hidden">
+        <div className="glass fixed inset-x-0 bottom-0 z-20 border-t border-white/70 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 lg:hidden">
           <button
             onClick={() => checkoutRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            className="flex w-full items-center justify-between rounded-xl bg-blue-500 px-5 py-3.5 font-bold text-white active:bg-blue-600"
+            className="press flex w-full items-center justify-between rounded-2xl bg-blue-500 px-5 py-3.5 font-bold text-white active:bg-blue-600"
           >
             <span>{t.items(count)}</span>
             <span>
