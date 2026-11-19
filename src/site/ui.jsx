@@ -72,7 +72,7 @@ export function QtyControl({ dish, size = 'md' }) {
       <button
         onClick={() => setQty(dish.id, qty - 1)}
         aria-label={`−1 ${dish.name}`}
-        className={`flex ${btn} items-center justify-center rounded-full border border-slate-300 text-ink hover:bg-mist`}
+        className={`press flex ${btn} items-center justify-center rounded-full border border-slate-300 text-ink hover:bg-mist`}
       >
         <Minus size={18} />
       </button>
@@ -80,7 +80,7 @@ export function QtyControl({ dish, size = 'md' }) {
       <button
         onClick={() => setQty(dish.id, qty + 1)}
         aria-label={`+1 ${dish.name}`}
-        className={`flex ${btn} items-center justify-center rounded-full bg-blue-500 text-white hover:bg-blue-600`}
+        className={`press flex ${btn} items-center justify-center rounded-full bg-blue-500 text-white hover:bg-blue-600`}
       >
         <Plus size={18} />
       </button>
@@ -100,7 +100,7 @@ export function DishCard({ dish }) {
   const txt = dishText(dish, lang);
   const href = path(`/menu/${dish.slug}`);
   return (
-    <article className={`group relative flex flex-col pt-24 ${dish.available ? '' : 'opacity-60'}`}>
+    <article className={`press rise-in group relative flex flex-col pt-24 ${dish.available ? '' : 'opacity-60'}`}>
       <Link
         to={href}
         aria-label={txt.name}
@@ -170,6 +170,7 @@ export function headerCompact(compact, scrollY) {
 export function Nav() {
   const { t, lang, setLang, route } = useSite();
   const headerRef = useRef(null);
+  const glassRef = useRef(null);
   useEffect(() => {
     const el = headerRef.current;
     if (!el) return undefined;
@@ -178,7 +179,9 @@ export function Nav() {
       const next = headerCompact(compact, window.scrollY);
       if (next === compact) return;
       compact = next;
-      el.dataset.compact = next ? 'true' : 'false';
+      const value = next ? 'true' : 'false';
+      el.dataset.compact = value;
+      if (glassRef.current) glassRef.current.dataset.compact = value;
     };
     update();
     window.addEventListener('scroll', update, { passive: true });
@@ -197,10 +200,11 @@ export function Nav() {
   return (
     <>
       <div aria-hidden="true" className="site-header-spacer" />
+      <div ref={glassRef} data-compact="false" className="header-glass" aria-hidden="true" />
       <header
         ref={headerRef}
         data-compact="false"
-        className="site-header fixed inset-x-0 top-0 z-30 bg-page pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(16,26,36,0.06)]"
+        className="site-header fixed inset-x-0 top-0 z-30 bg-transparent pt-[env(safe-area-inset-top)]"
       >
       <div className="header-row mx-auto flex max-w-6xl items-center gap-3 px-4 sm:px-6">
         <Logo
@@ -213,7 +217,7 @@ export function Nav() {
         <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           <button
             onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
-            className="rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-500 hover:text-ink"
+            className="press rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-500 hover:text-ink"
             aria-label={t.lang}
           >
             {lang === 'vi' ? 'EN' : 'VI'}
@@ -389,10 +393,10 @@ export function CartBar() {
   if (!count) return null;
   const total = items.reduce((s, d) => s + cart[d.id] * (d.price ?? 0), 0);
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+    <div className="glass fixed inset-x-0 bottom-0 z-30 border-t border-white/70 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_-24px_rgba(16,26,36,0.45)]">
       <Link
         to={path('/checkout')}
-        className="mx-auto flex max-w-md items-center justify-between rounded-2xl bg-ink px-5 py-4 font-semibold text-white shadow-[0_20px_40px_-12px_rgba(16,26,36,0.6)]"
+        className="press mx-auto flex max-w-md items-center justify-between rounded-2xl bg-ink px-5 py-4 font-semibold text-white shadow-[0_16px_30px_-16px_rgba(16,26,36,0.55)]"
       >
         <span className="flex items-center gap-2">
           <ShoppingBag size={18} /> {t.cart(count, formatMoney(total))}
