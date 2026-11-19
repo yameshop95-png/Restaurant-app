@@ -39,24 +39,51 @@ export function unlockAudio() {
   } catch {
     // Không hỗ trợ âm thanh: bỏ qua
   }
-  // Nạp sẵn file chuông ở lần chạm đầu tiên để lúc đơn mới vào kêu ngay, không phải chờ tải.
-  try {
-    getAlertAudio().load();
-  } catch {
+  // Nạp sẵn tiếng chuông ở lần chạm đầu tiên để lúc đơn mới vào kêu ngay, không phải chờ tải.
+  loadAlertAudio().catch(() => {
     // Không nạp được: lúc kêu sẽ dùng tiếng bíp dự phòng
-  }
+  });
 }
 
 // Tiếng chuông báo đơn mới: file ghi âm thật thay cho tiếng bíp tổng hợp.
 // "Bell Chime Alert" của plasterbrain, Freesound, giấy phép CC0 (dùng cho quán được):
 // https://freesound.org/people/plasterbrain/sounds/419493/ — 0,67 giây, chuông cao ~740 Hz.
-// File ở public/sounds/bell-chime-alert.wav, app gọi bằng đường dẫn /sounds/bell-chime-alert.wav.
-const ALERT_SOUND_URL = '/sounds/bell-chime-alert.wav';
+// Âm thanh nằm trong alertSoundData.js (base64) và được giải mã thành Blob URL lúc chạy;
+// import() động để đoạn base64 ~157 KB chỉ tải khi cần kêu, không nặng thêm lúc mở app.
+let alertAudioUrl;
+let alertAudioLoad;
 let alertAudio;
 
-function getAlertAudio() {
-  alertAudio ??= new Audio(ALERT_SOUND_URL);
-  return alertAudio;
+function loadAlertAudio() {
+  if (alertAudioUrl) return Promise.resolve(alertAudioUrl);
+  alertAudioLoad ??= import('./alertSoundData.js')
+    .then(({ default: base64 }) => {
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      alertAudioUrl = URL.createObjectURL(new Blob([bytes], { type: 'audio/wav' }));
+      return alertAudioUrl;
+    })
+    .catch(() => {
+      alertAudioLoad = null;
+      return null;
+    });
+  return alertAudioLoad;
+}
+
+function playAlertAudio() {
+  loadAlertAudio().then((url) => {
+    if (!url) {
+      playFallbackBeeps();
+      return;
+    }
+    try {
+      alertAudio ??= new Audio(url);
+      alertAudio.currentTime = 0;
+      const played = alertAudio.play();
+      if (played) played.catch(() => playFallbackBeeps());
+    } catch {
+      playFallbackBeeps();
+    }
+  });
 }
 
 // Dự phòng khi file chuông không phát được (chưa mở khoá âm thanh, file lỗi…):
@@ -83,13 +110,6 @@ function playFallbackBeeps() {
 }
 
 export function alertBeep() {
-  try {
-    const audio = getAlertAudio();
-    audio.currentTime = 0;
-    const played = audio.play();
-    if (played) played.catch(() => playFallbackBeeps());
-  } catch {
-    playFallbackBeeps();
-  }
+  playAlertAudio();
   navigator.vibrate?.([400, 100, 400, 100, 400]);
 }
