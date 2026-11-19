@@ -72,7 +72,7 @@ export function QtyControl({ dish, size = 'md' }) {
       <button
         onClick={() => setQty(dish.id, qty - 1)}
         aria-label={`−1 ${dish.name}`}
-        className={`flex ${btn} items-center justify-center rounded-full border border-slate-300 text-ink hover:bg-mist`}
+        className={`flex ${btn} items-center justify-center border border-slate-300 text-ink hover:bg-mist`}
       >
         <Minus size={18} />
       </button>
@@ -80,7 +80,7 @@ export function QtyControl({ dish, size = 'md' }) {
       <button
         onClick={() => setQty(dish.id, qty + 1)}
         aria-label={`+1 ${dish.name}`}
-        className={`flex ${btn} items-center justify-center rounded-full bg-blue-500 text-white hover:bg-blue-600`}
+        className={`flex ${btn} items-center justify-center bg-gold text-ink hover:brightness-95`}
       >
         <Plus size={18} />
       </button>
@@ -100,29 +100,23 @@ export function DishCard({ dish }) {
   const txt = dishText(dish, lang);
   const href = path(`/menu/${dish.slug}`);
   return (
-    <article className={`group relative flex flex-col pt-24 ${dish.available ? '' : 'opacity-60'}`}>
-      <Link
-        to={href}
-        aria-label={txt.name}
-        className="absolute left-1/2 top-0 z-10 block aspect-square w-48 -translate-x-1/2 overflow-hidden rounded-full shadow-[0_18px_40px_-18px_rgba(16,26,36,0.45)] transition duration-300 group-hover:-translate-y-1"
-      >
-        <Photo src={dish.content?.photo} alt={photoAlt(dish, lang)} />
+    <article className={`group relative flex flex-col bg-card ring-1 ring-slate-300 ${dish.available ? '' : 'opacity-60'}`}>
+      <Link to={href} aria-label={txt.name} className="relative block aspect-square overflow-hidden">
+        <div className="h-full w-full transition duration-500 group-hover:scale-[1.03]">
+          <Photo src={dish.content?.photo} alt={photoAlt(dish, lang)} />
+        </div>
+        {dish.price != null && (
+          <span className="absolute bottom-0 left-0 bg-page px-3 py-2 text-[15px] font-semibold text-ink">
+            {formatMoney(dish.price).replace(/\.00$/, '')}
+          </span>
+        )}
       </Link>
-      {dish.price != null && (
-        <span
-          className={`absolute left-[calc(50%+3.5rem)] top-8 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-ink font-bold text-white shadow-[0_12px_24px_-8px_rgba(16,26,36,0.6)] ${dish.price % 1 ? 'text-xs' : 'text-[15px]'}`}
-        >
-          {formatMoney(dish.price).replace(/\.00$/, '')}
-        </span>
-      )}
-      <div className="flex flex-1 flex-col items-center rounded-[28px] bg-card px-5 pb-6 pt-32 text-center shadow-[0_24px_50px_-30px_rgba(16,26,36,0.35)] ring-1 ring-slate-200/70">
+      <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
         <Link to={href} className="block">
-          <h3 className="font-serif text-xl font-bold leading-snug text-ink">{txt.name}</h3>
+          <h3 className="font-serif text-xl font-medium leading-snug text-ink">{txt.name}</h3>
         </Link>
         {txt.short && <p className="mt-2 text-[15px] leading-relaxed text-slate-500">{txt.short}</p>}
-        {txt.portion && (
-          <p className="mt-3 rounded-full bg-mist px-3 py-1 text-[13px] font-semibold text-ink">{txt.portion}</p>
-        )}
+        {txt.portion && <p className="mt-3 text-[13px] font-semibold text-ink">{txt.portion}</p>}
         <div className="mt-auto pt-5">
           <QtyControl dish={dish} />
         </div>
@@ -136,7 +130,7 @@ export function SectionTitle({ title, text, align = 'center', as: H = 'h2' }) {
   const center = align === 'center';
   return (
     <div className={center ? 'mx-auto max-w-xl text-center' : 'max-w-xl'}>
-      <H className="font-serif text-4xl font-bold leading-tight text-ink text-balance sm:text-5xl">{title}</H>
+      <H className="font-serif text-4xl font-normal leading-tight tracking-tight text-ink text-balance sm:text-5xl">{title}</H>
       {text && <p className={`mt-4 text-base leading-7 text-slate-500 ${center ? 'mx-auto max-w-md' : ''}`}>{text}</p>}
     </div>
   );
