@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* Website cho khách: theo mẫu Figma "Restaurant website Landing Page" (nền sáng).
-   Nền #E8E8E3 · mực #181715 · vàng đồng #BFB21A · tiêu đề Source Serif 4, chữ thường Libre Franklin (bản làm lại theo skill design-taste-frontend).
+   Nền #E8E8E3 · mực #181715 · cam #EA6D27 · tiêu đề Source Serif 4, chữ thường Libre Franklin (bản làm lại theo skill design-taste-frontend).
    App nhân viên dùng ../index.css (nền tối), không dính gì tới file này.
    Các trang vẫn dùng tên class Tailwind: blue đổi thành cam của mẫu, slate-900 là màu mực. */
 @theme {
@@ -12,7 +12,7 @@
   --color-card: #efefea;
   --color-mist: #dcdcd6;
   --color-ink: #181715;
-  --color-gold: #bfb21a;
+  --color-gold: #ea6d27;
 
   --color-slate-200: #cfcfc8;
   --color-slate-300: #bdbdb5;
@@ -20,16 +20,16 @@
   --color-slate-600: #5c5b56;
   --color-slate-900: #181715;
 
-  /* "blue" là màu nhấn: vàng đồng. 500 dùng làm chữ / viền nên đậm hơn nền nút (#bfb21a) để đủ tương phản */
-  --color-blue-50: #f3f1d6;
-  --color-blue-100: #ebe7ae;
-  --color-blue-200: #ddd773;
-  --color-blue-400: #a39800;
-  --color-blue-500: #6f6800;
-  --color-blue-600: #5a5400;
-  --color-blue-700: #484300;
-  --color-blue-800: #373300;
-  --color-blue-900: #282500;
+  /* "blue" là màu nhấn: giữ cam cũ của quán */
+  --color-blue-50: #fdf1ea;
+  --color-blue-100: #fbe2d3;
+  --color-blue-200: #f6c4a6;
+  --color-blue-400: #f08a52;
+  --color-blue-500: #ea6d27;
+  --color-blue-600: #d25c18;
+  --color-blue-700: #ad4a12;
+  --color-blue-800: #8a3b0f;
+  --color-blue-900: #6b2e0b;
 }
 
 @layer base {
@@ -70,8 +70,7 @@
     @apply bg-ink hover:bg-[#33312d];
   }
   .btn-accent {
-    @apply text-ink hover:brightness-95;
-    background: #bfb21a;
+    @apply bg-blue-500 text-white hover:bg-blue-600;
   }
   /* Header 2 trạng thái (data-compact do JS bật khi lướt qua 48px). Chỉ transform + transition nên chạy trên GPU,
      mượt cả khi Safari iPhone đang cuộn quán tính: cả header dịch lên --hdr-shift, logo co lại,

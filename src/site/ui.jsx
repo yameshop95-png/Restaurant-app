@@ -80,7 +80,7 @@ export function QtyControl({ dish, size = 'md' }) {
       <button
         onClick={() => setQty(dish.id, qty + 1)}
         aria-label={`+1 ${dish.name}`}
-        className={`flex ${btn} items-center justify-center bg-gold text-ink hover:brightness-95`}
+        className={`flex ${btn} items-center justify-center bg-blue-500 text-white hover:bg-blue-600`}
       >
         <Plus size={18} />
       </button>
