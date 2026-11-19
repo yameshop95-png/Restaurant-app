@@ -26,7 +26,8 @@ export function upcomingOrders(orders, now, withinMinutes = 60) {
     .sort((a, b) => a.deliverAt.localeCompare(b.deliverAt));
 }
 
-// Tiếng "bíp bíp" ngắn bằng Web Audio (không cần file âm thanh) + rung nếu máy hỗ trợ.
+// Tiếng "bíp bíp" to và dài hơn bằng Web Audio (không cần file âm thanh) + rung nếu máy hỗ trợ.
+// 4 tiếng bíp 880 Hz, mỗi tiếng 0,3 giây, âm lượng 0,6 (trước đây: 2 tiếng, 0,2 giây, âm lượng 0,3).
 let audioCtx;
 
 // Trình duyệt (nhất là iPhone) chỉ cho phát âm thanh sau khi người dùng đã chạm vào trang ít nhất một lần.
@@ -45,19 +46,19 @@ export function alertBeep() {
     audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const t = audioCtx.currentTime;
-    for (const start of [0, 0.25]) {
+    for (const start of [0, 0.35, 0.7, 1.05]) {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.frequency.value = 880;
       gain.gain.setValueAtTime(0.0001, t + start);
-      gain.gain.exponentialRampToValueAtTime(0.3, t + start + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + start + 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.6, t + start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + start + 0.28);
       osc.connect(gain).connect(audioCtx.destination);
       osc.start(t + start);
-      osc.stop(t + start + 0.2);
+      osc.stop(t + start + 0.3);
     }
   } catch {
     // Trình duyệt không cho phát âm thanh: bỏ qua
   }
-  navigator.vibrate?.([200, 100, 200]);
+  navigator.vibrate?.([400, 100, 400, 100, 400]);
 }
