@@ -27,14 +27,14 @@ export default function PrepPage({ orders, now, settings }) {
 
   if (!days.length) {
     return (
-      <p className="mx-auto max-w-2xl rounded-3xl bg-card px-5 py-12 text-center text-slate-400">
+      <p className="staff-stagger mx-auto max-w-2xl rounded-3xl bg-card px-5 py-12 text-center text-slate-400">
         Không có đơn nào chờ làm. Đơn mới sẽ tự hiện ở đây theo ngày lấy / giao.
       </p>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 pb-24 md:max-w-5xl">
+    <div className="staff-stagger mx-auto max-w-2xl space-y-5 pb-24 md:max-w-5xl">
       <div data-no-swipe className="flex gap-2 overflow-x-auto">
         {days.map((d) => (
           <button

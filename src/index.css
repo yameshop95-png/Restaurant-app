@@ -2,14 +2,14 @@
 
 /* Bộ màu của quán (nền tối):
    --bg-main #121214 · --bg-card #1E1E24 · --accent-primary #FF5722 · --accent-gold #D4AF37
-   --text-main #F8FAFC · --text-muted #94A3B8 · --border-color #2E2E38 · font Inter
+   --text-main #F8FAFC · --text-muted #94A3B8 · --border-color #2E2E38 · font hệ thống
    Các trang vẫn dùng tên class của Tailwind; ở đây đổi giá trị của chúng:
    slate đảo chiều (số nhỏ = nền tối, số lớn = chữ sáng).
    Bản gọn, mỗi màu một việc: cam (blue/orange 400-600) chỉ cho nút bấm và mục đang chọn;
    đỏ chỉ cho chữ / nhãn cần chú ý; xanh lá chỉ cho "đã thanh toán"; vàng gold cho số tiền tuần.
    Các nền nhạt và chữ thông tin của blue / orange / amber / violet đều về xám. */
 @theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   --color-page: #121214;
   --color-card: #1e1e24;
@@ -144,7 +144,7 @@
     width: 72mm;
     color: #000;
     background: #fff;
-    font-family: 'Inter', Arial, sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
     font-size: 13px;
     line-height: 1.35;
     print-color-adjust: exact;

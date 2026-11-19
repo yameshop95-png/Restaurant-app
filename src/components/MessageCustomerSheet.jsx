@@ -49,8 +49,8 @@ export default function MessageCustomerSheet({ order, shopName, shopAddress, onC
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4">
-      <div className="w-full rounded-t-3xl bg-card pb-[env(safe-area-inset-bottom)] sm:max-w-lg sm:rounded-3xl">
+    <div className="staff-scrim fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4">
+      <div className="staff-sheet w-full rounded-t-3xl bg-card pb-[env(safe-area-inset-bottom)] sm:max-w-lg sm:rounded-3xl">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
             <h2 className="text-lg font-bold text-slate-900">Nhắn khách · #{order.number}</h2>

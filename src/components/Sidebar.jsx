@@ -109,7 +109,7 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
                 key={id}
                 onClick={() => onTabChange(id)}
                 aria-current={active ? 'page' : undefined}
-                className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                className={`staff-press flex w-full items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-sm font-medium ${
                   active
                     ? 'bg-orange-500 text-white '
                     : 'text-slate-700 hover:bg-slate-100 hover:text-white'
