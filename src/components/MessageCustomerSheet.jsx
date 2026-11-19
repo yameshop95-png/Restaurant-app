@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Copy, MessageSquare, X } from 'lucide-react';
 import { customerMessage, defaultKind, defaultLang, MESSAGE_KINDS, smsLink } from '../lib/customerMessage';
 
@@ -15,6 +16,15 @@ export default function MessageCustomerSheet({ order, shopName, shopAddress, onC
   const [copied, setCopied] = useState(false);
   const text = edited ?? customerMessage(order, kind, lang, shopName, shopAddress);
   const phone = order.customer?.phone ?? '';
+
+  // Khoá cuộn trang phía sau khi khung đang mở: trên iPhone, trang phía sau cuộn / co giãn làm khung nhảy lên xuống
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   const choose = (setter) => (value) => {
     setter(value);
@@ -48,9 +58,11 @@ export default function MessageCustomerSheet({ order, shopName, shopAddress, onC
     </div>
   );
 
-  return (
+  // Vẽ thẳng vào <body>, ngoài thẻ đơn: thẻ đơn có hiệu ứng vào (transform) và tự vẽ lại khi dữ liệu đồng bộ,
+  // khung cố định nằm trong đó bị nhảy trên Safari iPhone.
+  return createPortal(
     <div className="staff-scrim fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4">
-      <div className="staff-sheet w-full rounded-t-3xl bg-card pb-[env(safe-area-inset-bottom)] sm:max-w-lg sm:rounded-3xl">
+      <div className="staff-sheet max-h-[92dvh] w-full overflow-y-auto overscroll-contain rounded-t-3xl bg-card pb-[env(safe-area-inset-bottom)] sm:max-w-lg sm:rounded-3xl">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
             <h2 className="text-lg font-bold text-slate-900">Nhắn khách · #{order.number}</h2>
@@ -108,6 +120,7 @@ export default function MessageCustomerSheet({ order, shopName, shopAddress, onC
           </a>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
