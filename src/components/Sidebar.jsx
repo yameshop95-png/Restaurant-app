@@ -32,7 +32,7 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col bg-[#0d0d0fb3] text-slate-800 border-r border-slate-200 backdrop-blur-xl transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col bg-[#0d0d0f99] text-slate-800 border-r border-slate-200 backdrop-blur-xl transition-transform duration-200 lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
