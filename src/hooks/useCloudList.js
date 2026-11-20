@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { cacheGet, cacheSet } from '../lib/listCache';
+import { cacheLoadList, cacheSaveList } from '../lib/listCache';
 import { supabase } from '../lib/supabase';
 import { enqueue, hasPending, onDrained, syncReady } from '../lib/sync';
 
@@ -30,7 +30,7 @@ export default function useCloudList(table, { fromRow, sort = (list) => list, wr
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       const { maxUpdated, hasUpdated, lastFull, fromServer } = meta.current;
-      if (fromServer) cacheSet(`list:${table}`, { items: listRef.current, maxUpdated, hasUpdated, lastFull });
+      if (fromServer) cacheSaveList(table, listRef.current, { maxUpdated, hasUpdated, lastFull });
     }, 1500);
   }, [table]);
 
@@ -123,7 +123,7 @@ export default function useCloudList(table, { fromRow, sort = (list) => list, wr
   useEffect(() => {
     alive.current = true;
     // Hiện bản lưu tạm trước (nếu máy chủ chưa kịp trả), rồi hỏi máy chủ
-    cacheGet(`list:${table}`).then((cached) => {
+    cacheLoadList(table).then((cached) => {
       if (alive.current && cached?.items && !meta.current.fromServer && !hasPending(table)) {
         Object.assign(meta.current, {
           maxUpdated: cached.maxUpdated ?? null,
