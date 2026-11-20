@@ -262,7 +262,7 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
   const nextLabel = { week: 'tuần sau', month: 'tháng sau', year: 'năm sau' }[kind];
 
   return (
-    <div className="staff-stagger mx-auto max-w-2xl space-y-5 pb-8">
+    <div className="report-page staff-stagger mx-auto max-w-2xl space-y-5 pb-8">
       {/* Chọn kỳ */}
       <div className="flex rounded-2xl bg-card p-1 shadow-sm">
         {Object.entries(PERIODS).map(([k, label]) => (
