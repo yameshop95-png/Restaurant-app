@@ -74,11 +74,54 @@ const SHIFT_ROWS = [
   ['unknown', 'Chưa ghi cách trả', null],
 ];
 
+// Màu từng lát của vòng tròn chốt ca (khớp palette app: emerald = đã thu,
+// xanh dương = chuyển khoản, đỏ nhạt = còn phải thu cần chú ý)
+const SHIFT_COLORS = {
+  cash: '#059669',
+  transfer: '#3b82f6',
+  payid: '#8b5cf6',
+  unknown: '#94a3b8',
+  unpaid: '#f87171',
+};
+
+// Vòng tròn vẽ bằng stroke-dasharray trên <circle>, cùng kiểu vòng tròn thiết bị
+// ở tab Customer Active: tâm (72, 72), bán kính 60, bề dày 16.
+const DONUT_R = 60;
+const DONUT_CIRC = 2 * Math.PI * DONUT_R;
+
 function ShiftClose({ orders, now, shopName }) {
   // Chốt ca quét toàn bộ đơn: chỉ tính lại khi đơn hoặc mốc giờ đổi, render khác thì dùng lại
   const day = useMemo(() => dailyCollection(orders, now), [orders, now]);
   const [msg, setMsg] = useState(null);
   const rows = SHIFT_ROWS.filter(([key]) => key !== 'unknown' || day.unknown.count);
+
+  // Các lát của vòng tròn: đã thu theo từng cách trả + phần còn phải thu.
+  // Mẫu số = đã thu + còn phải thu nên ngày chưa thu đồng nào (đã thu $0)
+  // vòng tròn vẫn hiện trọn phần còn phải thu thay vì trống rỗng.
+  const entries = [
+    ...rows.map(([key, label, hint]) => ({
+      key,
+      label,
+      hint,
+      color: SHIFT_COLORS[key],
+      total: day[key].total,
+      count: day[key].count,
+    })),
+    {
+      key: 'unpaid',
+      label: 'Còn phải thu',
+      hint: null,
+      color: SHIFT_COLORS.unpaid,
+      total: day.unpaid.total,
+      count: day.unpaid.count,
+    },
+  ];
+  const segs = donutSegments(
+    entries.map((e) => e.total),
+    DONUT_CIRC,
+  );
+  const totalText = formatMoney(day.total);
+  const totalSize = totalText.length <= 8 ? 'text-[21px]' : totalText.length <= 10 ? 'text-lg' : 'text-[15px]';
 
   const share = async () => {
     const lines = [
@@ -98,29 +141,67 @@ function ShiftClose({ orders, now, shopName }) {
   return (
     <Card title="Chốt ca hôm nay">
       <div className="px-5 pb-4 pt-1">
-        <div className="flex items-baseline justify-between gap-3">
-          <p className="text-2xl font-bold tracking-tight text-emerald-600">
-            <CountUp value={day.total} format={formatMoney} />
-          </p>
-          <span className="text-sm text-slate-500">đã thu hôm nay</span>
+        <div className="flex flex-col items-center gap-4 min-[500px]:flex-row">
+          <svg
+            viewBox="0 0 144 144"
+            className="h-40 w-40 shrink-0"
+            role="img"
+            aria-label={`Đã thu ${totalText} hôm nay: ${entries
+              .map((e, i) => `${e.label} ${formatMoney(e.total)}, ${e.count} đơn, ${segs[i].percent}%`)
+              .join('; ')}`}
+          >
+            <circle cx="72" cy="72" r={DONUT_R} fill="none" stroke="#e2e8f0" strokeWidth="16" />
+            {entries.map((e, i) => {
+              const s = segs[i];
+              if (s.length <= 0) return null;
+              // Lát chiếm trọn vòng: vẽ vòng tròn đầy, không chừa khe dasharray
+              if (s.fraction >= 0.999) {
+                return (
+                  <circle key={e.key} cx="72" cy="72" r={DONUT_R} fill="none" stroke={e.color} strokeWidth="16" />
+                );
+              }
+              return (
+                <circle
+                  key={e.key}
+                  cx="72"
+                  cy="72"
+                  r={DONUT_R}
+                  fill="none"
+                  stroke={e.color}
+                  strokeWidth="16"
+                  strokeDasharray={`${Math.max(0, s.length - 2).toFixed(1)} ${(DONUT_CIRC - s.length + 2).toFixed(1)}`}
+                  strokeDashoffset={(-s.offset).toFixed(1)}
+                  transform="rotate(-90 72 72)"
+                />
+              );
+            })}
+            <text x="72" y="71" textAnchor="middle" className={`fill-emerald-600 font-bold tabular-nums ${totalSize}`}>
+              {totalText}
+            </text>
+            <text x="72" y="90" textAnchor="middle" className="fill-slate-400 text-[11px]">
+              đã thu hôm nay
+            </text>
+          </svg>
+          <ul className="w-full min-w-0 flex-1 space-y-2">
+            {entries.map((e, i) => (
+              <li key={e.key} title={e.hint ?? undefined} className="flex items-center gap-2 text-sm">
+                <i className="h-2.5 w-2.5 shrink-0 rounded-[4px]" style={{ background: e.color }} />
+                <span
+                  className={`min-w-0 flex-1 truncate ${e.key === 'unpaid' ? 'font-medium text-red-600' : 'text-slate-600'}`}
+                >
+                  {e.label}
+                </span>
+                <span className={`shrink-0 font-bold tabular-nums ${e.key === 'unpaid' ? 'text-red-600' : 'text-slate-900'}`}>
+                  {formatMoney(e.total)}
+                </span>
+                <span className="w-24 shrink-0 text-right tabular-nums text-slate-500">
+                  {e.count} đơn · {segs[i].percent}%
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
-        <ul className="mt-3 grid gap-2" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))` }}>
-          {rows.map(([key, label, hint]) => (
-            <li key={key} title={hint ?? undefined} className="min-w-0 rounded-2xl bg-slate-100 px-3 py-2">
-              <span className="block text-xs leading-tight text-slate-500">{label}</span>
-              <span className="block truncate font-bold text-slate-900">{formatMoney(day[key].total)}</span>
-              <span className="block text-[13px] text-slate-500">{day[key].count} đơn</span>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-3 flex items-center justify-between gap-3">
-          {day.unpaid.count > 0 ? (
-            <span className="text-sm font-semibold text-red-600">
-              Còn phải thu {formatMoney(day.unpaid.total)} ({day.unpaid.count} đơn)
-            </span>
-          ) : (
-            <span className="text-sm text-slate-500">Đã thu đủ hôm nay</span>
-          )}
+        <div className="mt-4 flex justify-end">
           <button
             type="button"
             onClick={share}
@@ -336,6 +417,10 @@ export default function HomePage({ orders, now, settings, isOwner, isManager, on
       </div>
 
       <div className="staff-stagger space-y-6">
+      {/* Chốt ca hôm nay đứng đầu cột (trên cả thẻ Tiền tuần này) — việc cuối ngày cần thấy trước tiên.
+          Chỉ quản lý/chủ quán thấy, đúng điều kiện cũ của thẻ. */}
+      {seeWeekMoney && <ShiftClose orders={orders} now={now} shopName={settings.shopName} />}
+
       <div>
         <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Tổng tuần này</h2>
         <p className="mt-1 text-base text-slate-500">Từ thứ Hai {formatDate(stats.weekStart)}</p>
@@ -373,8 +458,6 @@ export default function HomePage({ orders, now, settings, isOwner, isManager, on
           )}
 
           <WeekMoneyDonut stats={stats} />
-
-          <ShiftClose orders={orders} now={now} shopName={settings.shopName} />
 
           {isOwner && (
           <Card title="Tổng cộng dồn">
