@@ -253,3 +253,16 @@
   /* Đường mục tiêu lãi ròng/tuần + dấu ◆ lãi ròng ở tầng 1 (vàng, cùng tông --chart-over) */
   --chart-target: #d4af37;
 }
+
+/* Tab Báo cáo: từ 1024px trở lên (khi app đã có sidebar cố định bên trái) cho cột nội dung
+   trải hết bề ngang vùng <main> thay vì bó ở max-w-2xl (672px) như các trang một cột khác —
+   thẻ và biểu đồ bên trong đều co giãn theo bề ngang nên tự rộng theo.
+   Chỉ áp cho .report-page (wrapper riêng của ReportPage) nên các tab khác giữ nguyên.
+   Dưới 1024px (điện thoại, iPad dọc) không đổi gì: vẫn max-w-2xl như cũ.
+   Quy tắc này nằm ngoài @layer và ở cuối file để thắng cả ghi đè .max-w-2xl
+   trong khối @media ≥1800px phía trên. */
+@media screen and (min-width: 1024px) {
+  .report-page {
+    max-width: none;
+  }
+}
