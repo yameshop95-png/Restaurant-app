@@ -47,7 +47,13 @@ export default function ForecastCard({ orders, now, settings, isOwner, onUpdateS
     }
   };
   // Tính lại mỗi phút (`now`) vì tỉ lệ đơn đã nhận thay đổi theo giờ trong tuần
-  const nc = useMemo(() => nowcast({ forecast: f, orders, now, level }), [f, orders, now, level]);
+  // Nowcast quét toàn bộ lịch sử đơn (tốn nhất khi có nhiều đơn): chỉ tính lại theo mốc 5 phút như dự báo,
+  // không tính lại mỗi khi có đơn mới. Số "đã đặt" có thể chậm tối đa 5 phút.
+  const nc = useMemo(
+    () => nowcast({ forecast: f, orders: ordersRef.current, now: new Date(slot * 300000), level }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [f, slot, level, loaded],
+  );
   const rows = nc.items.filter((it) => it.total != null);
   const chosen = weatherLog[thisKey] ?? null;
   // Ghi lại dự báo đầu tiên của tuần trên máy này, để sau so với số bán thật (xem docs/du-bao.md)
