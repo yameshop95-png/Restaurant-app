@@ -8,7 +8,10 @@ import { periodRange, shiftPeriod } from '../lib/report';
 
 // Thẻ "Báo cáo Hiệu suất Tuần" trong tab Báo cáo (theo ảnh mẫu của chủ quán): một thẻ lớn
 // bo góc, bóng mềm, ba tầng biểu đồ theo tuần dùng chung trục tuần —
-//   Tầng 1 "Tiền Lãi": cột nhóm lãi gộp theo kênh (Đơn web / Đơn tại quán), gradient chàm → xanh dương.
+//   Tầng 1 "Tiền Lãi": cột nhóm 3 cột mỗi tuần — lãi gộp Đơn web (gradient chàm), lãi gộp Đơn tại quán
+//   (gradient xanh ngọc đậm, phân biệt rõ với chàm) và Tổng doanh thu tuần (gradient cam, cùng họ
+//   màu với vùng doanh thu ở tầng 3). Cả ba dùng chung một thang tiền; đỉnh thang mở rộng tới
+//   doanh thu tuần cao nhất vì doanh thu thường lớn hơn lãi.
 //   Tầng 2 "Số lượng Order": hai đường cong mượt — Tổng Order (hồng magenta) và Order Cao Giá (tím violet).
 //   Tầng 3 "Tổng Tiền": vùng doanh thu phủ gradient cam ấm.
 // Mọi số liệu lấy từ profitReport (lib/inventory) chạy trên các mốc tuần periodRange('week', …)
@@ -21,6 +24,7 @@ const WEEK_OPTIONS = [4, 8, 12];
 const GRAD = {
   web: 'linear-gradient(180deg, var(--chart-chan-web-1), var(--chart-chan-web-2))',
   shop: 'linear-gradient(180deg, var(--chart-chan-shop-1), var(--chart-chan-shop-2))',
+  barRev: 'linear-gradient(180deg, var(--perf-bar-revenue-1), var(--perf-bar-revenue-2))',
   rev: 'linear-gradient(180deg, var(--chart-rev-1), var(--chart-rev-2))',
 };
 const ORD_ALL = 'var(--chart-ord-all)';
@@ -130,9 +134,11 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
   const totalOrders = weeks.reduce((s, w) => s + w.orders, 0);
   const missingRecipes = [...new Set(weeks.flatMap((w) => w.noRecipe))];
 
-  // ---- Tầng 1: thang tiền cho cột lãi gộp theo kênh (có thể âm) ----
+  // ---- Tầng 1: thang tiền chung cho cột lãi gộp theo kênh (có thể âm) và cột doanh thu ----
+  // Doanh thu tuần thường lớn hơn lãi nên đỉnh thang mở rộng tới doanh thu tuần cao nhất
+  // (cùng cách biểu đồ Màn hình chính đã làm); giá trị số liệu không đổi, chỉ đỉnh thang đổi.
   const chanValues = weeks.flatMap((w) => [w.web.profit, w.shop.profit]);
-  const barTop = niceCeil(Math.max(0, ...chanValues)) || 1;
+  const barTop = niceCeil(Math.max(0, ...chanValues, ...weeks.map((w) => w.revenue))) || 1;
   const barBottom = -niceCeil(Math.abs(Math.min(0, ...chanValues)));
   const barSpan = barTop - barBottom || 1;
   const PAD1 = 52; // chừa chỗ cho tooltip nổi ở phía trên vùng vẽ
@@ -184,19 +190,20 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
     }
   }
 
-  const barPair = (w, key, side) => {
-    const v = key === 'web' ? w.web.profit : w.shop.profit;
-    const grad = key === 'web' ? GRAD.web : GRAD.shop;
+  // Một cột trong nhóm 3 cột của tầng 1 (lãi Đơn web · lãi Đơn tại quán · doanh thu tuần).
+  // left là % bề ngang của ô tuần: 3 cột rộng 28%, cách đều nhau (4% / 36% / 68%).
+  // Cột âm (tuần lỗ theo kênh) vẽ xuống dưới đường 0 như trước.
+  const bar = (v, grad, left) => {
     const pos =
       v >= 0
         ? { top: Math.min(y1(v), zeroY1 - 3), height: Math.max(3, zeroY1 - y1(v)) }
         : { top: zeroY1, height: Math.max(3, y1(v) - zeroY1) };
     return (
       <div
-        className={`absolute w-[34%] transition-opacity duration-300 ${v >= 0 ? 'rounded-t-[7px]' : 'rounded-b-[7px]'}`}
+        className={`absolute w-[28%] transition-opacity duration-300 ${v >= 0 ? 'rounded-t-[7px]' : 'rounded-b-[7px]'}`}
         style={{
           ...pos,
-          [side]: '13%',
+          left,
           background: grad,
           boxShadow: '0 6px 14px -8px rgba(15, 23, 42, 0.45)',
           opacity: 1,
@@ -249,6 +256,7 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
             <b className="font-semibold text-slate-700">Tiền Lãi</b>
             <i className="h-2.5 w-2.5 rounded-[4px]" style={{ background: GRAD.web }} /> Đơn web
             <i className="ml-1.5 h-2.5 w-2.5 rounded-[4px]" style={{ background: GRAD.shop }} /> Đơn tại quán
+            <i className="ml-1.5 h-2.5 w-2.5 rounded-[4px]" style={{ background: GRAD.barRev }} /> Tổng doanh thu
           </span>
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <b className="font-semibold text-slate-700">Số lượng Order</b>
@@ -272,11 +280,11 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
         <p className="px-5 py-10 text-center text-sm text-slate-400 sm:px-6">Chưa có đơn nào trong {weekCount} tuần gần nhất.</p>
       ) : (
         <>
-          {/* ===== Tầng 1: Tiền Lãi — cột nhóm theo kênh ===== */}
+          {/* ===== Tầng 1: Tiền Lãi — cột nhóm theo kênh + cột doanh thu tuần ===== */}
           <div className="px-5 pt-5 sm:px-6">
             <TierTitle
               title="Tiền Lãi"
-              right={<span className="text-xs text-slate-400">Lãi gộp theo kênh · trục trái: AUD</span>}
+              right={<span className="text-xs text-slate-400">Lãi gộp theo kênh + doanh thu tuần · trục trái: AUD</span>}
             />
             <div className="relative mt-1">
               {/* Tooltip nổi của tuần đang chọn (chạm / rê chuột vào nhóm cột để đổi tuần) */}
@@ -291,8 +299,8 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                     {changeNote ? <> · {changeNote}</> : null}
                   </p>
                   <p className="mt-0.5 text-xs leading-snug text-slate-300">
-                    Đơn web {money(activeWeek.web.profit)} · Tại quán {money(activeWeek.shop.profit)} · Lãi ròng{' '}
-                    {money(activeWeek.profit)}
+                    Đơn web {money(activeWeek.web.profit)} · Tại quán {money(activeWeek.shop.profit)} · Doanh thu{' '}
+                    {money(activeWeek.revenue)} · Lãi ròng {money(activeWeek.profit)}
                     {activeWeek.otherCosts > 0 ? ` (chi phí chung ${money(activeWeek.otherCosts)})` : ''}
                   </p>
                 </div>
@@ -311,8 +319,11 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                 </div>
                 <div
                   role="img"
-                  aria-label={`Lãi gộp theo kênh ${n} tuần: ${weeks
-                    .map((w) => `tuần ${ddmm(w.start)} đơn web ${money(w.web.profit)}, đơn tại quán ${money(w.shop.profit)}`)
+                  aria-label={`Lãi gộp theo kênh và doanh thu ${n} tuần: ${weeks
+                    .map(
+                      (w) =>
+                        `tuần ${ddmm(w.start)} đơn web ${money(w.web.profit)}, đơn tại quán ${money(w.shop.profit)}, doanh thu ${money(w.revenue)}`,
+                    )
                     .join('; ')}`}
                   className="relative min-w-0 flex-1"
                   style={{ height: H1 }}
@@ -331,7 +342,7 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                         role="button"
                         tabIndex={0}
                         aria-label={`Tuần ${ddmm(w.start)}: lãi gộp ${money(w.gross)}`}
-                        title={`Tuần ${ddmm(w.start)}: lãi gộp ${money(w.gross)} · lãi ròng ${money(w.profit)}`}
+                        title={`Tuần ${ddmm(w.start)}: lãi gộp ${money(w.gross)} · doanh thu ${money(w.revenue)} · lãi ròng ${money(w.profit)}`}
                         onMouseEnter={() => setPicked(i)}
                         onClick={() => setPicked(i)}
                         onFocus={() => setPicked(i)}
@@ -341,8 +352,9 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                           className="absolute inset-0 transition-opacity duration-300"
                           style={{ opacity: active === i ? 1 : 0.38 }}
                         >
-                          {barPair(w, 'web', 'left')}
-                          {barPair(w, 'shop', 'right')}
+                          {bar(w.web.profit, GRAD.web, '4%')}
+                          {bar(w.shop.profit, GRAD.shop, '36%')}
+                          {bar(w.revenue, GRAD.barRev, '68%')}
                         </div>
                       </div>
                     ))}
@@ -468,7 +480,8 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
           <div className="space-y-1.5 px-5 pb-5 pt-4 sm:px-6">
             <p className="text-xs leading-relaxed text-slate-400">
               Lãi theo kênh là lãi gộp (doanh thu − giá vốn món của kênh đó); chi phí chung của tuần không chia theo kênh —
-              lãi ròng của tuần = lãi gộp − chi phí chung, hiện trong tooltip ở tầng Tiền Lãi. Đơn cao giá: đơn có tổng tiền
+              lãi ròng của tuần = lãi gộp − chi phí chung, hiện trong tooltip ở tầng Tiền Lãi. Cột cam ở tầng Tiền Lãi là
+              tổng doanh thu của tuần — cùng con số vẽ ở tầng Tổng Tiền bên dưới. Đơn cao giá: đơn có tổng tiền
               từ $50 trở lên. Đơn web: khách đặt qua website; Đơn tại quán: nhân viên nhập trong app.
             </p>
             {missingRecipes.length > 0 && (

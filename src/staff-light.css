@@ -76,13 +76,16 @@ html.staff-app.theme-light {
   --chart-en: #1f7fb0;
   --chart-app: #6b6a62;
   --chart-series: #d9531a;
-  /* Thẻ Báo cáo Hiệu suất Tuần (theo ảnh mẫu của chủ quán): cột lãi theo kênh = gradient
-     tím chàm #6366F1 → xanh dương #3B82F6, đường số đơn = hồng magenta / tím violet,
-     vùng doanh thu = gradient cam ấm. */
+  /* Thẻ Báo cáo Hiệu suất Tuần (theo ảnh mẫu của chủ quán): cột lãi Đơn web = gradient
+     tím chàm #6366F1, cột lãi Đơn tại quán = gradient xanh ngọc (teal) đậm #14B8A6 → #0F766E
+     (đổi từ xanh dương nhạt để phân biệt rõ với cột Đơn web), cột doanh thu tuần ở tầng 1
+     + vùng doanh thu tầng 3 = gradient cam ấm, đường số đơn = hồng magenta / tím violet. */
   --chart-chan-web-1: #818cf8;
   --chart-chan-web-2: #6366f1;
-  --chart-chan-shop-1: #60a5fa;
-  --chart-chan-shop-2: #3b82f6;
+  --chart-chan-shop-1: #14b8a6;
+  --chart-chan-shop-2: #0f766e;
+  --perf-bar-revenue-1: #fb923c;
+  --perf-bar-revenue-2: #f97316;
   --chart-ord-all: #c026d3;
   --chart-ord-high: #7c3aed;
   --chart-rev-1: #fb923c;
