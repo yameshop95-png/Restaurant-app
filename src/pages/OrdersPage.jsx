@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlarmClock,
   Armchair,
@@ -503,22 +503,44 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
 }
 
 // Tìm theo số đơn ("12" hoặc "#12"), tên / SĐT / địa chỉ khách, số bàn, ghi chú, tên món (không dấu cũng được)
+// Chữ tìm kiếm đã bỏ dấu của từng đơn, tính 1 lần cho mỗi phiên bản đơn (đơn đổi là object mới)
+const searchCache = new WeakMap();
+function searchTextOf(order) {
+  let hit = searchCache.get(order);
+  if (!hit) {
+    const text = [
+      order.customer?.name,
+      order.customer?.address,
+      order.table && `ban ${order.table}`,
+      order.note,
+      ...(order.items ?? []).flatMap((i) => [i.name, i.note]),
+    ]
+      .filter(Boolean)
+      .join(' | ');
+    hit = { text: normalizeText(text), phone: (order.customer?.phone ?? '').replace(/\D/g, '') };
+    searchCache.set(order, hit);
+  }
+  return hit;
+}
+// Mốc giờ dùng để sắp xếp, tính 1 lần cho mỗi đơn
+const dueCache = new WeakMap();
+function dueTime(o) {
+  let t = dueCache.get(o);
+  if (t === undefined) {
+    t = new Date(o.deliverAt ?? o.createdAt).getTime();
+    dueCache.set(o, t);
+  }
+  return t;
+}
+
 function matchesQuery(order, query) {
   const q = normalizeText(query.replace(/^#/, ''));
   if (!q) return true;
   if (/^\d+$/.test(q) && String(order.number) === q) return true;
+  const { text, phone } = searchTextOf(order);
   const digits = query.replace(/\D/g, '');
-  if (digits.length >= 3 && (order.customer?.phone ?? '').replace(/\D/g, '').includes(digits)) return true;
-  const text = [
-    order.customer?.name,
-    order.customer?.address,
-    order.table && `ban ${order.table}`,
-    order.note,
-    ...order.items.flatMap((i) => [i.name, i.note]),
-  ]
-    .filter(Boolean)
-    .join(' | ');
-  return normalizeText(text).includes(q);
+  if (digits.length >= 3 && phone.includes(digits)) return true;
+  return text.includes(q);
 }
 
 // Lọc theo ngày (YYYY-MM-DD): đơn tạo hoặc giao trong ngày đó, theo giờ máy
@@ -585,17 +607,31 @@ export default function OrdersPage({
   const [limit, setLimit] = useState(PAGE);
   useEffect(() => setLimit(PAGE), [filter, type, query, date]);
 
-  const ofType = orders.filter((o) => (type === 'delivery' ? o.type === 'delivery' : o.type !== 'delivery'));
+  // Gõ tìm kiếm: chờ ngừng gõ 180 ms mới lọc, để gõ không bị khựng khi có nhiều đơn
+  const [searchQ, setSearchQ] = useState('');
+  useEffect(() => {
+    if (!query.trim()) return setSearchQ('');
+    const t = setTimeout(() => setSearchQ(query), 180);
+    return () => clearTimeout(t);
+  }, [query]);
+  const ofType = useMemo(
+    () => orders.filter((o) => (type === 'delivery' ? o.type === 'delivery' : o.type !== 'delivery')),
+    [orders, type],
+  );
   // Đang tìm kiếm: tìm trong mọi trạng thái, mới tạo lên trước
   const searching = query.trim() !== '' || date !== '';
-  const visible = searching
-    ? ofType.filter((o) => matchesQuery(o, query) && matchesDate(o, date))
-    : ofType.filter(FILTERS.find((f) => f.id === filter).match);
-  // Đơn chưa xong (Chờ xử lý / Hoàn thành): giờ lấy / giờ giao sớm nhất lên trước.
-  // Đơn đã xong, đã huỷ và kết quả tìm kiếm: mới nhất lên trước.
-  const due = (o) => new Date(o.deliverAt ?? o.createdAt).getTime();
-  if (!searching && (filter === 'pending' || filter === 'done')) visible.sort((a, b) => due(a) - due(b));
-  else visible.sort((a, b) => due(b) - due(a));
+  // Lọc + sắp xếp chỉ chạy lại khi đơn / bộ lọc đổi, không chạy lại mỗi lần đồng hồ nhảy
+  const visible = useMemo(() => {
+    const list = searching
+      ? ofType.filter((o) => matchesQuery(o, searchQ) && matchesDate(o, date))
+      : ofType.filter(FILTERS.find((f) => f.id === filter).match);
+    // Đơn chưa xong (Chờ xử lý / Hoàn thành): giờ lấy / giờ giao sớm nhất lên trước.
+    // Đơn đã xong, đã huỷ và kết quả tìm kiếm: mới nhất lên trước.
+    if (!searching && (filter === 'pending' || filter === 'done')) list.sort((a, b) => dueTime(a) - dueTime(b));
+    else list.sort((a, b) => dueTime(b) - dueTime(a));
+    return list;
+  }, [ofType, searching, searchQ, date, filter]);
+  const tabCounts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f.id, ofType.filter(f.match).length])), [ofType]);
   const capped = searching || filter !== 'pending';
   const shown = capped ? visible.slice(0, limit) : visible;
   const selected = shown.find((o) => o.id === selectedId) ?? shown[0];
@@ -725,7 +761,7 @@ export default function OrdersPage({
 
           <div ref={tabsRef} data-no-swipe className={`mb-4 flex gap-2 overflow-x-auto ${searching ? 'hidden' : ''}`}>
             {FILTERS.map((f) => {
-              const n = ofType.filter(f.match).length;
+              const n = tabCounts[f.id];
               const active = filter === f.id;
               return (
                 <button

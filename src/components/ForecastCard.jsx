@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CloudRain, Snowflake, Sun, TrendingDown, TrendingUp, Wind } from 'lucide-react';
 import { FAMILY_LABEL, WEATHER, weekKey, weeklyForecast } from '../lib/forecast';
 import { saveForecastOnce } from '../lib/forecastLog';
@@ -24,11 +24,17 @@ const round = (n) => Math.round(n);
 export default function ForecastCard({ orders, now, settings, isOwner, onUpdateSettings }) {
   const weatherLog = settings.weatherLog ?? NO_WEATHER;
   const thisKey = weekKey(now);
+  // Dự báo tính trên cả lịch sử (vài trăm ms khi nhiều đơn): không tính lại mỗi khi có đơn mới,
+  // chỉ tối đa 5 phút / lần, hoặc khi đổi tuần, đổi thời tiết, hay lúc dữ liệu vừa tải xong.
+  // Số "đã đặt" trong tuần vẫn cập nhật ngay vì nowcast bên dưới đọc đơn trực tiếp.
+  const ordersRef = useRef(orders);
+  ordersRef.current = orders;
+  const slot = Math.floor(now.getTime() / 300000);
+  const loaded = orders.length > 0;
   const f = useMemo(
-    () => weeklyForecast({ orders, now, weatherLog }),
-    // `now` đổi mỗi phút; chỉ cần tính lại khi đơn, thời tiết hoặc tuần thay đổi
+    () => weeklyForecast({ orders: ordersRef.current, now, weatherLog }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [orders, weatherLog, thisKey],
+    [slot, loaded, weatherLog, thisKey],
   );
   const [open, setOpen] = useState(null);
   const [level, setLevel] = useState(readLevel);
