@@ -8,7 +8,9 @@ Chạy: `npm run test:dishprofit`
 
 `session.mjs` khẳng định trên dữ liệu giả (now cố định Thứ Tư 18/11/2026):
 
-- **Tính năng A** — thẻ `DishProfitCard` dùng mảng `dishes` của `profitReport`:
+- **Tính năng A** — mảng `dishes` của `profitReport` (dữ liệu nuôi thẻ "Lãi theo món"
+  ở tab "Lãi lỗ" của trang Inventory; thẻ `DishProfitCard` ở tab Báo cáo từng dùng
+  cùng mảng này đã được gỡ vì trùng lặp với Inventory):
   từng món đúng số phần / doanh thu / giá vốn / lãi gộp, xếp giảm dần theo lãi gộp,
   tỉ lệ lãi % = lãi gộp ÷ doanh thu món, cộng các món = lãi gộp toàn kỳ
   (doanh thu − giá vốn), đơn huỷ bị loại, và đổi sang kỳ tháng thì số đổi theo.

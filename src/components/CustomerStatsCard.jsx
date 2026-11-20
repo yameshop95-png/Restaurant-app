@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { periodInsights } from '../lib/reportInsights';
 
 // Thẻ "Khách hàng trong kỳ" ở tab Báo cáo: trong đúng kỳ đang chọn (trang truyền
-// `range` của buildReport xuống, như DishProfitCard), bao nhiêu khách đã mua, bao
+// `range` của buildReport xuống), bao nhiêu khách đã mua, bao
 // nhiêu khách MỚI (đơn đầu tiên trong lịch sử rơi vào kỳ này) và bao nhiêu khách
 // QUAY LẠI (đã từng mua trước kỳ này). Định nghĩa + khoá định danh khách (SĐT,
 // không có SĐT thì tên) nằm ở lib/reportInsights — dùng chung customerKey với

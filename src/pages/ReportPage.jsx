@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import AnalyticsExportCard from '../components/AnalyticsExportCard';
 import CustomerStatsCard from '../components/CustomerStatsCard';
-import DishProfitCard from '../components/DishProfitCard';
 import LanguageCard from '../components/LanguageCard';
 import PairsCard from '../components/PairsCard';
 import WeekRhythmCard from '../components/WeekRhythmCard';
@@ -411,9 +410,6 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
           </ul>
         )}
       </Card>
-
-      {/* Lãi gộp theo món trong đúng kỳ đang chọn (giá vốn từ profitReport) */}
-      <DishProfitCard orders={orders} menu={menu} range={report.range} />
 
       {/* Khách mới / khách quay lại trong đúng kỳ đang chọn */}
       <CustomerStatsCard orders={orders} range={report.range} />

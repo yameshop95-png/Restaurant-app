@@ -1,9 +1,9 @@
 // Test phần dữ liệu của hai tính năng Báo cáo mới:
-//   A. Thẻ "Top món theo lãi gộp" (components/DishProfitCard.jsx): thẻ lấy thẳng mảng
-//      `dishes` của profitReport (lib/inventory) chạy trên kỳ đang chọn của trang Báo cáo
-//      (range của buildReport: tuần / tháng / năm) — mỗi món có qty / revenue / cost /
-//      profit (= doanh thu dòng − giá vốn dòng, tức LÃI GỘP của món), đã xếp giảm dần
-//      theo profit. Tỉ lệ lãi % của thẻ = profit / revenue của món.
+//   A. Tổng hợp lãi theo món: mảng `dishes` của profitReport (lib/inventory) — dữ liệu
+//      nuôi thẻ "Lãi theo món" ở tab "Lãi lỗ" của trang Inventory (và trước đây nuôi
+//      thêm thẻ DishProfitCard ở tab Báo cáo; thẻ đó đã gỡ vì trùng lặp với Inventory).
+//      Mỗi món có qty / revenue / cost / profit (= doanh thu dòng − giá vốn dòng, tức
+//      LÃI GỘP của món), đã xếp giảm dần theo profit. Tỉ lệ lãi % = profit / revenue.
 //   B. Mục tiêu lãi tuần trong thẻ "Báo cáo Hiệu suất Tuần" (components/WeeklyPerformanceCard.jsx):
 //      đường đứt nét + dấu ◆ dùng chuỗi LÃI RÒNG theo tuần = trường `profit` của profitReport
 //      chạy trên các mốc tuần periodRange('week', shiftPeriod('week', now, -i)) — cùng
