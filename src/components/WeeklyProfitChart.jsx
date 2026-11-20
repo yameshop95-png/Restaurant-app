@@ -7,9 +7,12 @@ import { periodRange, shiftPeriod } from '../lib/report';
 
 // Lợi nhuận từng tuần (doanh thu − giá vốn − chi phí khác), tính giống tab Inventory Management.
 // Màu cột: vàng = lãi vượt mục tiêu, xanh = lãi, đỏ = lỗ. Mục tiêu lưu riêng trên máy này (chỉ chủ quán thấy biểu đồ).
+// Đường tím: số đơn mỗi tuần (thang đo riêng ở trục phải) — đếm cùng tập đơn với lợi nhuận:
+// profitReport đếm đơn chưa huỷ tạo trong tuần, đúng những đơn làm ra doanh thu của cột lãi.
 const WEEKS = 12;
 const DEFAULT_TARGET = 500; // lãi trên A$500/tuần mới tô vàng, đổi được bằng nút Mục tiêu
 const COLOR = { over: 'var(--chart-over)', profit: 'var(--chart-profit)', loss: 'var(--chart-loss)' };
+const LINE_COLOR = 'var(--chart-orders)';
 const ddmm = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
 const dm = (d) => `${d.getDate()}/${d.getMonth() + 1}`; // nhãn ngắn dưới cột
 const whole = (n) => `$${Math.round(n).toLocaleString('en-AU')}`;
@@ -48,6 +51,11 @@ export default function WeeklyProfitChart({ orders, menu, now, target: savedTarg
   const H = 160;
   const y = (v) => ((top - v) / span) * H;
   const zeroY = y(0);
+  // Thang đo riêng (trục phải) cho đường số đơn: 0 ở đáy biểu đồ, tuần đông đơn nhất gần đỉnh
+  // (chừa 12px trên / 4px dưới để chấm và nét không bị cắt). x của điểm = tâm cột của tuần đó.
+  const maxOrders = Math.max(0, ...weeks.map((w) => w.orders));
+  const yOrders = (v) => H - 4 - (v / (maxOrders || 1)) * (H - 16);
+  const linePts = weeks.map((w, i) => `${(((i + 0.5) / WEEKS) * 1200).toFixed(1)},${yOrders(w.orders).toFixed(1)}`).join(' ');
   const missingRecipes = [...new Set(weeks.flatMap((w) => w.noRecipe))];
   const overCount = weeks.filter((w) => !w.current && tone(w.profit) === 'over').length;
 
@@ -96,7 +104,7 @@ export default function WeeklyProfitChart({ orders, menu, now, target: savedTarg
           </button>
         )}
       </div>
-      <p className="mt-0.5 text-xs text-slate-400">{WEEKS} tuần gần nhất · doanh thu − giá vốn − chi phí</p>
+      <p className="mt-0.5 text-xs text-slate-400">{WEEKS} tuần gần nhất · doanh thu − giá vốn − chi phí · đường tím: số đơn</p>
 
       {!inventory.ready ? (
         <p className="py-10 text-center text-sm text-slate-400">Đang tải số liệu chi phí…</p>
@@ -106,7 +114,7 @@ export default function WeeklyProfitChart({ orders, menu, now, target: savedTarg
         <>
           <div
             role="img"
-            aria-label={`Lợi nhuận ${WEEKS} tuần: ${weeks.map((w) => `tuần ${ddmm(w.start)} ${money(w.profit)}`).join(', ')}`}
+            aria-label={`Lợi nhuận ${WEEKS} tuần: ${weeks.map((w) => `tuần ${ddmm(w.start)} lãi ${money(w.profit)}, ${w.orders} đơn`).join(', ')}`}
             className="relative mt-4"
             style={{ height: H }}
           >
@@ -136,6 +144,45 @@ export default function WeeklyProfitChart({ orders, menu, now, target: savedTarg
                 );
               })}
             </div>
+            {/* Đường số đơn (trục phải): phủ lên trên cột, không bắt sự kiện để tooltip cột vẫn dùng được */}
+            <svg
+              className="pointer-events-none absolute inset-0 h-full w-full"
+              viewBox={`0 0 1200 ${H}`}
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <polyline
+                points={linePts}
+                fill="none"
+                stroke={LINE_COLOR}
+                strokeWidth={2.5}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+            {weeks.map((w, i) => (
+              <span
+                key={`orders-dot-${w.start.getTime()}`}
+                title={`${w.orders} đơn · tuần ${ddmm(w.start)}`}
+                className="pointer-events-none absolute h-[9px] w-[9px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{
+                  left: `${(((i + 0.5) / WEEKS) * 100).toFixed(2)}%`,
+                  top: yOrders(w.orders),
+                  background: LINE_COLOR,
+                  border: '2px solid rgba(255, 255, 255, 0.9)',
+                }}
+              />
+            ))}
+            <span
+              className="pointer-events-none absolute right-0 rounded bg-card/80 px-1 text-[11px] font-semibold leading-tight"
+              style={{ top: Math.max(0, yOrders(maxOrders) - 7), color: LINE_COLOR }}
+            >
+              {maxOrders} đơn
+            </span>
+            <span className="pointer-events-none absolute bottom-0 right-0 rounded bg-card/80 px-1 text-[11px] leading-tight text-slate-400">
+              0
+            </span>
           </div>
           {/* Nhãn ngày đầu tuần: mỗi 3 tuần một nhãn, tuần cuối ghi "Nay"; nhãn được tràn sang hai bên cột */}
           <div className="mt-1.5 flex gap-1.5 text-center text-[13px] text-slate-500" aria-hidden="true">
@@ -154,6 +201,15 @@ export default function WeeklyProfitChart({ orders, menu, now, target: savedTarg
             </span>
             <span className="flex items-center gap-1.5">
               <i className="h-2.5 w-2.5 rounded-sm" style={{ background: COLOR.loss }} /> Lỗ
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="relative block h-[2.5px] w-6 rounded-full" style={{ background: LINE_COLOR }}>
+                <span
+                  className="absolute left-1/2 top-1/2 block h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                  style={{ background: LINE_COLOR }}
+                />
+              </span>
+              Số đơn (trục phải)
             </span>
             <span>{overCount} tuần trên {whole(target)}</span>
           </div>
