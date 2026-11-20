@@ -46,6 +46,8 @@ const STATUS = {
   cancelled: { label: 'Đã huỷ', badge: 'bg-slate-50 text-slate-500' },
 };
 
+const PAGE = 30;
+
 const FILTERS = [
   { id: 'pending', label: 'Chờ xử lý', match: (o) => o.status === 'pending' },
   { id: 'done', label: 'Hoàn thành', match: (o) => o.status === 'done' },
@@ -54,9 +56,12 @@ const FILTERS = [
   { id: 'cancelled', label: 'Đã huỷ', match: (o) => o.status === 'cancelled' },
 ];
 
+// toLocaleTimeString tạo bộ định dạng mới mỗi lần gọi (chậm trên iPhone); dùng chung một bộ
+const TIME_FMT = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
 function formatTime(iso, withDay = false) {
   const d = new Date(iso);
-  const time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  const time = TIME_FMT.format(d);
   const dayDiff = Math.round((new Date(d).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000);
   // Tự định dạng: toLocaleDateString('vi-VN') chỉ có ngày + tháng ra "20-10" trên một số trình duyệt
   const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -191,7 +196,7 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
               <button
                 onClick={() => setMore((v) => !v)}
                 aria-expanded={more}
-                className="flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600 active:bg-slate-200"
+                className="flex min-h-11 items-center gap-1 rounded-lg bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600 active:bg-slate-200"
               >
                 <MoreHorizontal size={14} /> {more ? 'Thu gọn' : 'Thêm'}
               </button>
@@ -319,8 +324,8 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
       )}
 
       <ul className="mt-3 space-y-1 border-t border-slate-100 pt-3 text-[15px]">
-        {order.items.map((item) => (
-          <li key={item.name} className="flex items-center justify-between gap-3">
+        {order.items.map((item, i) => (
+          <li key={`${item.name}-${i}`} className="flex items-center justify-between gap-3">
             <span className="flex min-w-0 items-center gap-3 text-slate-800">
               <DishThumb name={item.name} />
               <span className="min-w-0">
@@ -485,11 +490,12 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
           shopName={shopName}
           shopAddress={shopAddress}
           onClose={() => setMessaging(false)}
-          onSent={(kind) =>
-            kind === 'confirm' &&
-            stage === 'received' &&
-            onMarkStep(order.id, { confirmedAt: new Date().toISOString() }, 'đã nhắn xác nhận cho khách')
-          }
+          onSent={(kind) => {
+            // Nhắn xác nhận từ bất cứ đường nào (nút chính, "Thêm → Nhắn khách", Copy) cũng tính là đã nhận và đã xác nhận
+            if (kind !== 'confirm' || order.source !== 'web' || order.status !== 'pending' || order.confirmedAt) return;
+            const at = new Date().toISOString();
+            onMarkStep(order.id, { receivedAt: order.receivedAt ?? at, confirmedAt: at }, 'đã nhắn xác nhận cho khách');
+          }}
         />
       )}
     </li>
@@ -575,6 +581,9 @@ export default function OrdersPage({
   const [date, setDate] = useState('');
   const wide = useWide();
   const [selectedId, setSelectedId] = useState(null);
+  // Tab đơn đã xong / đã huỷ / kết quả tìm kiếm có thể có hàng trăm đơn: chỉ vẽ 30 đơn đầu, bấm để xem thêm
+  const [limit, setLimit] = useState(PAGE);
+  useEffect(() => setLimit(PAGE), [filter, type, query, date]);
 
   const ofType = orders.filter((o) => (type === 'delivery' ? o.type === 'delivery' : o.type !== 'delivery'));
   // Đang tìm kiếm: tìm trong mọi trạng thái, mới tạo lên trước
@@ -587,6 +596,9 @@ export default function OrdersPage({
   const due = (o) => new Date(o.deliverAt ?? o.createdAt).getTime();
   if (!searching && (filter === 'pending' || filter === 'done')) visible.sort((a, b) => due(a) - due(b));
   else visible.sort((a, b) => due(b) - due(a));
+  const capped = searching || filter !== 'pending';
+  const shown = capped ? visible.slice(0, limit) : visible;
+  const selected = shown.find((o) => o.id === selectedId) ?? shown[0];
 
   const filterLabel = (f) => (f.id === 'shipped' ? statusLabel('shipped', type) : f.label);
   const exportExcel = async () => {
@@ -720,7 +732,7 @@ export default function OrdersPage({
                   key={f.id}
                   onClick={() => setFilter(f.id)}
                   aria-pressed={active}
-                  className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
                     active ? 'bg-slate-900 text-slate-50' : 'bg-card text-slate-600'
                   }`}
                 >
@@ -779,19 +791,19 @@ export default function OrdersPage({
                   // Màn rất rộng (iPad ngang, máy tính): trái là danh sách gọn, phải là đơn đang chọn
                   <div className="grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-start gap-4">
                     <ul className="divide-y divide-slate-200 overflow-hidden rounded-3xl border border-slate-200 bg-card">
-                      {visible.map((order) => (
+                      {shown.map((order) => (
                         <OrderRow
                           key={order.id}
                           order={order}
-                          selected={order.id === (visible.find((o) => o.id === selectedId) ?? visible[0]).id}
+                          selected={order.id === selected.id}
                           onSelect={setSelectedId}
                         />
                       ))}
                     </ul>
                     <ul className="sticky top-20">
                       <OrderCard
-                        key={(visible.find((o) => o.id === selectedId) ?? visible[0]).id}
-                        order={visible.find((o) => o.id === selectedId) ?? visible[0]}
+                        key={selected.id}
+                        order={selected}
                       now={now}
                       shopName={settings.shopName}
                       shopAddress={settings.shopAddress}
@@ -806,7 +818,7 @@ export default function OrdersPage({
                 ) : (
                   // Màn vừa (iPad dọc): 2 cột đơn để nhìn được nhiều đơn cùng lúc
                   <ul className="space-y-3 md:grid md:grid-cols-2 md:items-start md:gap-3 md:space-y-0">
-                    {visible.map((order) => (
+                    {shown.map((order) => (
                       <OrderCard
                         key={order.id}
                         order={order}
@@ -822,6 +834,14 @@ export default function OrdersPage({
                     ))}
                   </ul>
                 )
+              )}
+              {shown.length < visible.length && (
+                <button
+                  onClick={() => setLimit((n) => n + PAGE)}
+                  className="mt-4 w-full rounded-2xl border border-slate-300 py-3 font-semibold text-slate-700 active:bg-slate-100"
+                >
+                  Xem thêm ({visible.length - shown.length} đơn nữa)
+                </button>
               )}
               {!searching && (
                 <p className="mt-4 text-center text-xs text-slate-400 lg:hidden">

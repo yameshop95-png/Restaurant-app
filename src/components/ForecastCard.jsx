@@ -16,12 +16,13 @@ const readLevel = () => {
 
 const WEATHER_ICON = { hot: Sun, mild: Wind, cold: Snowflake, rain: CloudRain };
 const SHOW = 6;
+const NO_WEATHER = {}; // hằng số: `?? {}` tạo đối tượng mới mỗi lần vẽ nên ô dự báo bị tính lại liên tục
 const round = (n) => Math.round(n);
 
 // Ô "Dự báo tuần này": món nào khách sẽ mua nhiều, dựa trên dữ liệu bán của quán.
 // Chủ quán chọn thời tiết của tuần (lưu chung trong thông tin quán) để app học món nào bán khác đi khi nóng / lạnh / mưa.
 export default function ForecastCard({ orders, now, settings, isOwner, onUpdateSettings }) {
-  const weatherLog = settings.weatherLog ?? {};
+  const weatherLog = settings.weatherLog ?? NO_WEATHER;
   const thisKey = weekKey(now);
   const f = useMemo(
     () => weeklyForecast({ orders, now, weatherLog }),

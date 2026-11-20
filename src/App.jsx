@@ -1,4 +1,5 @@
 import { applyTheme } from './lib/theme';
+import { InventoryProvider } from './hooks/useInventory';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import BottomNav from './components/BottomNav';
 import OnlineOrderAlert from './components/OnlineOrderAlert';
@@ -61,7 +62,9 @@ export default function App() {
     );
   }
   // key: đổi người đăng nhập thì tải lại từ đầu
-  return <Shop key={auth.account.id} account={auth.account} onLogout={auth.logout} />;
+  const shop = <Shop key={auth.account.id} account={auth.account} onLogout={auth.logout} />;
+  // Dữ liệu kho chỉ chủ quán dùng: tải một lần cho cả app thay vì mỗi lần mở một trang
+  return auth.account.role === 'owner' ? <InventoryProvider key={auth.account.id}>{shop}</InventoryProvider> : shop;
 }
 
 function Shop({ account, onLogout }) {

@@ -162,3 +162,14 @@ html.staff-app.theme-light button[role='switch'] > span {
 html.staff-app.theme-light .font-mono {
   font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 }
+
+/* Thông báo "Hoàn tác": nền đậm để nổi trên nền sáng (cùng màu với nền trang thì gần như không thấy) */
+html.staff-app.theme-light [role='status'].staff-float {
+  background-color: #232220;
+  border-color: #232220;
+  color: #fafaf7;
+}
+html.staff-app.theme-light [role='status'].staff-float button {
+  background-color: var(--color-blue-500);
+  color: #ffffff;
+}
