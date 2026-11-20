@@ -167,7 +167,9 @@ function Overview({ report, levels, products, onGo }) {
                   <p className="font-semibold text-slate-900">{d.name}</p>
                   <p className="text-xs text-slate-500">
                     Bán {qtyText(d.qty)} · doanh thu {money(d.revenue)}
-                    {d.hasRecipe ? ` · giá vốn ${money(d.cost)}` : ' · chưa có công thức'}
+                    {d.hasRecipe
+                      ? ` · giá vốn ${money(d.cost)}${d.revenue > 0 ? ` · biên lãi ${Math.round((d.profit / d.revenue) * 100)}%` : ''}`
+                      : ' · chưa có công thức'}
                   </p>
                 </div>
                 <p className={`shrink-0 font-bold tabular-nums ${d.profit < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{money(d.profit)}</p>

@@ -4,6 +4,7 @@ import { money } from './inventory/ui';
 import useInventory from '../hooks/useInventory';
 import useNow from '../hooks/useNow';
 import { profitReport } from '../lib/inventory';
+import { attachAutoTargets } from '../lib/autoTarget';
 import { periodRange, shiftPeriod } from '../lib/report';
 
 // Thẻ "Báo cáo Hiệu suất Tuần" trong tab Báo cáo (theo ảnh mẫu của chủ quán): một thẻ lớn
@@ -20,12 +21,18 @@ import { periodRange, shiftPeriod } from '../lib/report';
 // Lãi theo kênh là LÃI GỘP (doanh thu kênh − giá vốn kênh): giá vốn tính được cho từng đơn nên
 // tách được thật; chi phí khác là chi phí chung của cả tuần, không gán cho kênh nào — lãi ròng
 // của tuần (= lãi gộp − chi phí chung) hiện trong tooltip của tầng 1.
-// Mục tiêu lãi tuần: đọc từ thiết lập `profitTarget` (lưu riêng trên máy, cùng nguồn mà biểu đồ
-// "Lợi nhuận theo tuần" ở Màn hình chính trước đây dùng — biểu đồ đó đã bỏ). Khi đã đặt mục
-// tiêu (> 0), tầng 1 vẽ thêm đường đứt nét ngang ở mức mục tiêu trên cùng thang tiền và dấu ◆
-// tại chiều cao LÃI RÒNG của từng tuần để nhìn ra tuần nào đạt mục tiêu. Chưa đặt (trống / 0)
-// thì không vẽ gì thêm.
+// Mục tiêu lãi tuần: TỰ ĐỘNG theo dữ liệu (lib/autoTarget), thay cơ chế đặt tay
+// `profitTarget` trước đây — thẻ không còn đọc thiết lập đó nữa (giá trị đã lưu trên máy
+// vẫn giữ nguyên, chỉ là không dùng để vẽ). Mỗi tuần có một mức mục tiêu riêng, tính
+// walk-forward từ lãi ròng của tối đa 4 tuần đã kết thúc trước nó: mặt bằng trung bình
+// nhân hệ số theo tuần gần nhất (kẹp ±20%), làm tròn $10. Tầng 1 vẽ đường đứt nét nối
+// các điểm mục tiêu từng tuần trên cùng thang tiền và dấu ◆ tại chiều cao LÃI RÒNG của
+// từng tuần, tô vàng khi tuần đạt mục tiêu của chính tuần đó. Tuần chưa có cơ sở tính
+// mục tiêu (chưa có tuần nào kết thúc trước nó, hoặc mặt bằng ≤ 0) thì không vẽ điểm
+// mục tiêu ở tuần đó. Để tính walk-forward cho các tuần đầu của cửa sổ hiển thị, thẻ
+// xin thêm HISTORY_EXTRA tuần lịch sử trước cửa sổ rồi chỉ hiển thị cửa sổ đã chọn.
 const WEEK_OPTIONS = [4, 8, 12];
+const HISTORY_EXTRA = 8; // số tuần lịch sử lấy thêm trước cửa sổ hiển thị để tính mục tiêu tự động
 const GRAD = {
   web: 'linear-gradient(180deg, var(--chart-chan-web-1), var(--chart-chan-web-2))',
   shop: 'linear-gradient(180deg, var(--chart-chan-shop-1), var(--chart-chan-shop-2))',
@@ -90,7 +97,7 @@ function TierTitle({ title, right }) {
   );
 }
 
-export default function WeeklyPerformanceCard({ orders, menu, settings }) {
+export default function WeeklyPerformanceCard({ orders, menu }) {
   const inventory = useInventory();
   const ingredients = inventory.ingredients.list;
   const purchases = inventory.purchases.list;
@@ -101,13 +108,13 @@ export default function WeeklyPerformanceCard({ orders, menu, settings }) {
   const [weekCount, setWeekCount] = useState(8);
   const [picked, setPicked] = useState(null); // tuần đang chọn ở tầng 1; null = tuần mới nhất
   const gradientId = useId().replace(/[^a-zA-Z0-9]/g, '');
-  // Mục tiêu LÃI RÒNG mỗi tuần (A$) từ thiết lập của quán; trống / 0 / không hợp lệ → không vẽ.
-  const targetRaw = Number(settings?.profitTarget);
-  const target = Number.isFinite(targetRaw) && targetRaw > 0 ? targetRaw : null;
 
   const weeks = useMemo(() => {
     const out = [];
-    for (let i = weekCount - 1; i >= 0; i -= 1) {
+    // Tính cả HISTORY_EXTRA tuần trước cửa sổ hiển thị để có lịch sử cho mục tiêu tự
+    // động của các tuần đầu cửa sổ; các con số hiển thị không đổi, chỉ cửa sổ được cắt
+    // lại ở cuối (slice).
+    for (let i = weekCount + HISTORY_EXTRA - 1; i >= 0; i -= 1) {
       const range = periodRange('week', shiftPeriod('week', now, -i));
       const r = profitReport({ range, orders, menu: menu ?? [], recipes, ingredients, purchases, expenses, batches });
       const web = r.channels.find((c) => c.key === 'web');
@@ -127,7 +134,13 @@ export default function WeeklyPerformanceCard({ orders, menu, settings }) {
         noRecipe: r.noRecipe,
       });
     }
-    return out;
+    // Gắn mục tiêu tự động walk-forward trên TOÀN chuỗi (gồm cả phần lịch sử), rồi mới
+    // cắt cửa sổ hiển thị — mục tiêu của tuần đầu cửa sổ vẫn dùng được các tuần trước nó.
+    const targets = attachAutoTargets(out);
+    out.forEach((w, idx) => {
+      w.target = targets[idx];
+    });
+    return out.slice(HISTORY_EXTRA);
     // `now` đổi mỗi phút; chỉ tính lại khi sang tuần mới, đổi số tuần hoặc dữ liệu đổi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orders, menu, recipes, ingredients, purchases, expenses, batches, weekCount, periodRange('week', now).start.getTime()]);
@@ -146,9 +159,13 @@ export default function WeeklyPerformanceCard({ orders, menu, settings }) {
   // Doanh thu tuần thường lớn hơn lãi nên đỉnh thang mở rộng tới doanh thu tuần cao nhất
   // (cùng cách biểu đồ Màn hình chính đã làm); giá trị số liệu không đổi, chỉ đỉnh thang đổi.
   const chanValues = weeks.flatMap((w) => [w.web.profit, w.shop.profit]);
-  // Đỉnh thang cũng tính cả mục tiêu (khi đã đặt) để đường mục tiêu luôn nằm trong vùng vẽ,
-  // giống cách biểu đồ tuần trước đây dựng thang; giá trị các cột không đổi.
-  const barTop = niceCeil(Math.max(0, ...chanValues, ...weeks.map((w) => w.revenue), target ?? 0)) || 1;
+  // Đỉnh thang cũng tính cả các mức mục tiêu tự động để đường mục tiêu luôn nằm trong
+  // vùng vẽ; giá trị các cột không đổi.
+  const barTop = niceCeil(Math.max(0, ...chanValues, ...weeks.map((w) => w.revenue), ...weeks.map((w) => w.target ?? 0))) || 1;
+  // Mục tiêu tự động: có ít nhất một tuần trong cửa sổ có mục tiêu thì mới vẽ đường / dấu ◆.
+  const hasAnyTarget = weeks.some((w) => w.target != null);
+  // Tuần gần nhất (trong cửa sổ) có mục tiêu — để gắn nhãn "Mục tiêu $X" cạnh điểm đó.
+  const lastTargetIdx = weeks.reduce((acc, w, i) => (w.target != null ? i : acc), -1);
   const barBottom = -niceCeil(Math.abs(Math.min(0, ...chanValues)));
   const barSpan = barTop - barBottom || 1;
   const PAD1 = 52; // chừa chỗ cho tooltip nổi ở phía trên vùng vẽ
@@ -157,6 +174,26 @@ export default function WeeklyPerformanceCard({ orders, menu, settings }) {
   const y1 = (v) => PAD1 + ((barTop - v) / barSpan) * PLOT1;
   const zeroY1 = y1(0);
   const ticks1 = barBottom < 0 ? [barTop, 0, barBottom] : [barTop, barTop / 2, 0];
+
+  // ---- Đường mục tiêu tự động của tầng 1: nối các điểm mục tiêu từng tuần (SVG) ----
+  // Mỗi tuần một mức riêng; tuần không có mục tiêu làm đứt đường (không nối qua).
+  // Hệ toạ độ viewBox rộng 1200 như tầng 2/3, điểm đặt giữa ô tuần.
+  const W1 = 1200;
+  const targetSegments = [];
+  {
+    let run = [];
+    const flush = () => {
+      if (run.length >= 2) {
+        targetSegments.push(run.map((p, j) => `${j === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' '));
+      }
+      run = [];
+    };
+    weeks.forEach((w, i) => {
+      if (w.target != null) run.push({ x: ((i + 0.5) / n) * W1, y: y1(w.target) });
+      else flush();
+    });
+    flush();
+  }
 
   // ---- Tầng 2: thang số đơn (trục phải) ----
   const W = 1200;
@@ -267,13 +304,13 @@ export default function WeeklyPerformanceCard({ orders, menu, settings }) {
             <i className="h-2.5 w-2.5 rounded-[4px]" style={{ background: GRAD.web }} /> Đơn web
             <i className="ml-1.5 h-2.5 w-2.5 rounded-[4px]" style={{ background: GRAD.shop }} /> Đơn tại quán
             <i className="ml-1.5 h-2.5 w-2.5 rounded-[4px]" style={{ background: GRAD.barRev }} /> Tổng doanh thu
-            {target != null && (
+            {hasAnyTarget && (
               <>
                 <i
                   className="ml-1.5 inline-block h-0 w-5 border-t-2 border-dashed align-middle"
                   style={{ borderColor: 'var(--chart-target)' }}
                 />{' '}
-                Mục tiêu lãi ròng/tuần
+                Mục tiêu tự động (từ dữ liệu)
                 <i
                   className="ml-1.5 inline-block h-2 w-2 rotate-45"
                   style={{ background: 'var(--chart-target)' }}
@@ -326,11 +363,13 @@ export default function WeeklyPerformanceCard({ orders, menu, settings }) {
                     Đơn web {money(activeWeek.web.profit)} · Tại quán {money(activeWeek.shop.profit)} · Doanh thu{' '}
                     {money(activeWeek.revenue)} · Lãi ròng {money(activeWeek.profit)}
                     {activeWeek.otherCosts > 0 ? ` (chi phí chung ${money(activeWeek.otherCosts)})` : ''}
-                    {target != null && (
+                    {activeWeek.target != null && (
                       <>
                         {' '}
-                        · So mục tiêu {money(target)}:{' '}
-                        {activeWeek.profit >= target ? 'đạt ✓' : `còn thiếu ${money(target - activeWeek.profit)}`}
+                        · Mục tiêu {money(activeWeek.target)}:{' '}
+                        {activeWeek.profit >= activeWeek.target
+                          ? 'đạt ✓'
+                          : `còn thiếu ${money(activeWeek.target - activeWeek.profit)}`}
                       </>
                     )}
                   </p>
@@ -353,9 +392,9 @@ export default function WeeklyPerformanceCard({ orders, menu, settings }) {
                   aria-label={`Lãi gộp theo kênh và doanh thu ${n} tuần: ${weeks
                     .map(
                       (w) =>
-                        `tuần ${ddmm(w.start)} đơn web ${money(w.web.profit)}, đơn tại quán ${money(w.shop.profit)}, doanh thu ${money(w.revenue)}${target != null ? `, lãi ròng ${money(w.profit)}` : ''}`,
+                        `tuần ${ddmm(w.start)} đơn web ${money(w.web.profit)}, đơn tại quán ${money(w.shop.profit)}, doanh thu ${money(w.revenue)}, lãi ròng ${money(w.profit)}${w.target != null ? `, mục tiêu tự động ${money(w.target)}` : ''}`,
                     )
-                    .join('; ')}${target != null ? `; mục tiêu lãi ròng mỗi tuần ${money(target)}` : ''}`}
+                    .join('; ')}`}
                   className="relative min-w-0 flex-1"
                   style={{ height: H1 }}
                 >
@@ -366,17 +405,62 @@ export default function WeeklyPerformanceCard({ orders, menu, settings }) {
                       style={{ top: y1(t) }}
                     />
                   ))}
-                  {/* Đường mục tiêu LÃI RÒNG/tuần (đứt nét) trên cùng thang tiền + nhãn ở đầu trái */}
-                  {target != null && (
-                    <div className="pointer-events-none absolute inset-x-0 z-10" style={{ top: y1(target) }} aria-hidden="true">
-                      <div className="border-t-2 border-dashed" style={{ borderColor: 'var(--chart-target)' }} />
-                      <span
-                        className="absolute -top-2 left-0 bg-card pr-1 text-[11px] font-semibold leading-none"
-                        style={{ color: 'var(--chart-target)' }}
+                  {/* Đường mục tiêu TỰ ĐỘNG (đứt nét) nối điểm mục tiêu của từng tuần trên
+                      cùng thang tiền; tuần không có mục tiêu thì đường đứt ở đó. Điểm tròn
+                      nhỏ đánh dấu mức mục tiêu của từng tuần, nhãn gắn ở tuần có mục tiêu
+                      gần nhất. */}
+                  {hasAnyTarget && (
+                    <>
+                      <svg
+                        className="pointer-events-none absolute inset-0 z-10 h-full w-full"
+                        viewBox={`0 0 ${W1} ${H1}`}
+                        preserveAspectRatio="none"
+                        aria-hidden="true"
                       >
-                        Mục tiêu {money(target)}
-                      </span>
-                    </div>
+                        {targetSegments.map((d, si) => (
+                          <path
+                            key={si}
+                            d={d}
+                            fill="none"
+                            stroke="var(--chart-target)"
+                            strokeWidth={2}
+                            strokeDasharray="7 6"
+                            strokeLinecap="round"
+                            vectorEffect="non-scaling-stroke"
+                          />
+                        ))}
+                      </svg>
+                      {weeks.map(
+                        (w, i) =>
+                          w.target != null && (
+                            <span
+                              key={`tgt-${w.start.getTime()}`}
+                              title={`Mục tiêu tuần ${ddmm(w.start)}: ${money(w.target)}`}
+                              className="pointer-events-none absolute z-10 h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                              style={{
+                                left: `${(((i + 0.5) / n) * 100).toFixed(2)}%`,
+                                top: y1(w.target),
+                                background: 'var(--chart-target)',
+                                border: '1.5px solid rgba(255, 255, 255, 0.9)',
+                              }}
+                            />
+                          ),
+                      )}
+                      {lastTargetIdx >= 0 && (
+                        <span
+                          className="pointer-events-none absolute z-10 whitespace-nowrap text-[11px] font-semibold leading-none"
+                          style={{
+                            left: `${(((lastTargetIdx + 0.5) / n) * 100).toFixed(2)}%`,
+                            top: y1(weeks[lastTargetIdx].target),
+                            transform: 'translate(-50%, -240%)',
+                            color: 'var(--chart-target)',
+                          }}
+                          aria-hidden="true"
+                        >
+                          Mục tiêu {money(weeks[lastTargetIdx].target)}
+                        </span>
+                      )}
+                    </>
                   )}
                   <div className="absolute inset-0 flex gap-1">
                     {weeks.map((w, i) => (
@@ -402,21 +486,25 @@ export default function WeeklyPerformanceCard({ orders, menu, settings }) {
                       </div>
                     ))}
                   </div>
-                  {/* Dấu ◆ tại chiều cao LÃI RÒNG từng tuần: nằm trên đường mục tiêu = tuần đạt.
-                      Vàng khi đạt mục tiêu, xám khi chưa — so trực tiếp với đường đứt nét. */}
-                  {target != null &&
+                  {/* Dấu ◆ tại chiều cao LÃI RÒNG từng tuần: vàng khi tuần đạt mục tiêu
+                      CỦA CHÍNH TUẦN ĐÓ, xám khi chưa đạt hoặc tuần chưa có mục tiêu. */}
+                  {hasAnyTarget &&
                     weeks.map((w, i) => (
                       <span
                         key={`net-${w.start.getTime()}`}
-                        title={`Lãi ròng tuần ${ddmm(w.start)}: ${money(w.profit)} · mục tiêu ${money(target)} (${
-                          w.profit >= target ? 'đạt' : `còn thiếu ${money(target - w.profit)}`
-                        })`}
+                        title={
+                          w.target != null
+                            ? `Lãi ròng tuần ${ddmm(w.start)}: ${money(w.profit)} · mục tiêu ${money(w.target)} (${
+                                w.profit >= w.target ? 'đạt' : `còn thiếu ${money(w.target - w.profit)}`
+                              })`
+                            : `Lãi ròng tuần ${ddmm(w.start)}: ${money(w.profit)} (tuần này chưa có mục tiêu)`
+                        }
                         className="pointer-events-none absolute z-10 h-[9px] w-[9px]"
                         style={{
                           left: `${(((i + 0.5) / n) * 100).toFixed(2)}%`,
                           top: y1(w.profit),
                           transform: 'translate(-50%, -50%) rotate(45deg)',
-                          background: w.profit >= target ? 'var(--chart-target)' : '#94a3b8',
+                          background: w.target != null && w.profit >= w.target ? 'var(--chart-target)' : '#94a3b8',
                           border: '1.5px solid rgba(255, 255, 255, 0.9)',
                         }}
                       />
@@ -543,11 +631,12 @@ export default function WeeklyPerformanceCard({ orders, menu, settings }) {
             <p className="text-xs leading-relaxed text-slate-400">
               Lãi theo kênh là lãi gộp (doanh thu − giá vốn món của kênh đó); chi phí chung của tuần không chia theo kênh —
               lãi ròng của tuần = lãi gộp − chi phí chung, hiện trong tooltip ở tầng Tiền Lãi.
-              {target != null && (
+              {hasAnyTarget && (
                 <>
                   {' '}
-                  Đường đứt nét là mục tiêu lãi ròng mỗi tuần; dấu ◆ là lãi ròng của từng tuần — ◆ nằm trên đường là
-                  tuần đạt mục tiêu, ◆ vàng là đã đạt.
+                  Đường đứt nét là mục tiêu lãi ròng TỰ ĐỘNG của từng tuần, tính từ lãi ròng của tối đa 4 tuần đã kết
+                  thúc trước đó (theo mặt bằng gần nhất, nhích lên / hạ xuống tối đa ±20% rồi làm tròn $10); dấu ◆ là
+                  lãi ròng của từng tuần — ◆ vàng là tuần đạt mục tiêu của chính tuần đó.
                 </>
               )}{' '}
               Cột cam ở tầng Tiền Lãi là

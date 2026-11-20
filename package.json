@@ -11,6 +11,7 @@
     "test:cache": "node tests/list-cache/run.mjs",
     "test:performance": "node tests/performance/run.mjs",
     "test:dishprofit": "node tests/dish-profit/run.mjs",
+    "test:insights": "node tests/report-insights/run.mjs",
     "build:bridge": "esbuild print-bridge/src/backup-entry.js --bundle --platform=node --format=esm --target=node18 --outfile=print-bridge/backup-lib.mjs --banner:js=\"// TỰ SINH từ print-bridge/src/backup-entry.js (npm run build:bridge). Đừng sửa tay.\""
   },
   "dependencies": {

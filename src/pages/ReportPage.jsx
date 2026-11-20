@@ -8,15 +8,19 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import AnalyticsExportCard from '../components/AnalyticsExportCard';
-import DishProfitCard from '../components/DishProfitCard';
+import CustomerStatsCard from '../components/CustomerStatsCard';
 import LanguageCard from '../components/LanguageCard';
 import PairsCard from '../components/PairsCard';
+import WeekRhythmCard from '../components/WeekRhythmCard';
 import WeeklyPerformanceCard from '../components/WeeklyPerformanceCard';
 import { buildReport, PERIODS, reportForAI, shiftPeriod } from '../lib/report';
+import { periodInsights } from '../lib/reportInsights';
 import CountUp, { formatCount } from '../components/CountUp';
 import { formatMoney } from '../lib/stats';
 
 const ACCESS_CODE_KEY = 'restaurant-app.ai-code';
+// Tỉ lệ 0–1 → % với tối đa 1 chữ số thập phân, dấu phẩy kiểu Việt (VD 0,222 → "22,2%")
+const fmtRate = (r) => (r == null ? '—' : `${Math.round(r * 1000) / 10}%`.replace('.', ','));
 const SERIES = 'var(--chart-series)'; // màu chuỗi dữ liệu duy nhất của biểu đồ (cam chính của quán)
 
 function Card({ title, right, children }) {
@@ -250,6 +254,8 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
   const [kind, setKind] = useState('month');
   const [anchor, setAnchor] = useState(() => new Date());
   const report = useMemo(() => buildReport(orders, kind, anchor, menu), [orders, kind, anchor, menu]);
+  // Tỉ lệ đơn huỷ của đúng kỳ đang chọn (định nghĩa ở lib/reportInsights)
+  const cancel = useMemo(() => periodInsights(orders, report.range).cancellation, [orders, report.range]);
   const atCurrent = report.range.end > new Date();
   const { forecast } = report;
   const maxQty = report.dishes[0]?.qty ?? 0;
@@ -322,11 +328,18 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
               <p className="text-xs text-slate-500">TB / đơn</p>
             </div>
           </div>
+          {/* Đơn huỷ của kỳ: tổng đơn ở đây GỒM cả đơn huỷ (khác các số phía trên vốn đã loại đơn huỷ) */}
+          <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-sm">
+            <span className="text-slate-500">Đơn huỷ</span>
+            <span className="font-semibold text-slate-900">
+              {cancel.cancelledOrders} / {cancel.totalOrders} đơn · tỉ lệ huỷ {fmtRate(cancel.cancelRate)}
+            </span>
+          </div>
         </div>
       </Card>
 
       {/* Hiệu suất theo tuần: lãi theo kênh, số đơn và doanh thu trên cùng trục tuần */}
-      <WeeklyPerformanceCard orders={orders} menu={menu} settings={settings ?? {}} />
+      <WeeklyPerformanceCard orders={orders} menu={menu} />
 
       <Card title={kind === 'year' ? 'Doanh thu theo tháng' : 'Doanh thu theo ngày'}>
         <RevenueChart buckets={report.buckets} kind={kind} />
@@ -398,8 +411,11 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
         )}
       </Card>
 
-      {/* Lãi gộp theo món trong đúng kỳ đang chọn (giá vốn từ profitReport) */}
-      <DishProfitCard orders={orders} menu={menu} range={report.range} />
+      {/* Khách mới / khách quay lại trong đúng kỳ đang chọn */}
+      <CustomerStatsCard orders={orders} range={report.range} />
+
+      {/* Nhịp tuần trong tháng trên các tuần đã kết thúc của 6 tháng gần nhất */}
+      <WeekRhythmCard orders={orders} />
 
       {/* Thời điểm */}
       <Card title={kind === 'week' ? 'Theo ngày trong tuần' : kind === 'month' ? 'Thời điểm trong tháng' : 'Theo quý'}>
