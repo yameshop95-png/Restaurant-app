@@ -217,6 +217,98 @@ function ShiftClose({ orders, now, shopName }) {
 }
 
 // Ô bảng điều khiển: mỗi ô là một mục trong menu (cùng tên, cùng biểu tượng), bấm vào là chuyển sang tab đó.
+// Thẻ "Tiền tuần này" dạng vòng tròn theo hình mẫu Paul gửi: lát dày, hai đầu
+// bo tròn, có khe hở nhỏ giữa các lát; tâm là tổng tiền tuần + nhãn + số đơn.
+// Số liệu lấy thẳng từ summarize() (src/lib/stats.js) — cùng cơ chế với chốt ca:
+// đơn trong tuần là đơn chưa huỷ tạo từ đầu tuần (thứ Hai); "đã thanh toán" là
+// các đơn có paid, "chưa thanh toán" là phần còn lại của tổng tuần. Toán lát ở
+// src/lib/donut.js (bản có khe hở).
+const WEEK_DONUT_R = 55;
+const WEEK_DONUT_CIRC = 2 * Math.PI * WEEK_DONUT_R;
+const WEEK_DONUT_STROKE = 24;
+const WEEK_DONUT_GAP = 8;
+
+function WeekMoneyDonut({ stats }) {
+  const entries = [
+    { key: 'paid', label: 'Đã thanh toán', color: '#3b82f6', total: stats.weekPaid.total, count: stats.weekPaid.count },
+    { key: 'unpaid', label: 'Chưa thanh toán', color: '#f87171', total: stats.weekUnpaid.total, count: stats.weekUnpaid.count },
+  ];
+  const segs = donutSegments(
+    entries.map((e) => e.total),
+    WEEK_DONUT_CIRC,
+    { gap: WEEK_DONUT_GAP, strokeWidth: WEEK_DONUT_STROKE },
+  );
+  const totalText = formatMoney(stats.weekRevenue);
+  const totalSize = totalText.length <= 8 ? 'text-[20px]' : totalText.length <= 10 ? 'text-[15px]' : 'text-[13px]';
+
+  return (
+    <section className="rounded-3xl border border-gold/40 bg-card px-5 pb-5 pt-4 shadow-sm">
+      <div className="flex flex-col items-center gap-4 min-[500px]:flex-row">
+        <svg
+          viewBox="0 0 144 144"
+          className="h-44 w-44 shrink-0"
+          role="img"
+          aria-label={`Tiền tuần này ${totalText}: ${entries
+            .map((e, i) => `${e.label} ${formatMoney(e.total)}, ${e.count} đơn, ${segs[i].percent}%`)
+            .join('; ')}`}
+        >
+          <circle cx="72" cy="72" r={WEEK_DONUT_R} fill="none" stroke="#e2e8f0" strokeWidth={WEEK_DONUT_STROKE} />
+          {entries.map((e, i) => {
+            const s = segs[i];
+            if (e.total <= 0) return null;
+            // Lát chiếm trọn vòng (chỉ một phía có tiền): vẽ vòng đầy, không khe
+            if (s.drawLength >= WEEK_DONUT_CIRC - 0.01) {
+              return (
+                <circle key={e.key} cx="72" cy="72" r={WEEK_DONUT_R} fill="none" stroke={e.color} strokeWidth={WEEK_DONUT_STROKE} />
+              );
+            }
+            return (
+              <circle
+                key={e.key}
+                cx="72"
+                cy="72"
+                r={WEEK_DONUT_R}
+                fill="none"
+                stroke={e.color}
+                strokeWidth={WEEK_DONUT_STROKE}
+                strokeLinecap="round"
+                strokeDasharray={`${Math.max(0, s.drawLength).toFixed(1)} ${(WEEK_DONUT_CIRC - s.drawLength).toFixed(1)}`}
+                strokeDashoffset={(-s.drawOffset).toFixed(1)}
+                transform="rotate(-90 72 72)"
+              />
+            );
+          })}
+          <text x="72" y="67" textAnchor="middle" className={`fill-slate-900 font-bold tabular-nums ${totalSize}`}>
+            {totalText}
+          </text>
+          <text x="72" y="86" textAnchor="middle" className="fill-slate-400 text-[11px]">
+            Tiền tuần này
+          </text>
+          <text x="72" y="102" textAnchor="middle" className="fill-slate-400 text-[11px]">
+            {stats.weekOrderCount} đơn
+          </text>
+        </svg>
+        <ul className="w-full min-w-0 flex-1 space-y-2">
+          {entries.map((e, i) => (
+            <li key={e.key} className="flex items-center gap-2 text-sm">
+              <i className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: e.color }} />
+              <span className={`min-w-0 flex-1 truncate ${e.key === 'unpaid' ? 'font-medium text-red-600' : 'text-slate-600'}`}>
+                {e.label}
+              </span>
+              <span className={`shrink-0 font-bold tabular-nums ${e.key === 'unpaid' ? 'text-red-600' : 'text-slate-900'}`}>
+                {formatMoney(e.total)}
+              </span>
+              <span className="w-24 shrink-0 text-right tabular-nums text-slate-500">
+                {e.count} đơn · {segs[i].percent}%
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 function DashTile({ item, value, note, tone = 'normal', onOpen }) {
   const Icon = item.icon;
   const valueColor = tone === 'alert' ? 'text-red-600' : tone === 'warn' ? 'text-amber-500' : tone === 'good' ? 'text-emerald-600' : 'text-slate-900';
@@ -365,17 +457,7 @@ export default function HomePage({ orders, now, settings, isOwner, isManager, on
             </p>
           )}
 
-          <section className="rounded-3xl border border-gold/40 bg-card px-5 pb-5 pt-4 text-white">
-            <h2 className="text-[13px] font-medium text-slate-500">Tiền tuần này</h2>
-            <div className="mt-1 flex items-end justify-between gap-3">
-              <p className="text-4xl font-bold tracking-tight text-gold sm:text-5xl">
-                <CountUp value={stats.weekRevenue} format={formatMoney} />
-              </p>
-              <span className="shrink-0 rounded-full bg-slate-100 px-4 py-1.5 font-semibold text-slate-800">
-                <CountUp value={stats.weekOrderCount} format={formatCount} /> đơn
-              </span>
-            </div>
-          </section>
+          <WeekMoneyDonut stats={stats} />
 
           {isOwner && (
           <Card title="Tổng cộng dồn">

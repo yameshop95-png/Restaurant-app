@@ -60,5 +60,57 @@ const CIRC = 2 * Math.PI * 60;
   check('giá trị bậy: chỉ lát hợp lệ có cung', segs[3].percent === 100 && segs[0].length === 0 && segs[1].length === 0);
 }
 
+// 7) Không truyền options gap: drawLength/drawOffset = length/offset (tương thích bản cũ)
+{
+  const segs = donutSegments([100, 50], CIRC);
+  check(
+    'không gap: draw = cung gốc',
+    segs.every((s) => Math.abs(s.drawLength - s.length) < 1e-9 && Math.abs(s.drawOffset - s.offset) < 1e-9),
+  );
+}
+
+// 8) Có gap: mỗi lát thu ngắn hai đầu, khe NHÌN THẤY giữa hai lát đúng bằng gap
+//    (đầu bo tròn nhô ra strokeWidth/2 mỗi phía nên phải trừ cả phần đó)
+{
+  const C2 = 2 * Math.PI * 55;
+  const GAP = 8;
+  const SW = 24;
+  const segs = donutSegments([100, 100], C2, { gap: GAP, strokeWidth: SW });
+  const shrink = (GAP + SW) / 2;
+  check('gap: drawLength = length − 2×shrink', Math.abs(segs[0].drawLength - (segs[0].length - 2 * shrink)) < 1e-9);
+  check('gap: drawOffset = offset + shrink', Math.abs(segs[0].drawOffset - shrink) < 1e-9 && Math.abs(segs[1].drawOffset - (segs[1].offset + shrink)) < 1e-9);
+  const paintedGap = segs[1].drawOffset - SW / 2 - (segs[0].drawOffset + segs[0].drawLength + SW / 2);
+  check('gap: khe nhìn thấy đúng = gap', Math.abs(paintedGap - GAP) < 1e-9);
+}
+
+// 9) Có gap nhưng chỉ một lát có giá trị (100%): vẽ vòng đầy, không thu ngắn, không khe
+{
+  const C2 = 2 * Math.PI * 55;
+  const segs = donutSegments([0, 50], C2, { gap: 8, strokeWidth: 24 });
+  check('gap + một lát 100%: drawLength = trọn chu vi', Math.abs(segs[1].drawLength - C2) < 1e-9);
+  check('gap + một lát 100%: drawOffset = 0', segs[1].drawOffset === 0);
+}
+
+// 10) Có gap + lát quá nhỏ so với khe: rút thành chấm ở tâm lát, không số âm/NaN
+{
+  const C2 = 2 * Math.PI * 55;
+  const segs = donutSegments([1000, 1], C2, { gap: 8, strokeWidth: 24 });
+  check('gap + lát nhỏ: drawLength = 0 (chấm)', segs[1].drawLength === 0);
+  check(
+    'gap + lát nhỏ: chấm ở tâm lát, hữu hạn',
+    Number.isFinite(segs[1].drawOffset) && Math.abs(segs[1].drawOffset - (segs[1].offset + segs[1].length / 2)) < 1e-9,
+  );
+  check('gap + lát nhỏ: lát lớn vẫn vẽ được', segs[0].drawLength > 0 && Number.isFinite(segs[0].drawLength));
+}
+
+// 11) Có gap + toàn 0: mọi trường đều 0, không NaN
+{
+  const segs = donutSegments([0, 0], CIRC, { gap: 8, strokeWidth: 24 });
+  check(
+    'gap + toàn 0: draw đều 0, không NaN',
+    segs.every((s) => s.drawLength === 0 && s.drawOffset === 0 && Number.isFinite(s.fraction)),
+  );
+}
+
 console.log(`\nKẾT QUẢ: ${passed} đạt, ${failed} trượt`);
 if (failed > 0) process.exit(1);
