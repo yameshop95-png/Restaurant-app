@@ -1,13 +1,19 @@
 // Báo tình trạng của khách đang xem website cho quán (tab "Customer Active" trong app nhân viên).
 // Mỗi lần mở website là một phiên (sessionStorage); phiên gửi tình trạng lên máy chủ qua hàm track_session:
 // đang xem menu / có món trong giỏ / đang ở trang đặt món / đã đặt, kèm tên, số điện thoại, email nếu khách đã gõ.
+// Kèm theo (cho thẻ phân tích trong tab Customer Active): mã khách bền trong localStorage để biết
+// khách quay lại, nguồn truy cập lúc đáp vào web (referrer + utm), loại thiết bị, múi giờ và
+// số lượt xem từng trang trong phiên. Phần này máy chủ cũ chưa có cột thì tự bỏ qua êm.
 // Theo dõi lỗi thì bỏ qua êm: không bao giờ làm hỏng việc đặt món.
 import { siteClient } from './client';
+import { classifyDevice, classifySource } from './trackClassify';
 
 const SID_KEY = 'site.sid';
+const VID_KEY = 'site.vid';
 const HEARTBEAT_MS = 20000; // báo "vẫn đang ở đây" mỗi 20 giây
 const ACTIVE_WINDOW_MS = 10 * 60 * 1000; // quá 10 phút không chạm gì thì ngừng báo (tab mở bỏ quên)
 const DEBOUNCE_MS = 700;
+const MAX_PATHS = 20; // tối đa số trang khác nhau đếm trong một phiên
 
 const state = {
   stage: 'browsing',
@@ -23,12 +29,14 @@ const state = {
 };
 
 let sid = null;
+let meta = null; // thông tin phiên tính một lần lúc đáp vào web: vid, nguồn, thiết bị, múi giờ, utm
 let started = false;
 let disabled = false;
 let ordered = false;
 let lastActive = 0;
 let timer = null;
 let heartbeat = null;
+const pathCounts = {}; // số lượt xem từng trang trong phiên (path → số lần)
 
 const uuid = () =>
   globalThis.crypto?.randomUUID?.() ??
@@ -57,10 +65,79 @@ function sessionId() {
   return sid;
 }
 
+// Mã khách bền trong localStorage: qua nhiều lần mở web vẫn là một khách, nhờ đó
+// máy chủ biết được khách quay lại. Trình duyệt chặn lưu thì thôi (vid = null),
+// không cố tạo mã tạm — mã tạm mỗi lần một khác sẽ làm sai tỉ lệ quay lại.
+function visitorId() {
+  try {
+    let v = localStorage.getItem(VID_KEY);
+    if (!v) {
+      v = uuid();
+      localStorage.setItem(VID_KEY, v);
+    }
+    return v;
+  } catch {
+    return null;
+  }
+}
+
+// Thông tin "điểm chạm đầu tiên" của phiên, tính một lần rồi giữ nguyên cả phiên:
+// nguồn truy cập (referrer + utm của URL đáp), thiết bị, múi giờ (đại diện thô cho
+// vị trí khách). Lỗi ở đâu bỏ qua ở đó, thiếu thì để null.
+function sessionMeta() {
+  if (meta) return meta;
+  const m = { vid: null, source: null, device: null, tz: null, utm_source: null, utm_medium: null, utm_campaign: null };
+  try {
+    m.vid = visitorId();
+  } catch {
+    // bỏ qua
+  }
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const clean = (v) => {
+      const s = String(v ?? '').trim().slice(0, 120);
+      return s || null;
+    };
+    m.utm_source = clean(params.get('utm_source'));
+    m.utm_medium = clean(params.get('utm_medium'));
+    m.utm_campaign = clean(params.get('utm_campaign'));
+    m.source = classifySource({ referrer: document.referrer || '', utmSource: m.utm_source || '' });
+  } catch {
+    // bỏ qua
+  }
+  try {
+    m.device = classifyDevice(navigator.userAgent || '');
+  } catch {
+    // bỏ qua
+  }
+  try {
+    m.tz = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+  } catch {
+    // bỏ qua
+  }
+  meta = m;
+  return meta;
+}
+
+// Cộng một lượt xem trang vào bộ đếm của phiên (tối đa MAX_PATHS trang khác nhau).
+function notePath(p) {
+  try {
+    if (!p) return;
+    const key = String(p).slice(0, 120);
+    if (pathCounts[key] == null) {
+      if (Object.keys(pathCounts).length >= MAX_PATHS) return;
+      pathCounts[key] = 0;
+    }
+    pathCounts[key] += 1;
+  } catch {
+    // bỏ qua
+  }
+}
+
 function flush() {
   timer = null;
   if (disabled) return;
-  const payload = { sid: sessionId(), ...state };
+  const payload = { sid: sessionId(), ...sessionMeta(), paths: { ...pathCounts }, ...state };
   try {
     siteClient()
       .rpc('track_session', { payload })
@@ -117,6 +194,7 @@ export function trackView({ routeName, count, total, items, lang, path }) {
   if (count > 0) stage = routeName === 'checkout' ? 'checkout' : 'cart';
   else if (ordered) stage = 'ordered'; // đặt xong, giỏ trống: vẫn là khách đã đặt
   Object.assign(state, { stage, cart_count: count, cart_total: total, items, lang, path });
+  notePath(path);
   schedule();
 }
 
