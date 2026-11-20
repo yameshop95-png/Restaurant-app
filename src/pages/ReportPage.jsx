@@ -251,7 +251,6 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
   const atCurrent = report.range.end > new Date();
   const { forecast } = report;
   const maxQty = report.dishes[0]?.qty ?? 0;
-  const projectedQty = Object.fromEntries(forecast.dishes.map((d) => [d.name, d.projectedQty]));
   const nextLabel = { week: 'tuần sau', month: 'tháng sau', year: 'năm sau' }[kind];
 
   return (
@@ -333,11 +332,10 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
         <div className="grid grid-cols-2 gap-3 px-5 pb-4 pt-2">
           {forecast.isCurrent && (
             <div className="rounded-2xl bg-blue-50 p-3">
-              <p className="text-xs font-semibold text-blue-700">Dự kiến cả kỳ này</p>
-              <p className="text-xl font-bold text-blue-900">{formatMoney(forecast.projected)}</p>
+              <p className="text-xs font-semibold text-blue-700">Đã thực thu</p>
+              <p className="text-xl font-bold text-blue-900">{formatMoney(forecast.collected)}</p>
               <p className="text-xs text-blue-700">
-                đã qua {Math.round(forecast.elapsed * 100)}% thời gian
-                {forecast.sinceFirstOrder && ' · tính từ đơn đầu tiên'}
+                còn phải thu {formatMoney(forecast.uncollected)} · đã qua {Math.round(forecast.elapsed * 100)}% kỳ
               </p>
             </div>
           )}
@@ -386,7 +384,7 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
                         {change >= 0 ? '▲' : '▼'} {Math.abs(Math.round(change * 100))}% (kỳ trước {d.prevQty})
                       </span>
                     )}
-                    {projectedQty[d.name] != null && <span className="text-blue-600">dự kiến ~{projectedQty[d.name]} phần</span>}
+                    {false}
                   </p>
                 </li>
               );

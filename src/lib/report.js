@@ -168,9 +168,13 @@ export function buildReport(allOrders, kind, anchor, menu = [], now = new Date()
   // Đầu kỳ ít dữ liệu: dựa nhiều vào trung bình các kỳ trước; càng về cuối kỳ càng dựa vào tốc độ bán thực tế.
   const runRate = elapsed > 0 ? revenue / elapsed : 0;
   const weight = historyAvg ? Math.min(1, elapsed * 1.5) : 1;
+  // Số thực thu: đơn đã thanh toán trong kỳ (không ước tính). Phần chưa thu hiện riêng.
+  const collected = sum(orders.filter((o) => o.paid), orderTotal);
+  const uncollected = revenue - collected;
   const projected = isCurrent ? weight * runRate + (1 - weight) * historyAvg : revenue;
-  // Kỳ sau: trung bình kỳ này (dự kiến) + 2 kỳ trước, cộng xu hướng
-  const series = [history[1], history[0], projected].filter((v, i, arr) => v > 0 || i === arr.length - 1);
+  // Dự báo kỳ sau chỉ dựa trên các kỳ đã đủ (không dùng số ước tính của kỳ đang chạy)
+  const series = [history[1], history[0]].filter((v) => v > 0);
+  if (!isCurrent && revenue > 0) series.push(revenue);
   const trend = series.length >= 2 ? (series[series.length - 1] - series[0]) / (series.length - 1) : 0;
   const nextForecast = Math.max(0, sum(series, (v) => v) / series.length + trend);
 
@@ -178,10 +182,11 @@ export function buildReport(allOrders, kind, anchor, menu = [], now = new Date()
     isCurrent,
     elapsed: timeElapsed,
     sinceFirstOrder: effectiveStart > range.start,
-    projected,
+    collected,
+    uncollected,
     historyAvg,
     nextForecast,
-    dishes: isCurrent && elapsed > 0 ? dishRows.map((d) => ({ name: d.name, projectedQty: Math.round(d.qty / elapsed) })) : [],
+    dishes: [],
   };
 
   const report = {
