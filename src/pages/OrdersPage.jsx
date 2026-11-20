@@ -16,6 +16,7 @@ import {
   ShoppingBag,
   FileSpreadsheet,
   Globe,
+  MoreHorizontal,
   Send,
   StickyNote,
   Truck,
@@ -26,6 +27,8 @@ import NewOrderSheet from '../components/NewOrderSheet';
 import RoutePlanner from '../components/RoutePlanner';
 import { normalizeText } from '../hooks/useCustomers';
 import useSwipe from '../hooks/useSwipe';
+import useWide from '../hooks/useWide';
+import { dishThumb } from '../lib/dishPhotos';
 import { dueInfo, formatDue } from '../lib/due';
 import { exportOrderList } from '../lib/orderListExcel';
 import { ORDER_TYPES, PAYMENT_METHODS, paymentLabel, PREVIOUS_STATUS, statusLabel } from '../lib/orderStatus';
@@ -43,6 +46,8 @@ const STATUS = {
   cancelled: { label: 'Đã huỷ', badge: 'bg-slate-50 text-slate-500' },
 };
 
+const PAGE = 30;
+
 const FILTERS = [
   { id: 'pending', label: 'Chờ xử lý', match: (o) => o.status === 'pending' },
   { id: 'done', label: 'Hoàn thành', match: (o) => o.status === 'done' },
@@ -51,9 +56,12 @@ const FILTERS = [
   { id: 'cancelled', label: 'Đã huỷ', match: (o) => o.status === 'cancelled' },
 ];
 
+// toLocaleTimeString tạo bộ định dạng mới mỗi lần gọi (chậm trên iPhone); dùng chung một bộ
+const TIME_FMT = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
 function formatTime(iso, withDay = false) {
   const d = new Date(iso);
-  const time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  const time = TIME_FMT.format(d);
   const dayDiff = Math.round((new Date(d).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000);
   // Tự định dạng: toLocaleDateString('vi-VN') chỉ có ngày + tháng ra "20-10" trên một số trình duyệt
   const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -77,6 +85,68 @@ const backLabel = (order) =>
     ? 'Khách chưa lấy – chuyển về Hoàn thành'
     : BACK_LABEL[order.status];
 
+// Đơn online chờ xử lý đi qua 3 bước: chưa nhận → đã nhận → đã xác nhận
+const stageOf = (order) =>
+  order.source === 'web' && order.status === 'pending'
+    ? order.confirmedAt
+      ? 'confirmed'
+      : order.receivedAt
+        ? 'received'
+        : 'new'
+    : null;
+
+const STAGE_LABEL = { new: 'Chưa nhận đơn', received: 'Đã nhận · chưa xác nhận', confirmed: 'Đã xác nhận' };
+const DOT = { pending: 'bg-amber-500', done: 'bg-emerald-500', shipped: 'bg-slate-500', cancelled: 'bg-red-500' };
+
+// Nhãn trạng thái nhỏ có chấm màu
+function StatusPill({ order }) {
+  const stage = stageOf(order);
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+      <i className={`h-2 w-2 rounded-full ${DOT[order.status] ?? 'bg-slate-500'}`} />
+      {stage ? STAGE_LABEL[stage] : statusLabel(order.status, order.type)}
+    </span>
+  );
+}
+
+// Dòng gọn trong danh sách bên trái (màn rộng): số đơn + tên, giờ và loại đơn, tiền và trạng thái
+function OrderRow({ order, selected, onSelect }) {
+  const delivery = order.type === 'delivery';
+  return (
+    <li>
+      <button
+        onClick={() => onSelect(order.id)}
+        aria-current={selected ? 'true' : undefined}
+        className={`flex w-full items-start justify-between gap-3 border-l-4 px-4 py-3 text-left ${
+          selected ? 'border-blue-500 bg-slate-50' : 'border-transparent hover:bg-slate-50'
+        }`}
+      >
+        <span className="min-w-0">
+          <span className="block truncate font-semibold text-slate-900">
+            #{order.number}
+            {order.customer?.name ? ` · ${order.customer.name}` : ''}
+          </span>
+          <span className="block text-sm text-slate-500">
+            {delivery ? 'Giao hàng' : 'Đến lấy'}
+            {order.deliverAt ? ` · ${formatTime(order.deliverAt)}` : ''}
+          </span>
+        </span>
+        <span className="flex shrink-0 flex-col items-end gap-1">
+          <span className="font-mono text-sm font-semibold tabular-nums text-slate-900">{formatMoney(orderTotal(order))}</span>
+          <StatusPill order={order} />
+        </span>
+      </button>
+    </li>
+  );
+}
+
+// Ảnh nhỏ của món (ảnh trên website), món chưa có ảnh thì không hiện gì
+function DishThumb({ name }) {
+  const photo = dishThumb(name);
+  if (!photo) return null;
+  return <img src={photo} alt="" width="40" height="40" loading="lazy" className="h-10 w-10 shrink-0 rounded-lg object-cover" />;
+}
+
 function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetStatus, onSetPaid, onMarkStep }) {
   const status = STATUS[order.status];
   const cancelled = order.status === 'cancelled';
@@ -86,8 +156,8 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
   const [choosingPay, setChoosingPay] = useState(false);
   const [messaging, setMessaging] = useState(false);
   // Đơn online chờ xử lý đi qua 3 bước: nhận đơn → nhắn xác nhận cho khách → hoàn thành
-  const online = order.source === 'web' && order.status === 'pending';
-  const stage = !online ? null : order.confirmedAt ? 'confirmed' : order.receivedAt ? 'received' : 'new';
+  const stage = stageOf(order);
+  const [more, setMore] = useState(false);
   const askPayment = () => setChoosingPay(true);
 
   const share = async () => {
@@ -120,9 +190,24 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
           <p className="flex items-center gap-1 text-xs text-slate-400">
             <Clock size={12} /> Tạo lúc {formatTime(order.createdAt)}
             {order.createdBy && ` · ${order.createdBy}`}
+            {order.source === 'web' && (
+              <span className="ml-1 inline-flex items-center gap-1 font-semibold text-blue-600">
+                <Globe size={12} /> Online
+              </span>
+            )}
           </p>
           {!cancelled && (
             <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setMore((v) => !v)}
+                aria-expanded={more}
+                className="flex min-h-11 items-center gap-1 rounded-lg bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600 active:bg-slate-200"
+              >
+                <MoreHorizontal size={14} /> {more ? 'Thu gọn' : 'Thêm'}
+              </button>
+              {more && (
+                <>
+
               <button
                 onClick={() => onEdit(order)}
                 className="flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600 active:bg-slate-200"
@@ -161,15 +246,12 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
                   <Send size={14} /> Gửi cho shipper
                 </button>
               )}
+                </>
+              )}
             </div>
           )}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
-          {order.source === 'web' && (
-            <span className="flex items-center gap-1 rounded-full bg-blue-500 px-3 py-1 text-xs font-bold text-white">
-              <Globe size={12} /> Online
-            </span>
-          )}
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.badge}`}>
             {stage === 'new' && 'Chưa nhận đơn'}
             {stage === 'received' && 'Đã nhận · chưa xác nhận'}
@@ -242,13 +324,16 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
       )}
 
       <ul className="mt-3 space-y-1 border-t border-slate-100 pt-3 text-[15px]">
-        {order.items.map((item) => (
-          <li key={item.name} className="flex justify-between gap-3">
-            <span className="text-slate-800">
+        {order.items.map((item, i) => (
+          <li key={`${item.name}-${i}`} className="flex items-center justify-between gap-3">
+            <span className="flex min-w-0 items-center gap-3 text-slate-800">
+              <DishThumb name={item.name} />
+              <span className="min-w-0">
               <span className="font-semibold">{item.qty} ×</span> {item.name}
               {item.note && <span className="block text-sm font-semibold text-red-600">↳ {item.note}</span>}
+              </span>
             </span>
-            <span className="text-slate-500">{formatMoney(item.qty * item.price)}</span>
+            <span className="shrink-0 font-mono tabular-nums text-slate-500">{formatMoney(item.qty * item.price)}</span>
           </li>
         ))}
       </ul>
@@ -405,11 +490,12 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
           shopName={shopName}
           shopAddress={shopAddress}
           onClose={() => setMessaging(false)}
-          onSent={(kind) =>
-            kind === 'confirm' &&
-            stage === 'received' &&
-            onMarkStep(order.id, { confirmedAt: new Date().toISOString() }, 'đã nhắn xác nhận cho khách')
-          }
+          onSent={(kind) => {
+            // Nhắn xác nhận từ bất cứ đường nào (nút chính, "Thêm → Nhắn khách", Copy) cũng tính là đã nhận và đã xác nhận
+            if (kind !== 'confirm' || order.source !== 'web' || order.status !== 'pending' || order.confirmedAt) return;
+            const at = new Date().toISOString();
+            onMarkStep(order.id, { receivedAt: order.receivedAt ?? at, confirmedAt: at }, 'đã nhắn xác nhận cho khách');
+          }}
         />
       )}
     </li>
@@ -493,6 +579,11 @@ export default function OrdersPage({
   const [view, setView] = useState('list'); // tab Đơn ship: 'list' | 'route'
   const [query, setQuery] = useState('');
   const [date, setDate] = useState('');
+  const wide = useWide();
+  const [selectedId, setSelectedId] = useState(null);
+  // Tab đơn đã xong / đã huỷ / kết quả tìm kiếm có thể có hàng trăm đơn: chỉ vẽ 30 đơn đầu, bấm để xem thêm
+  const [limit, setLimit] = useState(PAGE);
+  useEffect(() => setLimit(PAGE), [filter, type, query, date]);
 
   const ofType = orders.filter((o) => (type === 'delivery' ? o.type === 'delivery' : o.type !== 'delivery'));
   // Đang tìm kiếm: tìm trong mọi trạng thái, mới tạo lên trước
@@ -505,6 +596,9 @@ export default function OrdersPage({
   const due = (o) => new Date(o.deliverAt ?? o.createdAt).getTime();
   if (!searching && (filter === 'pending' || filter === 'done')) visible.sort((a, b) => due(a) - due(b));
   else visible.sort((a, b) => due(b) - due(a));
+  const capped = searching || filter !== 'pending';
+  const shown = capped ? visible.slice(0, limit) : visible;
+  const selected = shown.find((o) => o.id === selectedId) ?? shown[0];
 
   const filterLabel = (f) => (f.id === 'shipped' ? statusLabel('shipped', type) : f.label);
   const exportExcel = async () => {
@@ -537,7 +631,7 @@ export default function OrdersPage({
   };
 
   return (
-    <div className="staff-stagger mx-auto max-w-2xl pb-24 md:max-w-5xl">
+    <div className="staff-stagger mx-auto max-w-2xl pb-24 md:max-w-5xl xl:max-w-7xl">
       {!fixedType && (
         <div className="mb-3 grid grid-cols-2 gap-2">
           {Object.entries(ORDER_TYPES).map(([id, info]) => {
@@ -638,7 +732,7 @@ export default function OrdersPage({
                   key={f.id}
                   onClick={() => setFilter(f.id)}
                   aria-pressed={active}
-                  className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
                     active ? 'bg-slate-900 text-slate-50' : 'bg-card text-slate-600'
                   }`}
                 >
@@ -693,12 +787,23 @@ export default function OrdersPage({
                       : 'Chưa có đơn'}
                 </p>
               ) : (
-                // Màn rộng (iPad, máy tính): 2 cột đơn để nhìn được nhiều đơn cùng lúc
-                <ul className="space-y-3 md:grid md:grid-cols-2 md:items-start md:gap-3 md:space-y-0">
-                  {visible.map((order) => (
-                    <OrderCard
-                      key={order.id}
-                      order={order}
+                wide ? (
+                  // Màn rất rộng (iPad ngang, máy tính): trái là danh sách gọn, phải là đơn đang chọn
+                  <div className="grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-start gap-4">
+                    <ul className="divide-y divide-slate-200 overflow-hidden rounded-3xl border border-slate-200 bg-card">
+                      {shown.map((order) => (
+                        <OrderRow
+                          key={order.id}
+                          order={order}
+                          selected={order.id === selected.id}
+                          onSelect={setSelectedId}
+                        />
+                      ))}
+                    </ul>
+                    <ul className="sticky top-20">
+                      <OrderCard
+                        key={selected.id}
+                        order={selected}
                       now={now}
                       shopName={settings.shopName}
                       shopAddress={settings.shopAddress}
@@ -707,9 +812,36 @@ export default function OrdersPage({
                       onSetStatus={onSetStatus}
                       onSetPaid={onSetPaid}
                       onMarkStep={onMarkStep}
-                    />
-                  ))}
-                </ul>
+                      />
+                    </ul>
+                  </div>
+                ) : (
+                  // Màn vừa (iPad dọc): 2 cột đơn để nhìn được nhiều đơn cùng lúc
+                  <ul className="space-y-3 md:grid md:grid-cols-2 md:items-start md:gap-3 md:space-y-0">
+                    {shown.map((order) => (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                      now={now}
+                      shopName={settings.shopName}
+                      shopAddress={settings.shopAddress}
+                      mapsApp={settings.mapsApp}
+                      onEdit={setEditing}
+                      onSetStatus={onSetStatus}
+                      onSetPaid={onSetPaid}
+                      onMarkStep={onMarkStep}
+                      />
+                    ))}
+                  </ul>
+                )
+              )}
+              {shown.length < visible.length && (
+                <button
+                  onClick={() => setLimit((n) => n + PAGE)}
+                  className="mt-4 w-full rounded-2xl border border-slate-300 py-3 font-semibold text-slate-700 active:bg-slate-100"
+                >
+                  Xem thêm ({visible.length - shown.length} đơn nữa)
+                </button>
               )}
               {!searching && (
                 <p className="mt-4 text-center text-xs text-slate-400 lg:hidden">

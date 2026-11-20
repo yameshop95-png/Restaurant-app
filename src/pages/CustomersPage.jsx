@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { BellRing, CircleDollarSign, MapPin, MessageSquare, Pencil, Phone, Plus, Search, Trash2, UserRound, X } from 'lucide-react';
-import { matchesCustomer, sameCustomer } from '../hooks/useCustomers';
+import { customerKey, matchesCustomer } from '../hooks/useCustomers';
 import { customerProfile } from '../lib/customerInsights';
 import { reminderMessage, smsLink } from '../lib/customerMessage';
 import { formatMoney, orderTotal } from '../lib/stats';
@@ -124,9 +124,19 @@ export default function CustomersPage({
   const [dueOnly, setDueOnly] = useState(false);
 
   // Số đơn, tổng tiền và tiền còn nợ (đơn chưa thanh toán, không tính đơn huỷ) của từng khách
-  const statsById = new Map(
+  // Gom đơn theo khách một lần (trước đây so từng khách với mọi đơn sau mỗi lần gõ tìm kiếm)
+  const statsById = useMemo(() => {
+    const byKey = new Map();
+    for (const o of orders) {
+      if (!o.customer || o.status === 'cancelled') continue;
+      const k = customerKey(o.customer);
+      const arr = byKey.get(k);
+      if (arr) arr.push(o);
+      else byKey.set(k, [o]);
+    }
+    return new Map(
     customers.map((c) => {
-      const list = orders.filter((o) => o.customer && o.status !== 'cancelled' && sameCustomer(o.customer, c));
+      const list = byKey.get(customerKey(c)) ?? [];
       const unpaid = list.filter((o) => !o.paid);
       return [
         c.id,
@@ -141,6 +151,9 @@ export default function CustomersPage({
       ];
     })
   );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders, customers]);
+
   const debtors = customers.filter((c) => statsById.get(c.id).debt > 0);
   const totalDebt = debtors.reduce((sum, c) => sum + statsById.get(c.id).debt, 0);
 

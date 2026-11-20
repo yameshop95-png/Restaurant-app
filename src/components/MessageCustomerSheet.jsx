@@ -35,6 +35,7 @@ export default function MessageCustomerSheet({ order, shopName, shopAddress, onC
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
+      onSent?.(kind); // copy sang Zalo / Messenger cũng tính là đã nhắn khách
       setTimeout(() => setCopied(false), 2500);
     } catch {
       setCopied(false);
@@ -70,7 +71,7 @@ export default function MessageCustomerSheet({ order, shopName, shopAddress, onC
               {order.customer?.name} · {phone}
             </p>
           </div>
-          <button onClick={onClose} className="rounded-full p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Đóng">
+          <button onClick={onClose} className="flex h-11 w-11 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100" aria-label="Đóng">
             <X size={22} />
           </button>
         </div>

@@ -135,7 +135,7 @@ html.staff-app .staff-row {
   transition: transform var(--m-press) var(--ease);
 }
 
-html.staff-app .staff-row:active {
+html.staff-app li.staff-row:not(.rounded-3xl):active {
   transform: scale(0.985);
 }
 

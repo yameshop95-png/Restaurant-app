@@ -20,6 +20,7 @@ const SHOP_DEFAULTS = {
 };
 
 const DEVICE_DEFAULTS = {
+  theme: 'light', // giao diện: 'light' (sáng) hoặc 'dark' (tối); lưu riêng từng máy
   dueSound: true, // kêu + rung khi đơn sắp tới giờ giao / trễ giờ
   keepAwake: false, // giữ màn hình luôn sáng khi mở app (máy để ở quán cả ngày)
   autoPrint: false, // tự in bill khi có đơn website mới; chỉ bật trên 1 máy để bill không in trùng

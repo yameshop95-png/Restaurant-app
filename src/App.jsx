@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { applyTheme } from './lib/theme';
+import { InventoryProvider } from './hooks/useInventory';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import BottomNav from './components/BottomNav';
 import OnlineOrderAlert from './components/OnlineOrderAlert';
 import PinLogin from './components/PinLogin';
@@ -60,7 +62,9 @@ export default function App() {
     );
   }
   // key: đổi người đăng nhập thì tải lại từ đầu
-  return <Shop key={auth.account.id} account={auth.account} onLogout={auth.logout} />;
+  const shop = <Shop key={auth.account.id} account={auth.account} onLogout={auth.logout} />;
+  // Dữ liệu kho chỉ chủ quán dùng: tải một lần cho cả app thay vì mỗi lần mở một trang
+  return auth.account.role === 'owner' ? <InventoryProvider key={auth.account.id}>{shop}</InventoryProvider> : shop;
 }
 
 function Shop({ account, onLogout }) {
@@ -112,6 +116,7 @@ function Shop({ account, onLogout }) {
   };
   const { settings, updateSettings } = useSettings();
   useAlwaysOn(settings.keepAwake);
+  useEffect(() => applyTheme(settings.theme), [settings.theme]);
   const now = useNow();
   const upcoming = upcomingOrders(orders, now, 60);
 
@@ -246,37 +251,39 @@ function Shop({ account, onLogout }) {
             </p>
           )}
           <div key={activeTab} className="staff-view" data-dir={viewDir.current}>
-          <ActivePage
-            account={account}
-            isOwner={isOwner}
-            isManager={isManager}
-            dataReady={ordersReady}
-            onLogout={onLogout}
-            orders={orders}
-            counts={counts}
-            now={now}
-            settings={settings}
-            onUpdateSettings={updateSettings}
-            onBackupNow={backupNow}
-            customers={customers}
-            menu={menu}
-            onAddOrder={createOrder}
-            onUpdateOrder={editOrder}
-            onAddCustomer={saveCustomer}
-            onUpdateCustomer={updateCustomer}
-            onDeleteCustomer={deleteCustomer}
-            onAddMenuItem={addItem}
-            onUpdateMenuItem={updateItem}
-            onDeleteMenuItem={deleteItem}
-            onMoveMenuItem={moveItem}
-            onImportMenu={importMenu}
-            onImportOrders={importOrders}
-            onImportCustomers={importCustomers}
-            onSetStatus={changeStatus}
-            onMarkStep={markStep}
-            onSetPaid={changePaid}
-            onNavigate={handleTabChange}
-          />
+          <Suspense fallback={<p className="py-16 text-center text-slate-500">Đang mở…</p>}>
+            <ActivePage
+              account={account}
+              isOwner={isOwner}
+              isManager={isManager}
+              dataReady={ordersReady}
+              onLogout={onLogout}
+              orders={orders}
+              counts={counts}
+              now={now}
+              settings={settings}
+              onUpdateSettings={updateSettings}
+              onBackupNow={backupNow}
+              customers={customers}
+              menu={menu}
+              onAddOrder={createOrder}
+              onUpdateOrder={editOrder}
+              onAddCustomer={saveCustomer}
+              onUpdateCustomer={updateCustomer}
+              onDeleteCustomer={deleteCustomer}
+              onAddMenuItem={addItem}
+              onUpdateMenuItem={updateItem}
+              onDeleteMenuItem={deleteItem}
+              onMoveMenuItem={moveItem}
+              onImportMenu={importMenu}
+              onImportOrders={importOrders}
+              onImportCustomers={importCustomers}
+              onSetStatus={changeStatus}
+              onMarkStep={markStep}
+              onSetPaid={changePaid}
+              onNavigate={handleTabChange}
+            />
+          </Suspense>
           </div>
         </main>
         <BottomNav

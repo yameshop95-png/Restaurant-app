@@ -21,6 +21,7 @@ export default function useCloudList(table, { fromRow, sort = (list) => list, wr
   const [loadError, setLoadError] = useState(null);
   const listRef = useRef(list);
   const alive = useRef(true);
+  const retryDelay = useRef(0);
   // maxUpdated: updated_at mới nhất đã thấy; hasUpdated: bảng có cột updated_at; lastFull: lần tải toàn bộ gần nhất
   const meta = useRef({ maxUpdated: null, hasUpdated: false, lastFull: 0, fromServer: false });
   const saveTimer = useRef(null);
@@ -92,10 +93,14 @@ export default function useCloudList(table, { fromRow, sort = (list) => list, wr
       const { rows, error } = await fetchRows(since);
       if (error) {
         setLoadError(error.message);
-        if (alive.current) setTimeout(() => alive.current && refetch(), 5000);
+        // Thử lại chậm dần (5s, 10s … tối đa 60s); bảng chưa tạo trên máy chủ thì thử lại mỗi 60s, không dồn dập
+        const missingTable = /relation|does not exist|schema cache/i.test(error.message ?? '');
+        retryDelay.current = missingTable ? 60000 : Math.min((retryDelay.current || 2500) * 2, 60000);
+        if (alive.current) setTimeout(() => alive.current && refetch(), retryDelay.current);
         return;
       }
       if (hasPending(table)) return;
+      retryDelay.current = 0;
       setLoadError(null);
       track(rows);
       m.fromServer = true;

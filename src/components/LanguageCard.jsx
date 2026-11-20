@@ -3,7 +3,7 @@ import { Languages } from 'lucide-react';
 import { LANG_GROUPS, languageSummary } from '../lib/languageReport';
 import { formatMoney } from '../lib/stats';
 
-const COLOR = { vi: '#f97316', en: '#38bdf8', app: '#64748b' };
+const COLOR = { vi: 'var(--chart-vi)', en: 'var(--chart-en)', app: 'var(--chart-app)' };
 
 // Khách theo ngôn ngữ trong kỳ đang xem: đơn web tiếng Việt / tiếng Anh, và đơn nhân viên tạo trong app
 export default function LanguageCard({ orders, range }) {

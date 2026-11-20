@@ -1,3 +1,4 @@
+import { createContext, createElement, useContext } from 'react';
 import useCloudList, { dataOf } from './useCloudList';
 import { supabase } from '../lib/supabase';
 
@@ -44,7 +45,7 @@ const byName = (list) => [...list].sort((a, b) => String(a.name).localeCompare(S
 const byDateDesc = (list) =>
   [...list].sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.id).localeCompare(String(a.id)));
 
-export default function useInventory() {
+function useInventoryData() {
   const ingredients = useTable('inv_ingredients', byName);
   const purchases = useTable('inv_purchases', byDateDesc);
   const adjustments = useTable('inv_adjustments', byDateDesc);
@@ -69,4 +70,16 @@ export default function useInventory() {
     missingTables: all.some(missing),
     loadError: all.map((t) => t.loadError).find(Boolean) ?? null,
   };
+}
+
+// Một bản dữ liệu kho dùng chung cho cả app (chủ quán): trước đây mỗi lần mở Màn hình chính / Báo cáo / Kho lại mở
+// thêm 6 kết nối trực tiếp và tải lại 6 bảng.
+const InventoryContext = createContext(null);
+
+export function InventoryProvider({ children }) {
+  return createElement(InventoryContext.Provider, { value: useInventoryData() }, children);
+}
+
+export default function useInventory() {
+  return useContext(InventoryContext);
 }

@@ -8,7 +8,7 @@ export { normalizeText };
 
 const phoneKey = (phone) => phone.replace(/\D/g, '');
 // Khách được nhận diện theo số điện thoại; không có SĐT thì theo tên.
-const customerKey = (c) => phoneKey(c.phone ?? '') || `name:${normalizeText(c.name)}`;
+export const customerKey = (c) => phoneKey(c.phone ?? '') || `name:${normalizeText(c.name)}`;
 const newId = () => crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 
 export function mergeInto(list, incoming) {
