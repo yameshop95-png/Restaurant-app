@@ -20,6 +20,11 @@ import { periodRange, shiftPeriod } from '../lib/report';
 // Lãi theo kênh là LÃI GỘP (doanh thu kênh − giá vốn kênh): giá vốn tính được cho từng đơn nên
 // tách được thật; chi phí khác là chi phí chung của cả tuần, không gán cho kênh nào — lãi ròng
 // của tuần (= lãi gộp − chi phí chung) hiện trong tooltip của tầng 1.
+// Mục tiêu lãi tuần: đọc từ thiết lập `profitTarget` (lưu riêng trên máy, cùng nguồn mà biểu đồ
+// "Lợi nhuận theo tuần" ở Màn hình chính trước đây dùng — biểu đồ đó đã bỏ). Khi đã đặt mục
+// tiêu (> 0), tầng 1 vẽ thêm đường đứt nét ngang ở mức mục tiêu trên cùng thang tiền và dấu ◆
+// tại chiều cao LÃI RÒNG của từng tuần để nhìn ra tuần nào đạt mục tiêu. Chưa đặt (trống / 0)
+// thì không vẽ gì thêm.
 const WEEK_OPTIONS = [4, 8, 12];
 const GRAD = {
   web: 'linear-gradient(180deg, var(--chart-chan-web-1), var(--chart-chan-web-2))',
@@ -85,7 +90,7 @@ function TierTitle({ title, right }) {
   );
 }
 
-export default function WeeklyPerformanceCard({ orders, menu }) {
+export default function WeeklyPerformanceCard({ orders, menu, settings }) {
   const inventory = useInventory();
   const ingredients = inventory.ingredients.list;
   const purchases = inventory.purchases.list;
@@ -96,6 +101,9 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
   const [weekCount, setWeekCount] = useState(8);
   const [picked, setPicked] = useState(null); // tuần đang chọn ở tầng 1; null = tuần mới nhất
   const gradientId = useId().replace(/[^a-zA-Z0-9]/g, '');
+  // Mục tiêu LÃI RÒNG mỗi tuần (A$) từ thiết lập của quán; trống / 0 / không hợp lệ → không vẽ.
+  const targetRaw = Number(settings?.profitTarget);
+  const target = Number.isFinite(targetRaw) && targetRaw > 0 ? targetRaw : null;
 
   const weeks = useMemo(() => {
     const out = [];
@@ -138,7 +146,9 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
   // Doanh thu tuần thường lớn hơn lãi nên đỉnh thang mở rộng tới doanh thu tuần cao nhất
   // (cùng cách biểu đồ Màn hình chính đã làm); giá trị số liệu không đổi, chỉ đỉnh thang đổi.
   const chanValues = weeks.flatMap((w) => [w.web.profit, w.shop.profit]);
-  const barTop = niceCeil(Math.max(0, ...chanValues, ...weeks.map((w) => w.revenue))) || 1;
+  // Đỉnh thang cũng tính cả mục tiêu (khi đã đặt) để đường mục tiêu luôn nằm trong vùng vẽ,
+  // giống cách biểu đồ tuần trước đây dựng thang; giá trị các cột không đổi.
+  const barTop = niceCeil(Math.max(0, ...chanValues, ...weeks.map((w) => w.revenue), target ?? 0)) || 1;
   const barBottom = -niceCeil(Math.abs(Math.min(0, ...chanValues)));
   const barSpan = barTop - barBottom || 1;
   const PAD1 = 52; // chừa chỗ cho tooltip nổi ở phía trên vùng vẽ
@@ -257,6 +267,20 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
             <i className="h-2.5 w-2.5 rounded-[4px]" style={{ background: GRAD.web }} /> Đơn web
             <i className="ml-1.5 h-2.5 w-2.5 rounded-[4px]" style={{ background: GRAD.shop }} /> Đơn tại quán
             <i className="ml-1.5 h-2.5 w-2.5 rounded-[4px]" style={{ background: GRAD.barRev }} /> Tổng doanh thu
+            {target != null && (
+              <>
+                <i
+                  className="ml-1.5 inline-block h-0 w-5 border-t-2 border-dashed align-middle"
+                  style={{ borderColor: 'var(--chart-target)' }}
+                />{' '}
+                Mục tiêu lãi ròng/tuần
+                <i
+                  className="ml-1.5 inline-block h-2 w-2 rotate-45"
+                  style={{ background: 'var(--chart-target)' }}
+                />{' '}
+                Lãi ròng tuần
+              </>
+            )}
           </span>
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <b className="font-semibold text-slate-700">Số lượng Order</b>
@@ -302,6 +326,13 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                     Đơn web {money(activeWeek.web.profit)} · Tại quán {money(activeWeek.shop.profit)} · Doanh thu{' '}
                     {money(activeWeek.revenue)} · Lãi ròng {money(activeWeek.profit)}
                     {activeWeek.otherCosts > 0 ? ` (chi phí chung ${money(activeWeek.otherCosts)})` : ''}
+                    {target != null && (
+                      <>
+                        {' '}
+                        · So mục tiêu {money(target)}:{' '}
+                        {activeWeek.profit >= target ? 'đạt ✓' : `còn thiếu ${money(target - activeWeek.profit)}`}
+                      </>
+                    )}
                   </p>
                 </div>
               )}
@@ -322,9 +353,9 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                   aria-label={`Lãi gộp theo kênh và doanh thu ${n} tuần: ${weeks
                     .map(
                       (w) =>
-                        `tuần ${ddmm(w.start)} đơn web ${money(w.web.profit)}, đơn tại quán ${money(w.shop.profit)}, doanh thu ${money(w.revenue)}`,
+                        `tuần ${ddmm(w.start)} đơn web ${money(w.web.profit)}, đơn tại quán ${money(w.shop.profit)}, doanh thu ${money(w.revenue)}${target != null ? `, lãi ròng ${money(w.profit)}` : ''}`,
                     )
-                    .join('; ')}`}
+                    .join('; ')}${target != null ? `; mục tiêu lãi ròng mỗi tuần ${money(target)}` : ''}`}
                   className="relative min-w-0 flex-1"
                   style={{ height: H1 }}
                 >
@@ -335,6 +366,18 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                       style={{ top: y1(t) }}
                     />
                   ))}
+                  {/* Đường mục tiêu LÃI RÒNG/tuần (đứt nét) trên cùng thang tiền + nhãn ở đầu trái */}
+                  {target != null && (
+                    <div className="pointer-events-none absolute inset-x-0 z-10" style={{ top: y1(target) }} aria-hidden="true">
+                      <div className="border-t-2 border-dashed" style={{ borderColor: 'var(--chart-target)' }} />
+                      <span
+                        className="absolute -top-2 left-0 bg-card pr-1 text-[11px] font-semibold leading-none"
+                        style={{ color: 'var(--chart-target)' }}
+                      >
+                        Mục tiêu {money(target)}
+                      </span>
+                    </div>
+                  )}
                   <div className="absolute inset-0 flex gap-1">
                     {weeks.map((w, i) => (
                       <div
@@ -359,6 +402,25 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                       </div>
                     ))}
                   </div>
+                  {/* Dấu ◆ tại chiều cao LÃI RÒNG từng tuần: nằm trên đường mục tiêu = tuần đạt.
+                      Vàng khi đạt mục tiêu, xám khi chưa — so trực tiếp với đường đứt nét. */}
+                  {target != null &&
+                    weeks.map((w, i) => (
+                      <span
+                        key={`net-${w.start.getTime()}`}
+                        title={`Lãi ròng tuần ${ddmm(w.start)}: ${money(w.profit)} · mục tiêu ${money(target)} (${
+                          w.profit >= target ? 'đạt' : `còn thiếu ${money(target - w.profit)}`
+                        })`}
+                        className="pointer-events-none absolute z-10 h-[9px] w-[9px]"
+                        style={{
+                          left: `${(((i + 0.5) / n) * 100).toFixed(2)}%`,
+                          top: y1(w.profit),
+                          transform: 'translate(-50%, -50%) rotate(45deg)',
+                          background: w.profit >= target ? 'var(--chart-target)' : '#94a3b8',
+                          border: '1.5px solid rgba(255, 255, 255, 0.9)',
+                        }}
+                      />
+                    ))}
                 </div>
               </div>
               <WeekLabels weeks={weeks} axis="left" />
@@ -480,7 +542,15 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
           <div className="space-y-1.5 px-5 pb-5 pt-4 sm:px-6">
             <p className="text-xs leading-relaxed text-slate-400">
               Lãi theo kênh là lãi gộp (doanh thu − giá vốn món của kênh đó); chi phí chung của tuần không chia theo kênh —
-              lãi ròng của tuần = lãi gộp − chi phí chung, hiện trong tooltip ở tầng Tiền Lãi. Cột cam ở tầng Tiền Lãi là
+              lãi ròng của tuần = lãi gộp − chi phí chung, hiện trong tooltip ở tầng Tiền Lãi.
+              {target != null && (
+                <>
+                  {' '}
+                  Đường đứt nét là mục tiêu lãi ròng mỗi tuần; dấu ◆ là lãi ròng của từng tuần — ◆ nằm trên đường là
+                  tuần đạt mục tiêu, ◆ vàng là đã đạt.
+                </>
+              )}{' '}
+              Cột cam ở tầng Tiền Lãi là
               tổng doanh thu của tuần — cùng con số vẽ ở tầng Tổng Tiền bên dưới. Đơn cao giá: đơn có tổng tiền
               từ $50 trở lên. Đơn web: khách đặt qua website; Đơn tại quán: nhân viên nhập trong app.
             </p>
