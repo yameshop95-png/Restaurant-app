@@ -92,14 +92,6 @@ async function printPending() {
       console.log(`[${stamp()}] Bỏ qua bill cũ: ${job.note ?? job.id}`);
       continue;
     }
-    // Giữ chỗ bill trước khi in: nếu có 2 máy chạy bridge thì chỉ 1 máy in
-    const { data: claimed } = await supabase
-      .from('print_jobs')
-      .update({ status: 'printing' })
-      .eq('id', job.id)
-      .eq('status', 'pending')
-      .select('id');
-    if (!claimed?.length) continue;
     try {
       const bytes = Buffer.from(job.payload, 'base64');
       if (PRINTER_NAME) await sendToWindowsPrinter(bytes);

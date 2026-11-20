@@ -428,7 +428,7 @@ returns jsonb language sql stable security definer set search_path to '' as $$
   )
 $$;
 
--- place_web_order: bản mới nhất nằm trong sql/security_fixes.sql (chặn ngày nghỉ, lưu đồng ý nhận tin).
+-- place_web_order: bản mới nhất nằm trong sql/web_order_dedupe.sql (chống trùng, chặn ngày nghỉ, lưu đồng ý nhận tin).
 
 create or replace function public.track_session(payload jsonb)
 returns void language plpgsql security definer set search_path to '' as $$
@@ -653,7 +653,7 @@ create policy print_jobs_delete on public.print_jobs for delete to authenticated
 -- ---------------------------------------------------------------------
 revoke execute on all functions in schema public from public, anon;
 grant execute on function public.public_shop(), public.track_session(jsonb) to anon, authenticated;
--- place_web_order: cấp quyền trong sql/security_fixes.sql
+-- place_web_order: cấp quyền trong sql/web_order_dedupe.sql
 grant execute on function
   public.customer_activity(), public.default_zones(), public.handle_web_session(uuid, text), public.is_member(),
   public.list_staff(), public.match_zone(text, jsonb), public.my_account(), public.my_role(),
