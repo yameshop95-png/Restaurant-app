@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Archive, ChevronRight, Loader2, Send } from 'lucide-react';
 import { NAV_ITEMS } from '../components/navigation';
-import WeeklyProfitChart from '../components/WeeklyProfitChart';
 import ForecastCard from '../components/ForecastCard';
 import CountUp, { formatCount } from '../components/CountUp';
 import { BACKUP_REMINDER_DAYS, daysSinceBackup } from '../lib/backup';
@@ -322,17 +321,8 @@ export default function HomePage({ orders, now, settings, isOwner, isManager, on
 
       </div>
 
-      {/* Cột phải: lợi nhuận theo tuần (chủ quán) và món bán trong tuần */}
+      {/* Cột phải: dự báo và món bán trong tuần (số liệu lợi nhuận tuần xem ở mục Báo cáo) */}
       <div className="staff-stagger space-y-6">
-      {isOwner && (
-        <WeeklyProfitChart
-          orders={orders}
-          menu={menu}
-          now={now}
-          target={settings.profitTarget}
-          onTargetChange={(v) => onUpdateSettings?.({ profitTarget: v })}
-        />
-      )}
       <ForecastCard
         orders={orders}
         now={now}
