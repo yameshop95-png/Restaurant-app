@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: **2026-11-20** (sau khi PR #47 merge, main ở `41460ff`).
+> Cập nhật lần cuối: **2026-11-21** (sau khi PR #50 merge, main ở `62d51d0`).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James luôn qua PR để Paul duyệt, chỉ merge khi Paul nói rõ cho từng PR.
 
@@ -21,11 +21,16 @@
 | #45 | 6 mục: tỉ lệ đơn huỷ; thẻ khách mới/quay lại; **mục tiêu lãi tự động theo dữ liệu**; thẻ nhịp tuần trong tháng; gỡ thẻ lãi theo món trùng ở Báo cáo; thêm biên lãi % ở Inventory | `79ced7e` |
 | #46 | Thẻ **Hoạt Động Khách Hàng Website** ở tab Customer Active (xem mục 3) + tracker web thu thêm: mã khách bền, nguồn truy cập, thiết bị, múi giờ, lượt xem theo trang + `sql/customer_activity.sql` mở rộng (cột mới + khoá `insights`; **Paul đã chạy SQL trên Supabase ngày 2026-11-20**) + gỡ khối thống kê tỉ lệ theo kỳ cũ ở giữa trang (số hôm nay/7 ngày đã gộp vào thẻ mới) | `253add7` |
 | #47 | **Nới rộng bố cục + sửa tooltip biểu đồ** (xem mục 3): Báo cáo/Customer Active/Kho trải hết bề ngang ở màn ≥1024px; tooltip biểu đồ chuyển sang component chung `ChartTip` — tách theo từng tầng, bỏ tooltip native của trình duyệt | `41460ff` |
+| #48 | Thẻ **Chốt ca hôm nay** ở Home thành **donut vòng liền mạch** (số liệu `dailyCollection` giữ nguyên) + **dời thẻ lên trên cùng Home**; toán lát ở `src/lib/donut.js` | `cb37b57` |
+| #50 | Thẻ **Tiền tuần này** ở Home thành **donut lát bo tròn + khe hở** theo hình mẫu của Paul (tâm = tổng tuần; vòng: Đã thanh toán / Chưa thanh toán từ `summarize()`) + mở rộng `donut.js` thêm `drawLength`/`drawOffset`. **Đây là bản dựng lại của PR #49** trên main sau #48 (xem mục 2) — nội dung y hệt | `62d51d0` |
 
 ## 2. PR đã đóng KHÔNG merge
 
 - **PR #42** (đường số đơn + đường doanh thu trên biểu đồ Home): đóng ngày 2026-11-20 kèm comment giải thích —
   Paul quyết định bỏ hẳn biểu đồ Home (việc xoá gộp vào PR #43) nên toàn bộ PR này hết ý nghĩa. Đừng mở lại.
+- **PR #49** (donut Tiền tuần này): đóng ngày 2026-11-21 KHÔNG merge vì xung đột add/add với main
+  ở `src/lib/donut.js` + `tests/donut/run.mjs` sau khi PR #48 merge (cả hai PR cùng tạo mới hai file này).
+  Nội dung đã hoà, kiểm chứng (build + test:donut 23/23 + mọi suite) và merge qua **PR #50**. Đừng mở lại PR #49.
 
 ## 3. Quyết định thiết kế hiện hành (đừng làm ngược lại)
 
@@ -67,6 +72,16 @@
   hiện khi rê chuột/chạm ô tuần, ẩn khi rê ra hoặc chạm chỗ khác (thuộc tính `data-chart-tip-zone`),
   bề rộng cố định và kẹp trong vùng vẽ bằng `clamp()`. **Đừng dùng lại tooltip native `title`** cho chấm biểu đồ —
   nó không hiện khi chạm trên mobile và tự ẩn sau vài giây (đây là lỗi Paul bắt gặp).
+- **Hai donut ở Home — hai mẫu KHÁC nhau theo ý Paul** (đừng đồng bộ style):
+  thẻ **Chốt ca hôm nay** (đứng trên cùng Home, chỉ quản lý/chủ thấy) là vòng liền mạch —
+  lát theo cách trả (tiền mặt emerald / chuyển khoản xanh dương / PayID tím / chưa ghi cách trả xám) + Còn phải thu đỏ nhạt,
+  mẫu số = đã thu + còn phải thu hôm nay, tâm = đã thu hôm nay.
+  Thẻ **Tiền tuần này** là lát **bo tròn hai đầu + khe hở** — tâm = tổng tiền tuần + số đơn;
+  vòng chỉ 2 lát: Đã thanh toán `#3b82f6` / Chưa thanh toán `#f87171`.
+  Cả hai dùng chung `src/lib/donut.js` (`donutSegments(values, circumference, {gap, strokeWidth})` —
+  không truyền options thì ra các trường cũ cho Chốt ca; có gap thì thêm `drawLength`/`drawOffset`).
+  Định nghĩa tiền tuần lấy từ `summarize()` (`src/lib/stats.js`): đơn chưa huỷ, `createdAt` từ 00:00 thứ Hai;
+  đã thanh toán = đơn có `paid = true` (`weekPaid`), chưa thanh toán = `weekRevenue − weekPaid` (`weekUnpaid`).
 
 ## 4. PR nháp đang mở — chờ Paul, ĐỪNG merge
 
@@ -91,7 +106,8 @@
 - `npm run build`, `npm run test:sync` (7), `npm run test:performance` (54),
   `npm run test:dishprofit` (18 — test lớp dữ liệu `profitReport().dishes`, nuôi thẻ Inventory),
   `npm run test:insights` (35), `npm run test:cache`,
-  `npm run test:classify` (39 — phân loại nguồn/thiết bị của tracker web).
+  `npm run test:classify` (39 — phân loại nguồn/thiết bị của tracker web),
+  `npm run test:donut` (23 — toán lát vòng tròn, gồm khe hở).
 - Không đụng khi chưa được giao: mã PIN, luồng đặt đơn, in bill, chuông báo, sync, cache.
 
 ---
