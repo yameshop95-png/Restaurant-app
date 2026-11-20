@@ -78,13 +78,28 @@ async function login() {
 async function printPending() {
   const { data: jobs, error } = await supabase
     .from('print_jobs')
-    .select('id, payload, note')
+    .select('id, payload, note, created_at')
     .eq('status', 'pending')
     .order('created_at', { ascending: true })
     .limit(20);
   if (error) throw error;
 
   for (const job of jobs ?? []) {
+    // Bill gửi quá 6 tiếng (máy tính tắt cả buổi): không in nữa, tránh ra cả loạt bill cũ.
+    // Muốn in thì bấm "In lại" trong app.
+    if (Date.now() - new Date(job.created_at).getTime() > 6 * 3600000) {
+      await supabase.from('print_jobs').update({ status: 'failed', error: 'Quá 6 tiếng chưa in, đã bỏ qua' }).eq('id', job.id).eq('status', 'pending');
+      console.log(`[${stamp()}] Bỏ qua bill cũ: ${job.note ?? job.id}`);
+      continue;
+    }
+    // Giữ chỗ bill trước khi in: nếu có 2 máy chạy bridge thì chỉ 1 máy in
+    const { data: claimed } = await supabase
+      .from('print_jobs')
+      .update({ status: 'printing' })
+      .eq('id', job.id)
+      .eq('status', 'pending')
+      .select('id');
+    if (!claimed?.length) continue;
     try {
       const bytes = Buffer.from(job.payload, 'base64');
       if (PRINTER_NAME) await sendToWindowsPrinter(bytes);

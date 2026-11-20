@@ -3,6 +3,7 @@ import { InventoryProvider } from './hooks/useInventory';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import BottomNav from './components/BottomNav';
 import OnlineOrderAlert from './components/OnlineOrderAlert';
+import PrintStatus from './components/PrintStatus';
 import PinLogin from './components/PinLogin';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
@@ -183,7 +184,14 @@ function Shop({ account, onLogout }) {
       );
       toPrint.forEach((o) => printed.add(o.id));
       savePrinted(printed);
-      toPrint.forEach((o) => sendToShopPrinter(o, settings.shopName).catch(() => {}));
+      // Gửi lỗi (mất mạng): bỏ khỏi danh sách đã in để lần mở app sau thử lại; lỗi máy in hiện ở cảnh báo PrintStatus
+      toPrint.forEach((o) =>
+        sendToShopPrinter(o, settings.shopName).catch(() => {
+          const again = readPrinted();
+          again.delete(o.id);
+          savePrinted(again);
+        }),
+      );
     }
   }, [orders, ordersReady, settings.autoPrint, settings.shopName]);
   // Đơn đã có người bấm Nhận đơn (máy này hay máy khác) / đã huỷ: tắt thông báo
@@ -326,6 +334,7 @@ function Shop({ account, onLogout }) {
           onTabChange={handleTabChange}
           onMore={() => setSidebarOpen(true)}
         />
+        <PrintStatus />
         <OnlineOrderAlert
           alerts={onlineAlerts}
           onDismiss={dismissOnline}
