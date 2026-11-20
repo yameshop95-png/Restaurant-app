@@ -77,8 +77,8 @@ export default defineConfig(({ isSsrBuild }) => ({
         lang: 'vi',
         start_url: '/',
         display: 'standalone',
-        background_color: '#121214',
-        theme_color: '#121214',
+        background_color: '#ecebe6',
+        theme_color: '#ecebe6',
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
@@ -88,11 +88,17 @@ export default defineConfig(({ isSsrBuild }) => ({
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg}'],
         // Trang website (/order) không thuộc app; order.html được thay bằng các trang dựng sẵn sau build
-        globIgnores: ['order.html', 'order/**', 'site/**'],
+        globIgnores: ['order.html', 'order/**', 'site/**', 'assets/order-*'],
         // Máy chủ AI luôn phải gọi qua mạng, không trả trang app thay thế
         navigateFallbackDenylist: [/^\/api\//, /^\/order/],
         // Font chữ (Google Fonts): lưu lại để lần sau mở không cần mạng vẫn đúng font
         runtimeCaching: [
+          // Ảnh nhỏ món trong danh sách đơn (36 KB tất cả): lưu lại để mở lại không cần mạng
+          {
+            urlPattern: /\/site\/thumbs\//,
+            handler: 'CacheFirst',
+            options: { cacheName: 'thumbs', expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 * 90 } },
+          },
           {
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/,
             handler: 'CacheFirst',

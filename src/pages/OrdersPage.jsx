@@ -28,7 +28,7 @@ import RoutePlanner from '../components/RoutePlanner';
 import { normalizeText } from '../hooks/useCustomers';
 import useSwipe from '../hooks/useSwipe';
 import useWide from '../hooks/useWide';
-import { findDishContent } from '../site/lib';
+import { dishThumb } from '../lib/dishPhotos';
 import { dueInfo, formatDue } from '../lib/due';
 import { exportOrderList } from '../lib/orderListExcel';
 import { ORDER_TYPES, PAYMENT_METHODS, paymentLabel, PREVIOUS_STATUS, statusLabel } from '../lib/orderStatus';
@@ -142,9 +142,9 @@ function OrderRow({ order, selected, onSelect }) {
 
 // Ảnh nhỏ của món (ảnh trên website), món chưa có ảnh thì không hiện gì
 function DishThumb({ name }) {
-  const photo = findDishContent({ name })?.photo;
+  const photo = dishThumb(name);
   if (!photo) return null;
-  return <img src={photo} alt="" loading="lazy" className="h-10 w-10 shrink-0 rounded-lg object-cover" />;
+  return <img src={photo} alt="" width="40" height="40" loading="lazy" className="h-10 w-10 shrink-0 rounded-lg object-cover" />;
 }
 
 function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetStatus, onSetPaid, onMarkStep }) {
@@ -190,6 +190,11 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
           <p className="flex items-center gap-1 text-xs text-slate-400">
             <Clock size={12} /> Tạo lúc {formatTime(order.createdAt)}
             {order.createdBy && ` · ${order.createdBy}`}
+            {order.source === 'web' && (
+              <span className="ml-1 inline-flex items-center gap-1 font-semibold text-blue-600">
+                <Globe size={12} /> Online
+              </span>
+            )}
           </p>
           {!cancelled && (
             <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -247,11 +252,6 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
           )}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
-          {order.source === 'web' && (
-            <span className="flex items-center gap-1 rounded-full bg-blue-500 px-3 py-1 text-xs font-bold text-white">
-              <Globe size={12} /> Online
-            </span>
-          )}
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.badge}`}>
             {stage === 'new' && 'Chưa nhận đơn'}
             {stage === 'received' && 'Đã nhận · chưa xác nhận'}

@@ -69,6 +69,14 @@ html.staff-app.theme-light {
   --color-violet-600: #4a4943;
   --color-violet-700: #36352f;
 
+  --chart-over: #a8860f;
+  --chart-profit: #1f9d5a;
+  --chart-loss: #c8322b;
+  --chart-vi: #d9531a;
+  --chart-en: #1f7fb0;
+  --chart-app: #6b6a62;
+  --chart-series: #d9531a;
+
   --hairline: rgba(23, 22, 18, 0.14);
   --action: #bc4515;
 }

@@ -9,7 +9,7 @@ import { periodRange, shiftPeriod } from '../lib/report';
 // Màu cột: vàng = lãi vượt mục tiêu, xanh = lãi, đỏ = lỗ. Mục tiêu lưu riêng trên máy này (chỉ chủ quán thấy biểu đồ).
 const WEEKS = 12;
 const DEFAULT_TARGET = 500; // lãi trên A$500/tuần mới tô vàng, đổi được bằng nút Mục tiêu
-const COLOR = { over: '#d4af37', profit: '#10b981', loss: '#ef4444' };
+const COLOR = { over: 'var(--chart-over)', profit: 'var(--chart-profit)', loss: 'var(--chart-loss)' };
 const ddmm = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
 const dm = (d) => `${d.getDate()}/${d.getMonth() + 1}`; // nhãn ngắn dưới cột
 const whole = (n) => `$${Math.round(n).toLocaleString('en-AU')}`;
@@ -130,7 +130,7 @@ export default function WeeklyProfitChart({ orders, menu, now, target: savedTarg
                     <div
                       title={`Tuần ${ddmm(w.start)}${w.current ? ' (đang diễn ra)' : ''}: ${money(w.profit)} · doanh thu ${money(w.revenue)} · ${w.orders} đơn`}
                       className="absolute inset-x-0 rounded-md"
-                      style={{ top: t, height: h, background: COLOR[tone(w.profit)], opacity: w.current ? 0.55 : 1 }}
+                      style={{ top: t, height: h, background: COLOR[tone(w.profit)], opacity: w.current ? 0.75 : 1 }}
                     />
                   </div>
                 );

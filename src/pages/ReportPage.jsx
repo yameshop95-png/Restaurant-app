@@ -15,7 +15,7 @@ import CountUp, { formatCount } from '../components/CountUp';
 import { formatMoney } from '../lib/stats';
 
 const ACCESS_CODE_KEY = 'restaurant-app.ai-code';
-const SERIES = '#ff5722'; // màu chuỗi dữ liệu duy nhất của biểu đồ (cam chính của quán)
+const SERIES = 'var(--chart-series)'; // màu chuỗi dữ liệu duy nhất của biểu đồ (cam chính của quán)
 
 function Card({ title, right, children }) {
   return (

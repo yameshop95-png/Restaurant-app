@@ -1,6 +1,6 @@
 import { applyTheme } from './lib/theme';
 import { InventoryProvider } from './hooks/useInventory';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import BottomNav from './components/BottomNav';
 import OnlineOrderAlert from './components/OnlineOrderAlert';
 import PinLogin from './components/PinLogin';
@@ -251,37 +251,39 @@ function Shop({ account, onLogout }) {
             </p>
           )}
           <div key={activeTab} className="staff-view" data-dir={viewDir.current}>
-          <ActivePage
-            account={account}
-            isOwner={isOwner}
-            isManager={isManager}
-            dataReady={ordersReady}
-            onLogout={onLogout}
-            orders={orders}
-            counts={counts}
-            now={now}
-            settings={settings}
-            onUpdateSettings={updateSettings}
-            onBackupNow={backupNow}
-            customers={customers}
-            menu={menu}
-            onAddOrder={createOrder}
-            onUpdateOrder={editOrder}
-            onAddCustomer={saveCustomer}
-            onUpdateCustomer={updateCustomer}
-            onDeleteCustomer={deleteCustomer}
-            onAddMenuItem={addItem}
-            onUpdateMenuItem={updateItem}
-            onDeleteMenuItem={deleteItem}
-            onMoveMenuItem={moveItem}
-            onImportMenu={importMenu}
-            onImportOrders={importOrders}
-            onImportCustomers={importCustomers}
-            onSetStatus={changeStatus}
-            onMarkStep={markStep}
-            onSetPaid={changePaid}
-            onNavigate={handleTabChange}
-          />
+          <Suspense fallback={<p className="py-16 text-center text-slate-500">Đang mở…</p>}>
+            <ActivePage
+              account={account}
+              isOwner={isOwner}
+              isManager={isManager}
+              dataReady={ordersReady}
+              onLogout={onLogout}
+              orders={orders}
+              counts={counts}
+              now={now}
+              settings={settings}
+              onUpdateSettings={updateSettings}
+              onBackupNow={backupNow}
+              customers={customers}
+              menu={menu}
+              onAddOrder={createOrder}
+              onUpdateOrder={editOrder}
+              onAddCustomer={saveCustomer}
+              onUpdateCustomer={updateCustomer}
+              onDeleteCustomer={deleteCustomer}
+              onAddMenuItem={addItem}
+              onUpdateMenuItem={updateItem}
+              onDeleteMenuItem={deleteItem}
+              onMoveMenuItem={moveItem}
+              onImportMenu={importMenu}
+              onImportOrders={importOrders}
+              onImportCustomers={importCustomers}
+              onSetStatus={changeStatus}
+              onMarkStep={markStep}
+              onSetPaid={changePaid}
+              onNavigate={handleTabChange}
+            />
+          </Suspense>
           </div>
         </main>
         <BottomNav

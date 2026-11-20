@@ -10,6 +10,9 @@ import { loadLocalSettings } from './hooks/useSettings';
 // Áp giao diện đã chọn trên máy này trước khi vẽ app, để không nháy nền tối rồi mới sáng
 applyTheme(loadLocalSettings().theme);
 
+// Sau khi cập nhật app, trang đang mở có thể xin một tệp cũ đã bị thay: tải lại trang để lấy bản mới
+window.addEventListener('vite:preloadError', () => window.location.reload());
+
 // iOS chỉ hiện :active trên phần tử không phải nút sau khi đã có một listener chạm.
 window.addEventListener('touchstart', () => {}, { passive: true });
 
