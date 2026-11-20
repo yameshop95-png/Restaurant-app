@@ -1,3 +1,4 @@
+import { applyTheme } from './lib/theme';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import BottomNav from './components/BottomNav';
 import OnlineOrderAlert from './components/OnlineOrderAlert';
@@ -112,6 +113,7 @@ function Shop({ account, onLogout }) {
   };
   const { settings, updateSettings } = useSettings();
   useAlwaysOn(settings.keepAwake);
+  useEffect(() => applyTheme(settings.theme), [settings.theme]);
   const now = useNow();
   const upcoming = upcomingOrders(orders, now, 60);
 

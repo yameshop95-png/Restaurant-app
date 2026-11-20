@@ -16,6 +16,7 @@ import {
   ShoppingBag,
   FileSpreadsheet,
   Globe,
+  MoreHorizontal,
   Send,
   StickyNote,
   Truck,
@@ -26,6 +27,8 @@ import NewOrderSheet from '../components/NewOrderSheet';
 import RoutePlanner from '../components/RoutePlanner';
 import { normalizeText } from '../hooks/useCustomers';
 import useSwipe from '../hooks/useSwipe';
+import useWide from '../hooks/useWide';
+import { findDishContent } from '../site/lib';
 import { dueInfo, formatDue } from '../lib/due';
 import { exportOrderList } from '../lib/orderListExcel';
 import { ORDER_TYPES, PAYMENT_METHODS, paymentLabel, PREVIOUS_STATUS, statusLabel } from '../lib/orderStatus';
@@ -77,6 +80,68 @@ const backLabel = (order) =>
     ? 'Khách chưa lấy – chuyển về Hoàn thành'
     : BACK_LABEL[order.status];
 
+// Đơn online chờ xử lý đi qua 3 bước: chưa nhận → đã nhận → đã xác nhận
+const stageOf = (order) =>
+  order.source === 'web' && order.status === 'pending'
+    ? order.confirmedAt
+      ? 'confirmed'
+      : order.receivedAt
+        ? 'received'
+        : 'new'
+    : null;
+
+const STAGE_LABEL = { new: 'Chưa nhận đơn', received: 'Đã nhận · chưa xác nhận', confirmed: 'Đã xác nhận' };
+const DOT = { pending: 'bg-amber-500', done: 'bg-emerald-500', shipped: 'bg-slate-500', cancelled: 'bg-red-500' };
+
+// Nhãn trạng thái nhỏ có chấm màu
+function StatusPill({ order }) {
+  const stage = stageOf(order);
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+      <i className={`h-2 w-2 rounded-full ${DOT[order.status] ?? 'bg-slate-500'}`} />
+      {stage ? STAGE_LABEL[stage] : statusLabel(order.status, order.type)}
+    </span>
+  );
+}
+
+// Dòng gọn trong danh sách bên trái (màn rộng): số đơn + tên, giờ và loại đơn, tiền và trạng thái
+function OrderRow({ order, selected, onSelect }) {
+  const delivery = order.type === 'delivery';
+  return (
+    <li>
+      <button
+        onClick={() => onSelect(order.id)}
+        aria-current={selected ? 'true' : undefined}
+        className={`flex w-full items-start justify-between gap-3 border-l-4 px-4 py-3 text-left ${
+          selected ? 'border-blue-500 bg-slate-50' : 'border-transparent hover:bg-slate-50'
+        }`}
+      >
+        <span className="min-w-0">
+          <span className="block truncate font-semibold text-slate-900">
+            #{order.number}
+            {order.customer?.name ? ` · ${order.customer.name}` : ''}
+          </span>
+          <span className="block text-sm text-slate-500">
+            {delivery ? 'Giao hàng' : 'Đến lấy'}
+            {order.deliverAt ? ` · ${formatTime(order.deliverAt)}` : ''}
+          </span>
+        </span>
+        <span className="flex shrink-0 flex-col items-end gap-1">
+          <span className="font-mono text-sm font-semibold tabular-nums text-slate-900">{formatMoney(orderTotal(order))}</span>
+          <StatusPill order={order} />
+        </span>
+      </button>
+    </li>
+  );
+}
+
+// Ảnh nhỏ của món (ảnh trên website), món chưa có ảnh thì không hiện gì
+function DishThumb({ name }) {
+  const photo = findDishContent({ name })?.photo;
+  if (!photo) return null;
+  return <img src={photo} alt="" loading="lazy" className="h-10 w-10 shrink-0 rounded-lg object-cover" />;
+}
+
 function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetStatus, onSetPaid, onMarkStep }) {
   const status = STATUS[order.status];
   const cancelled = order.status === 'cancelled';
@@ -86,8 +151,8 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
   const [choosingPay, setChoosingPay] = useState(false);
   const [messaging, setMessaging] = useState(false);
   // Đơn online chờ xử lý đi qua 3 bước: nhận đơn → nhắn xác nhận cho khách → hoàn thành
-  const online = order.source === 'web' && order.status === 'pending';
-  const stage = !online ? null : order.confirmedAt ? 'confirmed' : order.receivedAt ? 'received' : 'new';
+  const stage = stageOf(order);
+  const [more, setMore] = useState(false);
   const askPayment = () => setChoosingPay(true);
 
   const share = async () => {
@@ -123,6 +188,16 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
           </p>
           {!cancelled && (
             <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setMore((v) => !v)}
+                aria-expanded={more}
+                className="flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600 active:bg-slate-200"
+              >
+                <MoreHorizontal size={14} /> {more ? 'Thu gọn' : 'Thêm'}
+              </button>
+              {more && (
+                <>
+
               <button
                 onClick={() => onEdit(order)}
                 className="flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600 active:bg-slate-200"
@@ -160,6 +235,8 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
                 >
                   <Send size={14} /> Gửi cho shipper
                 </button>
+              )}
+                </>
               )}
             </div>
           )}
@@ -243,12 +320,15 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
 
       <ul className="mt-3 space-y-1 border-t border-slate-100 pt-3 text-[15px]">
         {order.items.map((item) => (
-          <li key={item.name} className="flex justify-between gap-3">
-            <span className="text-slate-800">
+          <li key={item.name} className="flex items-center justify-between gap-3">
+            <span className="flex min-w-0 items-center gap-3 text-slate-800">
+              <DishThumb name={item.name} />
+              <span className="min-w-0">
               <span className="font-semibold">{item.qty} ×</span> {item.name}
               {item.note && <span className="block text-sm font-semibold text-red-600">↳ {item.note}</span>}
+              </span>
             </span>
-            <span className="text-slate-500">{formatMoney(item.qty * item.price)}</span>
+            <span className="shrink-0 font-mono tabular-nums text-slate-500">{formatMoney(item.qty * item.price)}</span>
           </li>
         ))}
       </ul>
@@ -493,6 +573,8 @@ export default function OrdersPage({
   const [view, setView] = useState('list'); // tab Đơn ship: 'list' | 'route'
   const [query, setQuery] = useState('');
   const [date, setDate] = useState('');
+  const wide = useWide();
+  const [selectedId, setSelectedId] = useState(null);
 
   const ofType = orders.filter((o) => (type === 'delivery' ? o.type === 'delivery' : o.type !== 'delivery'));
   // Đang tìm kiếm: tìm trong mọi trạng thái, mới tạo lên trước
@@ -537,7 +619,7 @@ export default function OrdersPage({
   };
 
   return (
-    <div className="staff-stagger mx-auto max-w-2xl pb-24 md:max-w-5xl">
+    <div className="staff-stagger mx-auto max-w-2xl pb-24 md:max-w-5xl xl:max-w-7xl">
       {!fixedType && (
         <div className="mb-3 grid grid-cols-2 gap-2">
           {Object.entries(ORDER_TYPES).map(([id, info]) => {
@@ -693,12 +775,23 @@ export default function OrdersPage({
                       : 'Chưa có đơn'}
                 </p>
               ) : (
-                // Màn rộng (iPad, máy tính): 2 cột đơn để nhìn được nhiều đơn cùng lúc
-                <ul className="space-y-3 md:grid md:grid-cols-2 md:items-start md:gap-3 md:space-y-0">
-                  {visible.map((order) => (
-                    <OrderCard
-                      key={order.id}
-                      order={order}
+                wide ? (
+                  // Màn rất rộng (iPad ngang, máy tính): trái là danh sách gọn, phải là đơn đang chọn
+                  <div className="grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-start gap-4">
+                    <ul className="divide-y divide-slate-200 overflow-hidden rounded-3xl border border-slate-200 bg-card">
+                      {visible.map((order) => (
+                        <OrderRow
+                          key={order.id}
+                          order={order}
+                          selected={order.id === (visible.find((o) => o.id === selectedId) ?? visible[0]).id}
+                          onSelect={setSelectedId}
+                        />
+                      ))}
+                    </ul>
+                    <ul className="sticky top-20">
+                      <OrderCard
+                        key={(visible.find((o) => o.id === selectedId) ?? visible[0]).id}
+                        order={visible.find((o) => o.id === selectedId) ?? visible[0]}
                       now={now}
                       shopName={settings.shopName}
                       shopAddress={settings.shopAddress}
@@ -707,9 +800,28 @@ export default function OrdersPage({
                       onSetStatus={onSetStatus}
                       onSetPaid={onSetPaid}
                       onMarkStep={onMarkStep}
-                    />
-                  ))}
-                </ul>
+                      />
+                    </ul>
+                  </div>
+                ) : (
+                  // Màn vừa (iPad dọc): 2 cột đơn để nhìn được nhiều đơn cùng lúc
+                  <ul className="space-y-3 md:grid md:grid-cols-2 md:items-start md:gap-3 md:space-y-0">
+                    {visible.map((order) => (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                      now={now}
+                      shopName={settings.shopName}
+                      shopAddress={settings.shopAddress}
+                      mapsApp={settings.mapsApp}
+                      onEdit={setEditing}
+                      onSetStatus={onSetStatus}
+                      onSetPaid={onSetPaid}
+                      onMarkStep={onMarkStep}
+                      />
+                    ))}
+                  </ul>
+                )
               )}
               {!searching && (
                 <p className="mt-4 text-center text-xs text-slate-400 lg:hidden">

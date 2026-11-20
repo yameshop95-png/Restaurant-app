@@ -353,6 +353,33 @@ function AlertSettings({ settings, onUpdateSettings }) {
   );
 }
 
+// Giao diện sáng / tối, chọn riêng cho từng máy
+function ThemeSettings({ settings, onUpdateSettings }) {
+  return (
+    <section className="rounded-3xl border border-slate-200 bg-card px-5 py-4 shadow-sm">
+      <h2 className="font-bold text-slate-900">Giao diện</h2>
+      <p className="text-sm text-slate-500">Sáng dễ đọc khi để máy gần cửa sổ hoặc ngoài trời. Chọn riêng cho từng máy.</p>
+      <div className="mt-3 grid grid-cols-2 gap-2" role="group" aria-label="Giao diện">
+        {[
+          ['light', 'Sáng'],
+          ['dark', 'Tối'],
+        ].map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => onUpdateSettings({ theme: id })}
+            aria-pressed={(settings.theme ?? 'light') === id}
+            className={`rounded-xl border-2 py-2.5 font-semibold ${
+              (settings.theme ?? 'light') === id ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-700'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // Máy để ở quán mở app cả ngày (iPad): giữ màn hình luôn sáng
 function KeepAwakeSettings({ settings, onUpdateSettings }) {
   const supported = typeof navigator !== 'undefined' && 'wakeLock' in navigator;
@@ -459,6 +486,7 @@ export default function SettingsPage({
       <MapsSettings settings={settings} onUpdateSettings={onUpdateSettings} />
       <AlertSettings settings={settings} onUpdateSettings={onUpdateSettings} />
       <AutoPrintSettings settings={settings} onUpdateSettings={onUpdateSettings} />
+      <ThemeSettings settings={settings} onUpdateSettings={onUpdateSettings} />
       <KeepAwakeSettings settings={settings} onUpdateSettings={onUpdateSettings} />
 
       {isOwner && (

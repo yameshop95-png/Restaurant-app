@@ -1,0 +1,164 @@
+/* Giao diện sáng của app nhân viên (mặc định). Bật bằng lớp theme-light trên <html> (lib/theme.js, chọn ở Cài đặt app).
+   Chỉ đổi giá trị biến màu của Tailwind và vài chỗ màu cố định ở staff-motion.css; không đổi bố cục.
+   Nền xám ấm, thẻ gần trắng, chữ mực đậm, cam của quán cho nút bấm (chữ trắng trên cam đậm đủ tương phản). */
+html.staff-app.theme-light {
+  color-scheme: light;
+  --color-page: #ecebe6;
+  --color-card: #fcfcfa;
+  --color-gold: #8f7209;
+
+  --color-slate-50: #f4f3ee;
+  --color-slate-100: #ecebe5;
+  --color-slate-200: #dcdad2;
+  --color-slate-300: #c4c2b8;
+  --color-slate-400: #77756c;
+  --color-slate-500: #5d5b53;
+  --color-slate-600: #4a4943;
+  --color-slate-700: #36352f;
+  --color-slate-800: #24231f;
+  --color-slate-900: #171612;
+  --color-slate-950: #000000;
+
+  --color-blue-50: #fdf1ea;
+  --color-blue-100: #fbe2d3;
+  --color-blue-200: #f6c4a6;
+  --color-blue-400: #e8743a;
+  --color-blue-500: #d9531a;
+  --color-blue-600: #bc4515;
+  --color-blue-700: #983810;
+  --color-blue-800: #7a2e0d;
+  --color-blue-900: #5e240a;
+
+  --color-orange-50: #fdf1ea;
+  --color-orange-100: #fbe2d3;
+  --color-orange-300: #f2a37c;
+  --color-orange-400: #e8743a;
+  --color-orange-500: #d9531a;
+  --color-orange-600: #bc4515;
+  --color-orange-800: #7a2e0d;
+
+  --color-emerald-50: #e6f4ec;
+  --color-emerald-100: #d1ebdc;
+  --color-emerald-200: #a6d8bd;
+  --color-emerald-500: #1f9d5a;
+  --color-emerald-600: #14804a;
+  --color-emerald-700: #0f663b;
+  --color-emerald-800: #0b4e2e;
+
+  --color-red-50: #fdecea;
+  --color-red-100: #fad8d5;
+  --color-red-200: #f2b0ab;
+  --color-red-300: #e8837c;
+  --color-red-400: #d94b44;
+  --color-red-500: #c8322b;
+  --color-red-600: #b02620;
+  --color-red-700: #911e19;
+
+  --color-amber-50: #f7f3e2;
+  --color-amber-100: #efe7c2;
+  --color-amber-300: #d9c882;
+  --color-amber-500: #a8860f;
+  --color-amber-600: #8f7209;
+  --color-amber-700: #755d07;
+  --color-amber-800: #5d4905;
+  --color-amber-900: #483904;
+
+  --color-violet-100: #ecebe5;
+  --color-violet-400: #a8860f;
+  --color-violet-500: #d9531a;
+  --color-violet-600: #4a4943;
+  --color-violet-700: #36352f;
+
+  --hairline: rgba(23, 22, 18, 0.14);
+  --action: #bc4515;
+}
+
+/* Chữ "trắng" của giao diện tối thành mực đậm; trên nền cam / đỏ / xanh / mực thì vẫn trắng */
+html.staff-app.theme-light .text-white {
+  color: var(--color-slate-900);
+}
+html.staff-app.theme-light :is(.bg-blue-500, .bg-blue-600, .bg-orange-500, .bg-orange-600, .bg-red-500, .bg-red-600, .bg-emerald-500, .bg-emerald-600, .bg-slate-900)
+  :is(.text-white, svg),
+html.staff-app.theme-light :is(.bg-blue-500, .bg-blue-600, .bg-orange-500, .bg-orange-600, .bg-red-500, .bg-red-600, .bg-emerald-500, .bg-emerald-600).text-white {
+  color: #ffffff;
+}
+html.staff-app.theme-light .bg-slate-900 {
+  color: #fafaf7;
+}
+html.staff-app.theme-light .bg-slate-900.text-slate-50 {
+  color: #fafaf7;
+}
+
+/* Thanh bên */
+html.staff-app.theme-light aside.fixed {
+  background-color: var(--color-card);
+  border-color: var(--color-slate-200);
+}
+
+/* Bóng thẻ: nhẹ, không phát sáng */
+html.staff-app.theme-light .rounded-3xl.bg-card {
+  box-shadow: 0 1px 2px rgba(23, 22, 18, 0.06), 0 8px 20px -14px rgba(23, 22, 18, 0.18);
+}
+html.staff-app.theme-light section.rounded-3xl.bg-card,
+html.staff-app.theme-light div.rounded-3xl.bg-card,
+html.staff-app.theme-light p.rounded-3xl.bg-card,
+html.staff-app.theme-light button.rounded-3xl.bg-card,
+html.staff-app.theme-light .staff-float {
+  box-shadow: 0 1px 2px rgba(23, 22, 18, 0.06), 0 10px 24px -16px rgba(23, 22, 18, 0.22);
+}
+html.staff-app.theme-light .staff-press::after,
+html.staff-app.theme-light .staff-tab-pill.is-active,
+html.staff-app.theme-light .staff-tab-pill.is-squish,
+html.staff-app.theme-light .staff-tab-pill.is-pop,
+html.staff-app.theme-light .staff-tab:focus-visible .staff-tab-pill {
+  box-shadow: none;
+}
+html.staff-app.theme-light .staff-tab-pill::before {
+  display: none;
+}
+html.staff-app.theme-light button.staff-press.is-pop,
+html.staff-app.theme-light li.staff-press.is-pop {
+  border-color: rgba(217, 83, 26, 0.45);
+}
+html.staff-app.theme-light li.staff-press.is-pop {
+  outline-color: rgba(217, 83, 26, 0.4);
+}
+html.staff-app.theme-light .staff-tab:focus-visible .staff-tab-pill {
+  box-shadow: 0 0 0 2px var(--color-page), 0 0 0 4px rgba(217, 83, 26, 0.7);
+}
+
+/* Thanh trên, thanh tab dưới, khung trượt */
+html.staff-app.theme-light .staff-chrome {
+  background-color: rgba(252, 252, 250, 0.9);
+  border-color: rgba(23, 22, 18, 0.1);
+}
+html.staff-app.theme-light .staff-sheet {
+  background-color: var(--color-card);
+  box-shadow: 0 -1px 0 rgba(23, 22, 18, 0.08) inset, 0 18px 44px rgba(23, 22, 18, 0.22);
+}
+html.staff-app.theme-light .staff-skip {
+  background: var(--color-card);
+  color: var(--color-slate-900);
+}
+@media (hover: none) and (pointer: coarse) {
+  html.staff-app.theme-light .staff-chrome,
+  html.staff-app.theme-light .staff-sheet {
+    background-color: var(--color-card);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.staff-app.theme-light .staff-chrome,
+  html.staff-app.theme-light .staff-sheet {
+    background-color: var(--color-card);
+  }
+}
+
+/* Nút công tắc: núm trắng trên nền xám / cam */
+html.staff-app.theme-light button[role='switch'] > span {
+  background-color: #ffffff;
+}
+
+/* Số tiền và số đơn trong danh sách: chữ số đều chiều rộng */
+html.staff-app.theme-light .font-mono {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
