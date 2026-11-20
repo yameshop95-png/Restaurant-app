@@ -55,7 +55,26 @@ export default function WeeklyProfitChart({ orders, menu, now, target: savedTarg
   // (chừa 12px trên / 4px dưới để chấm và nét không bị cắt). x của điểm = tâm cột của tuần đó.
   const maxOrders = Math.max(0, ...weeks.map((w) => w.orders));
   const yOrders = (v) => H - 4 - (v / (maxOrders || 1)) * (H - 16);
-  const linePts = weeks.map((w, i) => `${(((i + 0.5) / WEEKS) * 1200).toFixed(1)},${yOrders(w.orders).toFixed(1)}`).join(' ');
+  const lineXY = weeks.map((w, i) => ({ x: ((i + 0.5) / WEEKS) * 1200, y: yOrders(w.orders) }));
+  // Bo cong đường số đơn: Catmull-Rom chuyển sang Bézier bậc 3 — đường cong đi qua đúng từng
+  // điểm tuần nhưng không gãy góc. Điểm điều khiển được kẹp (clamp) trong [đỉnh, đáy] của thang
+  // số đơn, nên khi số đơn nhảy mạnh giữa hai tuần kề nhau, cong không lún xuống dưới mức 0 đơn
+  // (đáy thang) cũng không vọt quá tuần đông đơn nhất (đỉnh thang) — chống overshoot.
+  const clampLineY = (v) => Math.min(yOrders(0), Math.max(yOrders(maxOrders), v));
+  const linePath = (() => {
+    if (lineXY.length < 2) return '';
+    let d = `M ${lineXY[0].x.toFixed(1)} ${lineXY[0].y.toFixed(1)}`;
+    for (let i = 0; i < lineXY.length - 1; i += 1) {
+      const p0 = lineXY[Math.max(0, i - 1)];
+      const p1 = lineXY[i];
+      const p2 = lineXY[i + 1];
+      const p3 = lineXY[Math.min(lineXY.length - 1, i + 2)];
+      const c1 = `${(p1.x + (p2.x - p0.x) / 6).toFixed(1)} ${clampLineY(p1.y + (p2.y - p0.y) / 6).toFixed(1)}`;
+      const c2 = `${(p2.x - (p3.x - p1.x) / 6).toFixed(1)} ${clampLineY(p2.y - (p3.y - p1.y) / 6).toFixed(1)}`;
+      d += ` C ${c1}, ${c2}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+    }
+    return d;
+  })();
   const missingRecipes = [...new Set(weeks.flatMap((w) => w.noRecipe))];
   const overCount = weeks.filter((w) => !w.current && tone(w.profit) === 'over').length;
 
@@ -144,19 +163,18 @@ export default function WeeklyProfitChart({ orders, menu, now, target: savedTarg
                 );
               })}
             </div>
-            {/* Đường số đơn (trục phải): phủ lên trên cột, không bắt sự kiện để tooltip cột vẫn dùng được */}
+            {/* Đường cong số đơn (trục phải): phủ lên trên cột, không bắt sự kiện để tooltip cột vẫn dùng được */}
             <svg
               className="pointer-events-none absolute inset-0 h-full w-full"
               viewBox={`0 0 1200 ${H}`}
               preserveAspectRatio="none"
               aria-hidden="true"
             >
-              <polyline
-                points={linePts}
+              <path
+                d={linePath}
                 fill="none"
                 stroke={LINE_COLOR}
                 strokeWidth={2.5}
-                strokeLinejoin="round"
                 strokeLinecap="round"
                 vectorEffect="non-scaling-stroke"
               />
