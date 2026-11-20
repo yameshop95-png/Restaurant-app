@@ -367,6 +367,10 @@ export function shoppingList(data) {
   };
 }
 
+// Ngưỡng "đơn cao giá" cho thẻ Báo cáo Hiệu suất Tuần: đơn có tổng tiền (món + phí ship − giảm giá,
+// đúng định nghĩa orderTotal) từ mức này trở lên được đếm là đơn cao giá. Muốn đổi ngưỡng thì sửa đúng chỗ này.
+export const HIGH_VALUE_ORDER_MIN = 50;
+
 // Lãi lỗ trong khoảng [start, end): doanh thu − giá vốn − chi phí khác. Thời điểm bán = lúc tạo đơn (giống tab Báo cáo).
 // Giá nguyên liệu = giá nhập trung bình của tuần bán (có tính sale). Món làm theo mẻ = chi phí thật của mẻ cùng tuần / số phần;
 // món khác theo công thức.
@@ -387,6 +391,27 @@ export function profitReport({ range, orders, menu, recipes, ingredients, purcha
   const sold = live(orders).filter((o) => inRange(new Date(o.createdAt)));
   const revenue = sold.reduce((s, o) => s + orderTotal(o), 0);
 
+  // Tách theo kênh bán cho thẻ Báo cáo Hiệu suất Tuần. Kênh phân biệt bằng trường `source` của đơn:
+  // đơn khách đặt qua website do hàm place_web_order ghi source: 'web' (kèm createdBy 'Website');
+  // đơn nhân viên tạo trong app không có trường source → kênh tại quán.
+  // Giá vốn tính được cho từng đơn (vòng lặp dưới đây tính chi phí từng dòng đơn) nên tách được
+  // lãi gộp theo kênh: lãi gộp kênh = doanh thu kênh − giá vốn kênh. Chi phí khác (otherCosts) là
+  // chi phí chung của cả kỳ nên KHÔNG gán cho kênh nào; lãi ròng của kỳ vẫn là `profit` ở dưới,
+  // và cộng hai kênh lại đúng bằng doanh thu / giá vốn / lãi gộp của cả kỳ.
+  const channelOf = (o) => (o.source === 'web' ? 'web' : 'shop');
+  const channelTotals = {
+    web: { key: 'web', orders: 0, revenue: 0, cogs: 0 },
+    shop: { key: 'shop', orders: 0, revenue: 0, cogs: 0 },
+  };
+  let highValueOrders = 0;
+  for (const o of sold) {
+    const ch = channelTotals[channelOf(o)];
+    const total = orderTotal(o);
+    ch.orders += 1;
+    ch.revenue += total;
+    if (total >= HIGH_VALUE_ORDER_MIN) highValueOrders += 1;
+  }
+
   const dishes = new Map();
   const noRecipe = new Set();
   const noPrice = new Set();
@@ -394,6 +419,7 @@ export function profitReport({ range, orders, menu, recipes, ingredients, purcha
   for (const order of sold) {
     const created = new Date(order.createdAt);
     const week = weekStartKey(dateKey(created));
+    let orderCogs = 0;
     for (const item of order.items ?? []) {
       const menuItem = byName.get(normalizeText(item.name ?? ''));
       const recipe = recipesById.get(menuItem?.id);
@@ -414,6 +440,7 @@ export function profitReport({ range, orders, menu, recipes, ingredients, purcha
       const qty = num(item.qty);
       const lineCost = unitCost * qty;
       cogs += lineCost;
+      orderCogs += lineCost;
       const row = dishes.get(item.name) ?? { name: item.name, qty: 0, revenue: 0, cost: 0, hasRecipe: known };
       row.qty += qty;
       row.revenue += num(item.price) * qty;
@@ -421,6 +448,7 @@ export function profitReport({ range, orders, menu, recipes, ingredients, purcha
       row.hasRecipe = row.hasRecipe || known;
       dishes.set(item.name, row);
     }
+    channelTotals[channelOf(order)].cogs += orderCogs;
   }
 
   const dateIn = (e) => inRange(parseKey(e.date));
@@ -442,6 +470,10 @@ export function profitReport({ range, orders, menu, recipes, ingredients, purcha
     cashNet: revenue - bought - otherCosts,
     bought,
     orders: sold.length,
+    // Kênh bán (xem ghi chú ở đầu hàm): lãi gộp theo kênh = doanh thu kênh − giá vốn kênh,
+    // chưa trừ chi phí khác. Cộng hai kênh = doanh thu / giá vốn / lãi gộp của cả kỳ.
+    channels: [channelTotals.web, channelTotals.shop].map((c) => ({ ...c, profit: c.revenue - c.cogs })),
+    highValueOrders,
     byCategory: [...byCategory.entries()].sort((a, b) => b[1] - a[1]),
     dishes: [...dishes.values()].map((d) => ({ ...d, profit: d.revenue - d.cost })).sort((a, b) => b.profit - a.profit),
     noRecipe: [...noRecipe],

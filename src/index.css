@@ -236,4 +236,15 @@
   --chart-en: #38bdf8;
   --chart-app: #64748b;
   --chart-series: #ff5722;
+  /* Thẻ Báo cáo Hiệu suất Tuần (bản tối lấy tông sáng hơn để đọc rõ trên nền tối):
+     cột lãi theo kênh = gradient chàm → xanh dương, đường số đơn = hồng magenta / tím violet,
+     vùng doanh thu = gradient cam ấm. */
+  --chart-chan-web-1: #a5b4fc;
+  --chart-chan-web-2: #818cf8;
+  --chart-chan-shop-1: #7dd3fc;
+  --chart-chan-shop-2: #60a5fa;
+  --chart-ord-all: #e879f9;
+  --chart-ord-high: #a78bfa;
+  --chart-rev-1: #fdba74;
+  --chart-rev-2: #fb923c;
 }

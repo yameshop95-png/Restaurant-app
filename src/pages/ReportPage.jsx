@@ -10,6 +10,7 @@ import {
 import AnalyticsExportCard from '../components/AnalyticsExportCard';
 import LanguageCard from '../components/LanguageCard';
 import PairsCard from '../components/PairsCard';
+import WeeklyPerformanceCard from '../components/WeeklyPerformanceCard';
 import { buildReport, PERIODS, reportForAI, shiftPeriod } from '../lib/report';
 import CountUp, { formatCount } from '../components/CountUp';
 import { formatMoney } from '../lib/stats';
@@ -322,6 +323,9 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
           </div>
         </div>
       </Card>
+
+      {/* Hiệu suất theo tuần: lãi theo kênh, số đơn và doanh thu trên cùng trục tuần */}
+      <WeeklyPerformanceCard orders={orders} menu={menu} />
 
       <Card title={kind === 'year' ? 'Doanh thu theo tháng' : 'Doanh thu theo ngày'}>
         <RevenueChart buckets={report.buckets} kind={kind} />
