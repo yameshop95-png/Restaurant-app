@@ -32,6 +32,23 @@ import {
   SettingsPage,
 } from './pages';
 
+// Đơn web máy này đã tự in (giữ 300 đơn gần nhất), để tải lại app không in trùng
+const PRINTED_KEY = 'restaurant-app.autoPrinted';
+function readPrinted() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(PRINTED_KEY)) ?? []);
+  } catch {
+    return new Set();
+  }
+}
+function savePrinted(set) {
+  try {
+    localStorage.setItem(PRINTED_KEY, JSON.stringify([...set].slice(-300)));
+  } catch {
+    // bộ nhớ đầy / chế độ ẩn danh: bỏ qua
+  }
+}
+
 // Map id tab -> component hiển thị trong Main Content Area.
 const PAGES = {
   home: HomePage,
@@ -138,30 +155,47 @@ function Shop({ account, onLogout }) {
     if (fresh.length && settings.dueSound) alertBeep();
   }, [orders, ordersReady, now, settings.dueSound]);
 
-  // Đơn khách đặt qua website: kêu + hiện thông báo nổi. Lần đầu tải chỉ ghi nhận đơn đã có.
+  // Đơn khách đặt qua website: kêu + hiện thông báo nổi.
+  // Đơn web còn "chưa nhận" (chờ xử lý, chưa ai bấm Nhận đơn) luôn được báo, kể cả đơn đến lúc app đang tắt
+  // hoặc lúc mất mạng: mở app lên là kêu ngay, không để đơn nằm im trong danh sách.
   const [onlineAlerts, setOnlineAlerts] = useState([]);
   const seenOrders = useRef(null);
   useEffect(() => {
     if (!ordersReady) return;
-    if (!seenOrders.current) {
-      seenOrders.current = new Set(orders.map((o) => o.id));
-      return;
-    }
-    const fresh = orders.filter(
-      (o) =>
-        !seenOrders.current.has(o.id) &&
-        o.source === 'web' &&
-        Date.now() - new Date(o.createdAt).getTime() < 30 * 60000,
-    );
+    const unhandled = (o) =>
+      o.source === 'web' &&
+      o.status === 'pending' &&
+      !o.receivedAt &&
+      Date.now() - new Date(o.createdAt).getTime() < 7 * 86400000;
+    const first = !seenOrders.current;
+    if (first) seenOrders.current = new Set();
+    const fresh = orders.filter((o) => !seenOrders.current.has(o.id) && unhandled(o));
     orders.forEach((o) => seenOrders.current.add(o.id));
     if (!fresh.length) return;
     alertBeep();
-    setOnlineAlerts((list) => [...fresh, ...list]);
-    // Máy được bật "Tự in bill": đơn website mới tự ra bill ở quán, không ai phải bấm
+    setOnlineAlerts((list) => [...fresh.filter((o) => !list.some((a) => a.id === o.id)), ...list]);
+    // Máy được bật "Tự in bill": đơn website tự ra bill ở quán. Nhớ đơn đã in trên máy này để tải lại app không in trùng;
+    // đơn cũ hơn 1 ngày (lúc mới bật app) thì không tự in lại.
     if (settings.autoPrint) {
-      fresh.forEach((o) => sendToShopPrinter(o, settings.shopName).catch(() => {}));
+      const printed = readPrinted();
+      const toPrint = fresh.filter(
+        (o) => !printed.has(o.id) && (!first || Date.now() - new Date(o.createdAt).getTime() < 86400000),
+      );
+      toPrint.forEach((o) => printed.add(o.id));
+      savePrinted(printed);
+      toPrint.forEach((o) => sendToShopPrinter(o, settings.shopName).catch(() => {}));
     }
   }, [orders, ordersReady, settings.autoPrint, settings.shopName]);
+  // Đơn đã có người bấm Nhận đơn (máy này hay máy khác) / đã huỷ: tắt thông báo
+  useEffect(() => {
+    setOnlineAlerts((list) => {
+      const next = list.filter((a) => {
+        const o = orders.find((x) => x.id === a.id);
+        return o && o.status === 'pending' && !o.receivedAt;
+      });
+      return next.length === list.length ? list : next;
+    });
+  }, [orders]);
   // Chuông báo lặp lại mỗi 3,5 giây cho tới khi có người bấm vào thông báo để mở đơn (xác nhận),
   // kẻo nhân viên bận không nghe thấy. Bấm vào thông báo hoặc nút X sẽ tắt chuông.
   useEffect(() => {
