@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: **2026-11-20** (sau khi PR #46 merge, main ở `253add7`).
+> Cập nhật lần cuối: **2026-11-20** (sau khi PR #47 merge, main ở `41460ff`).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James luôn qua PR để Paul duyệt, chỉ merge khi Paul nói rõ cho từng PR.
 
@@ -20,6 +20,7 @@
 | #44 | (A) Thẻ lãi theo món ở Báo cáo — **đã bị PR #45 gỡ** (xem mục 3); (B) mục tiêu lãi tuần trong thẻ Hiệu suất — **đã bị PR #45 thay bằng mục tiêu tự động** | `caf1ee6` |
 | #45 | 6 mục: tỉ lệ đơn huỷ; thẻ khách mới/quay lại; **mục tiêu lãi tự động theo dữ liệu**; thẻ nhịp tuần trong tháng; gỡ thẻ lãi theo món trùng ở Báo cáo; thêm biên lãi % ở Inventory | `79ced7e` |
 | #46 | Thẻ **Hoạt Động Khách Hàng Website** ở tab Customer Active (xem mục 3) + tracker web thu thêm: mã khách bền, nguồn truy cập, thiết bị, múi giờ, lượt xem theo trang + `sql/customer_activity.sql` mở rộng (cột mới + khoá `insights`; **Paul đã chạy SQL trên Supabase ngày 2026-11-20**) + gỡ khối thống kê tỉ lệ theo kỳ cũ ở giữa trang (số hôm nay/7 ngày đã gộp vào thẻ mới) | `253add7` |
+| #47 | **Nới rộng bố cục + sửa tooltip biểu đồ** (xem mục 3): Báo cáo/Customer Active/Kho trải hết bề ngang ở màn ≥1024px; tooltip biểu đồ chuyển sang component chung `ChartTip` — tách theo từng tầng, bỏ tooltip native của trình duyệt | `41460ff` |
 
 ## 2. PR đã đóng KHÔNG merge
 
@@ -58,6 +59,14 @@
   (UTM ưu tiên hơn referrer, first-touch theo phiên). Khách quay lại tính theo `vid` bền
   (localStorage `site.vid`). Vị trí khách chỉ ở mức múi giờ — web không lấy được vị trí chính xác.
   Khối thống kê tỉ lệ theo kỳ cũ ở giữa trang đã gỡ; thẻ đang-online trực tiếp và danh sách khách bỏ dở giữ nguyên.
+- **Bề rộng trang + tooltip biểu đồ** (PR #47): wrapper gốc của ReportPage/CustomerActivityPage/InventoryPage
+  có class riêng (`report-page`/`activity-page`/`inventory-page`) và quy tắc ở cuối `src/index.css`:
+  `@media ≥1024px` thì `max-width: none` (trải hết vùng main); dưới 1024px giữ max-width cũ.
+  Các trang còn lại giữ nguyên bề rộng (Home/Đơn hàng/Chuẩn bị đã tự nới theo bậc; Khách hàng/Món ăn là danh sách 1 cột; Cài đặt là form).
+  Tooltip biểu đồ dùng component chung **`src/components/ChartTip.jsx`**: mỗi tầng biểu đồ một hộp riêng,
+  hiện khi rê chuột/chạm ô tuần, ẩn khi rê ra hoặc chạm chỗ khác (thuộc tính `data-chart-tip-zone`),
+  bề rộng cố định và kẹp trong vùng vẽ bằng `clamp()`. **Đừng dùng lại tooltip native `title`** cho chấm biểu đồ —
+  nó không hiện khi chạm trên mobile và tự ẩn sau vài giây (đây là lỗi Paul bắt gặp).
 
 ## 4. PR nháp đang mở — chờ Paul, ĐỪNG merge
 
