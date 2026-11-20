@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cacheGet, cacheSet } from '../lib/listCache';
 import { supabase } from '../lib/supabase';
-import { enqueue, hasPending, onDrained } from '../lib/sync';
+import { enqueue, hasPending, onDrained, syncReady } from '../lib/sync';
 
 const PAGE = 1000; // máy chủ trả tối đa 1000 dòng mỗi lần: đọc nối tiếp cho đủ
 const FULL_EVERY = 6 * 3600 * 1000; // tải lại toàn bộ ít nhất 6 giờ một lần (để biết dòng nào đã bị xoá)
@@ -84,6 +84,9 @@ export default function useCloudList(table, { fromRow, sort = (list) => list, wr
 
   const refetch = useCallback(
     async ({ full = false } = {}) => {
+      // Chờ hàng đợi đã lưu được khôi phục xong (chỉ lần mở app đầu tiên mới phải chờ):
+      // không thì hasPending() chưa đúng, lần tải toàn bộ có thể đè mất dòng đang chờ gửi (đơn tạo lúc mất mạng)
+      await syncReady();
       // Còn thay đổi chưa gửi được thì giữ nguyên dữ liệu trên máy, tránh mất thay đổi đó
       if (hasPending(table)) return;
       const m = meta.current;

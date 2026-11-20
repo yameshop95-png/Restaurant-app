@@ -22,6 +22,7 @@ function write({ added, changed, removed }) {
       ops.push({
         rowId: group.length === 1 ? group[0].id : undefined,
         run: () => supabase.from('orders').upsert(group).select(),
+        spec: { kind: 'upsert', table: 'orders', rows: group, select: true },
       });
     }
   }
@@ -31,11 +32,17 @@ function write({ added, changed, removed }) {
     ops.push({
       rowId: next.id,
       run: () => supabase.rpc('patch_data', { table_name: 'orders', row_id: next.id, patch }),
+      spec: { kind: 'rpc', name: 'patch_data', args: { table_name: 'orders', row_id: next.id, patch } },
       onDone: () => {},
     });
   }
   for (const o of removed) {
-    ops.push({ rowId: o.id, run: () => supabase.from('orders').delete().eq('id', o.id), onDone: () => {} });
+    ops.push({
+      rowId: o.id,
+      run: () => supabase.from('orders').delete().eq('id', o.id),
+      spec: { kind: 'delete', table: 'orders', rowId: o.id },
+      onDone: () => {},
+    });
   }
   return ops;
 }

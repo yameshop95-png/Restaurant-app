@@ -51,6 +51,7 @@ const write = ({ changed }) =>
     return {
       rowId: next.id,
       run: () => supabase.from('shop_settings').update({ data }).eq('id', next.id),
+      spec: { kind: 'update', table: 'shop_settings', rowId: next.id, values: { data } },
       onDone: () => {},
     };
   });

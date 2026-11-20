@@ -44,11 +44,17 @@ function write({ added, changed, removed }) {
     ops.push({
       rowId: rows.length === 1 ? rows[0].id : undefined,
       run: () => supabase.from('customers').upsert(rows),
+      spec: { kind: 'upsert', table: 'customers', rows },
       onDone: () => {},
     });
   }
   for (const c of removed) {
-    ops.push({ rowId: c.id, run: () => supabase.from('customers').delete().eq('id', c.id), onDone: () => {} });
+    ops.push({
+      rowId: c.id,
+      run: () => supabase.from('customers').delete().eq('id', c.id),
+      spec: { kind: 'delete', table: 'customers', rowId: c.id },
+      onDone: () => {},
+    });
   }
   return ops;
 }
