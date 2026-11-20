@@ -253,3 +253,22 @@
   /* Đường mục tiêu lãi ròng/tuần + dấu ◆ lãi ròng ở tầng 1 (vàng, cùng tông --chart-over) */
   --chart-target: #d4af37;
 }
+
+/* Các trang số liệu / biểu đồ (Báo cáo, Customer Active, Kho): từ 1024px trở lên (khi app
+   đã có sidebar cố định bên trái) cho cột nội dung trải hết bề ngang vùng <main> thay vì
+   bó ở max-w-2xl (672px) / max-w-4xl (896px) — thẻ, biểu đồ và danh sách bên trong đều co
+   giãn theo bề ngang nên tự rộng theo.
+   Chỉ áp cho class riêng của từng trang (.report-page / .activity-page / .inventory-page)
+   nên các tab khác giữ nguyên bề rộng: Tổng quan đã có lưới 2 cột riêng ở xl, Đơn hàng và
+   Chuẩn bị đã tự nới theo bậc md/xl, còn Khách hàng, Món ăn (danh sách một cột) và Cài đặt
+   (toàn form nhập liệu) hẹp là có chủ đích.
+   Dưới 1024px (điện thoại, iPad dọc) không đổi gì: vẫn bề rộng như cũ.
+   Quy tắc này nằm ngoài @layer và ở cuối file để thắng cả ghi đè .max-w-2xl
+   trong khối @media ≥1800px phía trên. */
+@media screen and (min-width: 1024px) {
+  .report-page,
+  .activity-page,
+  .inventory-page {
+    max-width: none;
+  }
+}

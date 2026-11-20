@@ -1,5 +1,6 @@
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { Check, Mail, MessageSquare, Phone, RefreshCw, Trash2 } from 'lucide-react';
+import ChartTip, { useChartTipDismiss } from '../components/ChartTip';
 import useCustomerActivity from '../hooks/useCustomerActivity';
 import { smsLink } from '../lib/customerMessage';
 import CountUp, { formatCount } from '../components/CountUp';
@@ -84,6 +85,12 @@ const TREND_ENGAGED = '#6366f1';
 // Máy chủ chưa chạy bản SQL mới (chưa có `insights`) thì thẻ tự ẩn, trang không vỡ.
 function WebsiteInsightsCard({ insights, periods, updatedAt }) {
   const gradientId = useId().replace(/[^a-zA-Z0-9]/g, '');
+  // Hộp thông tin của biểu đồ xu hướng: chỉ số của ĐÚNG tuần được rê chuột / chạm vào.
+  // Trước đây các chấm chỉ có tooltip native `title` — không hiện trên cảm ứng và bị
+  // trình duyệt tự ẩn. Nay dùng hộp ChartTip như thẻ Hiệu suất Tuần: không hẹn giờ tự
+  // tắt, ẩn khi rê chuột ra khỏi vùng vẽ hoặc chạm vào chỗ khác.
+  const [tip, setTip] = useState(null); // chỉ số tuần đang xem; null = ẩn
+  useChartTipDismiss(tip != null, () => setTip(null));
   const d30 = periods?.days30 ?? {};
   const d7 = periods?.days7 ?? {};
   const today = periods?.today ?? {};
@@ -246,6 +253,8 @@ function WebsiteInsightsCard({ insights, periods, updatedAt }) {
                   .join('; ')}`}
                 className="relative min-w-0 flex-1"
                 style={{ height: H }}
+                data-chart-tip-zone
+                onMouseLeave={() => setTip(null)}
               >
                 {[0, 50, 100].map((p) => (
                   <div key={p} className="absolute inset-x-0 border-t border-slate-100" style={{ top: `${p}%` }} />
@@ -269,19 +278,48 @@ function WebsiteInsightsCard({ insights, periods, updatedAt }) {
                 {weekly.map((w, i) => (
                   <span
                     key={`v-${w.start}`}
-                    title={`Tuần ${dmFromIso(w.start)}: ${w.visits ?? 0} lượt vào`}
-                    className="pointer-events-none absolute h-[8px] w-[8px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    className={`pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full ${
+                      tip === i ? 'h-[12px] w-[12px]' : 'h-[8px] w-[8px]'
+                    }`}
                     style={{ left: `${(((i + 0.5) / n) * 100).toFixed(2)}%`, top: yT(w.visits ?? 0), background: TREND_VISITS, border: '2px solid rgba(255, 255, 255, 0.9)' }}
                   />
                 ))}
                 {weekly.map((w, i) => (
                   <span
                     key={`e-${w.start}`}
-                    title={`Tuần ${dmFromIso(w.start)}: ${w.engaged ?? 0} khách tương tác sâu`}
-                    className="pointer-events-none absolute h-[8px] w-[8px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    className={`pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full ${
+                      tip === i ? 'h-[12px] w-[12px]' : 'h-[8px] w-[8px]'
+                    }`}
                     style={{ left: `${(((i + 0.5) / n) * 100).toFixed(2)}%`, top: yT(w.engaged ?? 0), background: TREND_ENGAGED, border: '2px solid rgba(255, 255, 255, 0.9)' }}
                   />
                 ))}
+                {/* Ô chạm / rê chuột theo tuần cho biểu đồ xu hướng */}
+                <div className="absolute inset-0 flex">
+                  {weekly.map((w, i) => (
+                    <div
+                      key={`cell-${w.start}`}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Tuần ${dmFromIso(w.start)}: ${w.visits ?? 0} lượt vào, ${w.engaged ?? 0} khách tương tác sâu`}
+                      onMouseEnter={() => setTip(i)}
+                      onClick={() => setTip(i)}
+                      onFocus={() => setTip(i)}
+                      onBlur={() => setTip(null)}
+                      className="h-full flex-1 cursor-pointer outline-none"
+                    />
+                  ))}
+                </div>
+                {/* Hộp thông tin RIÊNG của biểu đồ xu hướng: hai số của đúng tuần đó */}
+                {tip != null && weekly[tip] && (
+                  <ChartTip xPct={((tip + 0.5) / n) * 100}>
+                    <p className="text-[13px] font-semibold leading-snug text-white">
+                      Tuần {dmFromIso(weekly[tip].start)}
+                    </p>
+                    <p className="mt-0.5 text-xs leading-snug text-slate-300">
+                      {weekly[tip].visits ?? 0} lượt vào · {weekly[tip].engaged ?? 0} khách tương tác sâu
+                    </p>
+                  </ChartTip>
+                )}
               </div>
               <div className="relative w-9 shrink-0" style={{ height: H }} aria-hidden="true">
                 {ticksT.map((t) => (
@@ -469,7 +507,7 @@ export default function CustomerActivityPage({ settings }) {
   }
 
   return (
-    <div className="staff-stagger mx-auto max-w-4xl space-y-6">
+    <div className="activity-page staff-stagger mx-auto max-w-4xl space-y-6">
       <div className="flex items-center justify-between gap-3">
         <p className="flex items-center gap-2 text-sm text-slate-500">
           <span className={`h-2.5 w-2.5 rounded-full ${error ? 'bg-red-500' : 'animate-pulse bg-emerald-500'}`} />

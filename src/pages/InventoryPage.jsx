@@ -246,7 +246,7 @@ function InventoryOwner({ tab, setTab, orders, menu, shopName }) {
   }
 
   return (
-    <div className="staff-stagger mx-auto max-w-2xl space-y-5 pb-8">
+    <div className="inventory-page staff-stagger mx-auto max-w-2xl space-y-5 pb-8">
       <div data-no-swipe className="flex gap-2 overflow-x-auto">
         {TABS.map(([id, label]) => (
           <button
