@@ -8,6 +8,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import AnalyticsExportCard from '../components/AnalyticsExportCard';
+import DishProfitCard from '../components/DishProfitCard';
 import LanguageCard from '../components/LanguageCard';
 import PairsCard from '../components/PairsCard';
 import WeeklyPerformanceCard from '../components/WeeklyPerformanceCard';
@@ -325,7 +326,7 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
       </Card>
 
       {/* Hiệu suất theo tuần: lãi theo kênh, số đơn và doanh thu trên cùng trục tuần */}
-      <WeeklyPerformanceCard orders={orders} menu={menu} />
+      <WeeklyPerformanceCard orders={orders} menu={menu} settings={settings ?? {}} />
 
       <Card title={kind === 'year' ? 'Doanh thu theo tháng' : 'Doanh thu theo ngày'}>
         <RevenueChart buckets={report.buckets} kind={kind} />
@@ -396,6 +397,9 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
           </ul>
         )}
       </Card>
+
+      {/* Lãi gộp theo món trong đúng kỳ đang chọn (giá vốn từ profitReport) */}
+      <DishProfitCard orders={orders} menu={menu} range={report.range} />
 
       {/* Thời điểm */}
       <Card title={kind === 'week' ? 'Theo ngày trong tuần' : kind === 'month' ? 'Thời điểm trong tháng' : 'Theo quý'}>

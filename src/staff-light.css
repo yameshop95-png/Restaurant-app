@@ -90,6 +90,8 @@ html.staff-app.theme-light {
   --chart-ord-high: #7c3aed;
   --chart-rev-1: #fb923c;
   --chart-rev-2: #f97316;
+  /* Đường mục tiêu lãi ròng/tuần + dấu ◆ lãi ròng ở tầng 1 (vàng đậm cho nền sáng) */
+  --chart-target: #a8860f;
 
   --hairline: rgba(23, 22, 18, 0.14);
   --action: #bc4515;

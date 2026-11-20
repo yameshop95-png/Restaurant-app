@@ -250,4 +250,6 @@
   --chart-ord-high: #a78bfa;
   --chart-rev-1: #fdba74;
   --chart-rev-2: #fb923c;
+  /* Đường mục tiêu lãi ròng/tuần + dấu ◆ lãi ròng ở tầng 1 (vàng, cùng tông --chart-over) */
+  --chart-target: #d4af37;
 }
