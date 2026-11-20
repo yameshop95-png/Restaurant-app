@@ -15,11 +15,17 @@ function writer(table) {
       ops.push({
         rowId: rows.length === 1 ? rows[0].id : undefined,
         run: () => supabase.from(table).upsert(rows),
+        spec: { kind: 'upsert', table, rows },
         onDone: () => {},
       });
     }
     for (const x of removed) {
-      ops.push({ rowId: x.id, run: () => supabase.from(table).delete().eq('id', x.id), onDone: () => {} });
+      ops.push({
+        rowId: x.id,
+        run: () => supabase.from(table).delete().eq('id', x.id),
+        spec: { kind: 'delete', table, rowId: x.id },
+        onDone: () => {},
+      });
     }
     return ops;
   };

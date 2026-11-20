@@ -25,6 +25,7 @@ function write({ prev, next, added, changed, removed }) {
       ops.push({
         rowId: m.id,
         run: () => supabase.rpc('set_menu_available', { item_id: m.id, is_available: m.available }),
+        spec: { kind: 'rpc', name: 'set_menu_available', args: { item_id: m.id, is_available: m.available } },
         onDone: () => {},
       });
     } else rows.push(m);
@@ -34,11 +35,17 @@ function write({ prev, next, added, changed, removed }) {
     ops.push({
       rowId: payload.length === 1 ? payload[0].id : undefined,
       run: () => supabase.from('menu_items').upsert(payload),
+      spec: { kind: 'upsert', table: 'menu_items', rows: payload },
       onDone: () => {},
     });
   }
   for (const m of removed) {
-    ops.push({ rowId: m.id, run: () => supabase.from('menu_items').delete().eq('id', m.id), onDone: () => {} });
+    ops.push({
+      rowId: m.id,
+      run: () => supabase.from('menu_items').delete().eq('id', m.id),
+      spec: { kind: 'delete', table: 'menu_items', rowId: m.id },
+      onDone: () => {},
+    });
   }
   return ops;
 }
