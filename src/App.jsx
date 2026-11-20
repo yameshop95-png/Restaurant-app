@@ -1,6 +1,6 @@
 import { applyTheme } from './lib/theme';
 import { InventoryProvider } from './hooks/useInventory';
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import BottomNav from './components/BottomNav';
 import OnlineOrderAlert from './components/OnlineOrderAlert';
 import PrintStatus from './components/PrintStatus';
@@ -136,7 +136,8 @@ function Shop({ account, onLogout }) {
   useAlwaysOn(settings.keepAwake);
   useEffect(() => applyTheme(settings.theme), [settings.theme]);
   const now = useNow();
-  const upcoming = upcomingOrders(orders, now, 60);
+  // Quét toàn bộ đơn: chỉ tính lại khi đơn hoặc mốc giờ đổi (now nhảy mỗi 30 giây), render khác dùng lại
+  const upcoming = useMemo(() => upcomingOrders(orders, now, 60), [orders, now]);
 
   // Kêu + rung một lần khi đơn vào mốc "còn ≤ 30 phút" và một lần nữa khi trễ giờ.
   // Lần đầu mở app chỉ ghi nhận các đơn đang gấp, không kêu.
@@ -241,12 +242,14 @@ function Shop({ account, onLogout }) {
     rememberCustomer(order.customer);
   };
 
-  const pending = orders.filter((o) => o.status === 'pending');
-  const counts = {
-    pendingPickup: pending.filter((o) => o.type !== 'delivery').length,
-    pendingDelivery: pending.filter((o) => o.type === 'delivery').length,
-    pendingAll: pending.length,
-  };
+  const counts = useMemo(() => {
+    const pending = orders.filter((o) => o.status === 'pending');
+    return {
+      pendingPickup: pending.filter((o) => o.type !== 'delivery').length,
+      pendingDelivery: pending.filter((o) => o.type === 'delivery').length,
+      pendingAll: pending.length,
+    };
+  }, [orders]);
 
   const handleTabChange = (tab) => {
     const from = Math.max(0, NAV_ITEMS.findIndex((item) => item.id === activeTab));

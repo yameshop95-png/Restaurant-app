@@ -75,7 +75,8 @@ const SHIFT_ROWS = [
 ];
 
 function ShiftClose({ orders, now, shopName }) {
-  const day = dailyCollection(orders, now);
+  // Chốt ca quét toàn bộ đơn: chỉ tính lại khi đơn hoặc mốc giờ đổi, render khác thì dùng lại
+  const day = useMemo(() => dailyCollection(orders, now), [orders, now]);
   const [msg, setMsg] = useState(null);
   const rows = SHIFT_ROWS.filter(([key]) => key !== 'unknown' || day.unknown.count);
 
@@ -158,9 +159,10 @@ function DashTile({ item, value, note, tone = 'normal', onOpen }) {
 }
 
 function DashTiles({ orders, counts, customers, menu, settings, now, isOwner, weekRevenue, onNavigate }) {
+  // Đơn sắp tới giờ cũng quét toàn bộ đơn: memo như trên, tránh quét lại mỗi lần vẽ
+  const dueSoon = useMemo(() => upcomingOrders(orders, now, 60), [orders, now]);
   if (!onNavigate) return null;
   const pending = counts ?? { pendingAll: 0, pendingDelivery: 0, pendingPickup: 0 };
-  const dueSoon = upcomingOrders(orders, now, 60);
   const overdue = dueSoon.filter((o) => dueInfo(o, now)?.level === 'overdue').length;
   const menuList = menu ?? [];
   const soldOut = menuList.filter((m) => m.available === false).length;
