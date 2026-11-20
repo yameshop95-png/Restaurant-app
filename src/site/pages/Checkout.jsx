@@ -118,6 +118,7 @@ export default function Checkout() {
   const checkoutRef = useRef(null);
   // Thanh giỏ hàng dưới đáy chỉ hiện khi nút "Đặt món" chưa nằm trên màn hình
   const submitRef = useRef(null);
+  const orderKey = useRef(null); // { sig, key }: mã chống trùng cho lần đặt đang gửi
   const [checkoutVisible, setCheckoutVisible] = useState(false);
   useEffect(() => {
     const el = submitRef.current;
@@ -280,6 +281,12 @@ export default function Checkout() {
       lang, // để quán nhắn tin xác nhận đúng ngôn ngữ khách dùng
       marketingConsent: form.consent,
     };
+    // Mã đơn tạm: giữ nguyên khi bấm Đặt lại với cùng nội dung (mạng chập chờn), để máy chủ không tạo 2 đơn
+    const sig = JSON.stringify(payload);
+    if (!orderKey.current || orderKey.current.sig !== sig) {
+      orderKey.current = { sig, key: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}` };
+    }
+    payload.clientKey = orderKey.current.key;
     const { data: res, error } = await siteClient().rpc('place_web_order', { payload });
     setSending(false);
     if (error) return setServerError(t.errors.network);
@@ -301,6 +308,7 @@ export default function Checkout() {
       street: form.street.trim(),
       suburb: form.suburb,
     });
+    orderKey.current = null;
     trackOrdered(res.number);
     setDone({ ...res, type: form.type, items, when: due });
     clearCart();
