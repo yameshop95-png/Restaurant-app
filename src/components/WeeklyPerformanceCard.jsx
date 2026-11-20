@@ -1,6 +1,7 @@
 import { useId, useMemo, useState } from 'react';
 import { ChevronDown, RefreshCw } from 'lucide-react';
 import { money } from './inventory/ui';
+import ChartTip, { useChartTipDismiss } from './ChartTip';
 import useInventory from '../hooks/useInventory';
 import useNow from '../hooks/useNow';
 import { profitReport } from '../lib/inventory';
@@ -106,7 +107,18 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
   const batches = inventory.batches.list;
   const now = useNow(60000);
   const [weekCount, setWeekCount] = useState(8);
-  const [picked, setPicked] = useState(null); // tuần đang chọn ở tầng 1; null = tuần mới nhất
+  const [picked, setPicked] = useState(null); // tuần đang chọn (dùng chung cả 3 tầng); null = tuần mới nhất
+  // Hộp thông tin đang hiện: { tier, i } — MỖI TẦNG MỘT HỘP RIÊNG, chỉ chứa số của tầng đó
+  // (trước đây chỉ có một hộp chung ở tầng 1 chứa mọi số tiền, lại bị ép hẹp ở mép phải).
+  // Không hẹn giờ tự tắt: hiện khi rê chuột / chạm vào ô tuần của tầng đó, ẩn khi rê chuột
+  // ra khỏi vùng vẽ của tầng đó hoặc chạm vào chỗ khác (useChartTipDismiss).
+  const [tip, setTip] = useState(null);
+  const showTip = (tier, i) => {
+    setPicked(i);
+    setTip({ tier, i });
+  };
+  const hideTip = (tier) => setTip((t) => (t && t.tier === tier ? null : t));
+  useChartTipDismiss(tip != null, () => setTip(null));
   const gradientId = useId().replace(/[^a-zA-Z0-9]/g, '');
 
   const weeks = useMemo(() => {
@@ -348,33 +360,6 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
               right={<span className="text-xs text-slate-400">Lãi gộp theo kênh + doanh thu tuần · trục trái: AUD</span>}
             />
             <div className="relative mt-1">
-              {/* Tooltip nổi của tuần đang chọn (chạm / rê chuột vào nhóm cột để đổi tuần) */}
-              {activeWeek && (
-                <div
-                  className="pointer-events-none absolute top-0 z-10 max-w-[94%] -translate-x-1/2 rounded-2xl bg-slate-900 px-3.5 py-2 text-center shadow-[0_16px_32px_-12px_rgba(15,23,42,0.5)]"
-                  style={{ left: `${Math.min(84, Math.max(16, ((active + 0.5) / n) * 100))}%` }}
-                >
-                  <p className="text-[13px] font-semibold leading-snug text-white">
-                    Tuần {ddmm(activeWeek.start)}
-                    {activeWeek.current ? ' (đang diễn ra)' : ''}: Lãi gộp {money(activeWeek.gross)}
-                    {changeNote ? <> · {changeNote}</> : null}
-                  </p>
-                  <p className="mt-0.5 text-xs leading-snug text-slate-300">
-                    Đơn web {money(activeWeek.web.profit)} · Tại quán {money(activeWeek.shop.profit)} · Doanh thu{' '}
-                    {money(activeWeek.revenue)} · Lãi ròng {money(activeWeek.profit)}
-                    {activeWeek.otherCosts > 0 ? ` (chi phí chung ${money(activeWeek.otherCosts)})` : ''}
-                    {activeWeek.target != null && (
-                      <>
-                        {' '}
-                        · Mục tiêu {money(activeWeek.target)}:{' '}
-                        {activeWeek.profit >= activeWeek.target
-                          ? 'đạt ✓'
-                          : `còn thiếu ${money(activeWeek.target - activeWeek.profit)}`}
-                      </>
-                    )}
-                  </p>
-                </div>
-              )}
               <div className="flex gap-2">
                 <div className="relative w-11 shrink-0" style={{ height: H1 }} aria-hidden="true">
                   {ticks1.map((t) => (
@@ -397,6 +382,8 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                     .join('; ')}`}
                   className="relative min-w-0 flex-1"
                   style={{ height: H1 }}
+                  data-chart-tip-zone
+                  onMouseLeave={() => hideTip(1)}
                 >
                   {ticks1.map((t) => (
                     <div
@@ -435,7 +422,6 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                           w.target != null && (
                             <span
                               key={`tgt-${w.start.getTime()}`}
-                              title={`Mục tiêu tuần ${ddmm(w.start)}: ${money(w.target)}`}
                               className="pointer-events-none absolute z-10 h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full"
                               style={{
                                 left: `${(((i + 0.5) / n) * 100).toFixed(2)}%`,
@@ -469,10 +455,10 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                         role="button"
                         tabIndex={0}
                         aria-label={`Tuần ${ddmm(w.start)}: lãi gộp ${money(w.gross)}`}
-                        title={`Tuần ${ddmm(w.start)}: lãi gộp ${money(w.gross)} · doanh thu ${money(w.revenue)} · lãi ròng ${money(w.profit)}`}
-                        onMouseEnter={() => setPicked(i)}
-                        onClick={() => setPicked(i)}
-                        onFocus={() => setPicked(i)}
+                        onMouseEnter={() => showTip(1, i)}
+                        onClick={() => showTip(1, i)}
+                        onFocus={() => showTip(1, i)}
+                        onBlur={() => hideTip(1)}
                         className="relative h-full flex-1 cursor-pointer outline-none"
                       >
                         <div
@@ -492,13 +478,6 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                     weeks.map((w, i) => (
                       <span
                         key={`net-${w.start.getTime()}`}
-                        title={
-                          w.target != null
-                            ? `Lãi ròng tuần ${ddmm(w.start)}: ${money(w.profit)} · mục tiêu ${money(w.target)} (${
-                                w.profit >= w.target ? 'đạt' : `còn thiếu ${money(w.target - w.profit)}`
-                              })`
-                            : `Lãi ròng tuần ${ddmm(w.start)}: ${money(w.profit)} (tuần này chưa có mục tiêu)`
-                        }
                         className="pointer-events-none absolute z-10 h-[9px] w-[9px]"
                         style={{
                           left: `${(((i + 0.5) / n) * 100).toFixed(2)}%`,
@@ -509,6 +488,32 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                         }}
                       />
                     ))}
+                  {/* Hộp thông tin RIÊNG của tầng Tiền Lãi: chỉ nhóm số tiền của tuần đang
+                      chọn. Neo trong vùng vẽ của tầng này (kẹp mép bằng clamp trong ChartTip)
+                      nên không tràn mép / không bị ép hẹp như hộp chung cũ. */}
+                  {tip?.tier === 1 && activeWeek && (
+                    <ChartTip xPct={((active + 0.5) / n) * 100} width={248}>
+                      <p className="text-[13px] font-semibold leading-snug text-white">
+                        Tuần {ddmm(activeWeek.start)}
+                        {activeWeek.current ? ' (đang diễn ra)' : ''}: Lãi gộp {money(activeWeek.gross)}
+                        {changeNote ? <> · {changeNote}</> : null}
+                      </p>
+                      <p className="mt-0.5 text-xs leading-snug text-slate-300">
+                        Đơn web {money(activeWeek.web.profit)} · Tại quán {money(activeWeek.shop.profit)} · Doanh thu{' '}
+                        {money(activeWeek.revenue)} · Lãi ròng {money(activeWeek.profit)}
+                        {activeWeek.otherCosts > 0 ? ` (chi phí chung ${money(activeWeek.otherCosts)})` : ''}
+                        {activeWeek.target != null && (
+                          <>
+                            {' '}
+                            · Mục tiêu {money(activeWeek.target)}:{' '}
+                            {activeWeek.profit >= activeWeek.target
+                              ? 'đạt ✓'
+                              : `còn thiếu ${money(activeWeek.target - activeWeek.profit)}`}
+                          </>
+                        )}
+                      </p>
+                    </ChartTip>
+                  )}
                 </div>
               </div>
               <WeekLabels weeks={weeks} axis="left" />
@@ -531,6 +536,8 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                   .join('; ')}`}
                 className="relative min-w-0 flex-1"
                 style={{ height: H2 }}
+                data-chart-tip-zone
+                onMouseLeave={() => hideTip(2)}
               >
                 {[0, 50, 100].map((p) => (
                   <div key={p} className="absolute inset-x-0 border-t border-slate-100" style={{ top: `${p}%` }} />
@@ -548,19 +555,50 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                 {weeks.map((w, i) => (
                   <span
                     key={`all-${w.start.getTime()}`}
-                    title={`Tổng ${w.orders} đơn · tuần ${ddmm(w.start)}`}
-                    className="pointer-events-none absolute h-[8px] w-[8px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    className={`pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full ${
+                      tip?.tier === 2 && tip.i === i ? 'h-[12px] w-[12px]' : 'h-[8px] w-[8px]'
+                    }`}
                     style={{ left: `${(((i + 0.5) / n) * 100).toFixed(2)}%`, top: y2(w.orders), background: ORD_ALL, border: '2px solid rgba(255, 255, 255, 0.9)' }}
                   />
                 ))}
                 {weeks.map((w, i) => (
                   <span
                     key={`high-${w.start.getTime()}`}
-                    title={`${w.highValueOrders} đơn cao giá · tuần ${ddmm(w.start)}`}
-                    className="pointer-events-none absolute h-[8px] w-[8px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    className={`pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full ${
+                      tip?.tier === 2 && tip.i === i ? 'h-[12px] w-[12px]' : 'h-[8px] w-[8px]'
+                    }`}
                     style={{ left: `${(((i + 0.5) / n) * 100).toFixed(2)}%`, top: y2(w.highValueOrders), background: ORD_HIGH, border: '2px solid rgba(255, 255, 255, 0.9)' }}
                   />
                 ))}
+                {/* Ô chạm / rê chuột theo tuần của tầng 2 (trước đây tầng này chỉ có
+                    tooltip native `title` trên các chấm — không hiện trên cảm ứng) */}
+                <div className="absolute inset-0 flex">
+                  {weeks.map((w, i) => (
+                    <div
+                      key={`cell2-${w.start.getTime()}`}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Tuần ${ddmm(w.start)}: tổng ${w.orders} đơn, ${w.highValueOrders} đơn cao giá`}
+                      onMouseEnter={() => showTip(2, i)}
+                      onClick={() => showTip(2, i)}
+                      onFocus={() => showTip(2, i)}
+                      onBlur={() => hideTip(2)}
+                      className="h-full flex-1 cursor-pointer outline-none"
+                    />
+                  ))}
+                </div>
+                {/* Hộp thông tin RIÊNG của tầng Số lượng Order: chỉ số đơn của tuần đó */}
+                {tip?.tier === 2 && (
+                  <ChartTip xPct={((tip.i + 0.5) / n) * 100}>
+                    <p className="text-[13px] font-semibold leading-snug text-white">
+                      Tuần {ddmm(weeks[tip.i].start)}
+                      {weeks[tip.i].current ? ' (đang diễn ra)' : ''}
+                    </p>
+                    <p className="mt-0.5 text-xs leading-snug text-slate-300">
+                      Tổng {weeks[tip.i].orders} đơn · {weeks[tip.i].highValueOrders} đơn cao giá (từ $50)
+                    </p>
+                  </ChartTip>
+                )}
               </div>
               <div className="relative w-9 shrink-0" style={{ height: H2 }} aria-hidden="true">
                 {ticks2.map((t) => (
@@ -594,6 +632,8 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                 aria-label={`Doanh thu ${n} tuần: ${weeks.map((w) => `tuần ${ddmm(w.start)} ${money(w.revenue)}`).join('; ')}`}
                 className="relative min-w-0 flex-1"
                 style={{ height: H3 }}
+                data-chart-tip-zone
+                onMouseLeave={() => hideTip(3)}
               >
                 {[0, 50, 100].map((p) => (
                   <div key={p} className="absolute inset-x-0 border-t border-slate-100" style={{ top: `${p}%` }} />
@@ -616,11 +656,41 @@ export default function WeeklyPerformanceCard({ orders, menu }) {
                 {weeks.map((w, i) => (
                   <span
                     key={`rev-${w.start.getTime()}`}
-                    title={`Doanh thu ${money(w.revenue)} · tuần ${ddmm(w.start)}`}
-                    className="pointer-events-none absolute h-[8px] w-[8px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    className={`pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full ${
+                      tip?.tier === 3 && tip.i === i ? 'h-[12px] w-[12px]' : 'h-[8px] w-[8px]'
+                    }`}
                     style={{ left: `${(((i + 0.5) / n) * 100).toFixed(2)}%`, top: y3(w.revenue), background: REV_LINE, border: '2px solid rgba(255, 255, 255, 0.9)' }}
                   />
                 ))}
+                {/* Ô chạm / rê chuột theo tuần của tầng 3 (trước đây chỉ có tooltip
+                    native `title` trên các chấm — không hiện trên cảm ứng) */}
+                <div className="absolute inset-0 flex">
+                  {weeks.map((w, i) => (
+                    <div
+                      key={`cell3-${w.start.getTime()}`}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Tuần ${ddmm(w.start)}: doanh thu ${money(w.revenue)}`}
+                      onMouseEnter={() => showTip(3, i)}
+                      onClick={() => showTip(3, i)}
+                      onFocus={() => showTip(3, i)}
+                      onBlur={() => hideTip(3)}
+                      className="h-full flex-1 cursor-pointer outline-none"
+                    />
+                  ))}
+                </div>
+                {/* Hộp thông tin RIÊNG của tầng Tổng Tiền: chỉ doanh thu của tuần đó */}
+                {tip?.tier === 3 && (
+                  <ChartTip xPct={((tip.i + 0.5) / n) * 100}>
+                    <p className="text-[13px] font-semibold leading-snug text-white">
+                      Tuần {ddmm(weeks[tip.i].start)}
+                      {weeks[tip.i].current ? ' (đang diễn ra)' : ''}
+                    </p>
+                    <p className="mt-0.5 text-xs leading-snug text-slate-300">
+                      Doanh thu {money(weeks[tip.i].revenue)}
+                    </p>
+                  </ChartTip>
+                )}
               </div>
             </div>
             <WeekLabels weeks={weeks} axis="left" />
