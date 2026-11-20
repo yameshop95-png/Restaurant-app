@@ -190,7 +190,11 @@ html.staff-app.theme-light [role='status'].staff-float button {
    V2 (tinh chỉnh màu theo design-taste-frontend): một họ azure duy nhất, giảm bão
    hoà thô — quầng pastel dịu lại (alpha 0,34–0,42), gradient 5 chặng liền mạch,
    saturate() hạ 1,6 → 1,3 để màu nền không bị đẩy gắt qua lớp kính, bóng đổ chuyển
-   sang xanh thép đậm ít bão hoà cho tổng thể sang và dễ nhìn hơn. */
+   sang xanh thép đậm ít bão hoà cho tổng thể sang và dễ nhìn hơn.
+   V3 (nhẹ máy): thẻ .bg-card BỎ backdrop-filter — blur trên vùng cuộn lớn là phần
+   nặng GPU nhất trên iPad; thẻ giữ vẻ kính bằng nền trắng mờ hơn (0,57 → 0,75) +
+   viền sáng + bóng như v2. Blur chỉ còn ở các thanh cố định diện nhỏ (thanh bên,
+   .staff-chrome) và .staff-sheet tạm thời. */
 html.staff-app.theme-light body {
   background-color: #e7f1fa;
   background-image:
@@ -201,11 +205,11 @@ html.staff-app.theme-light body {
   background-attachment: fixed;
 }
 
-/* Mọi bề mặt dùng nền thẻ thành kính trắng trong mờ */
+/* Mọi bề mặt dùng nền thẻ thành kính trắng trong mờ.
+   V3: KHÔNG còn backdrop-filter ở thẻ (nhẹ GPU khi cuộn) — tăng độ trắng nền
+   0,57 → 0,75 để thẻ vẫn đọc như kính mờ trên nền gradient. */
 html.staff-app.theme-light .bg-card {
-  background-color: rgba(255, 255, 255, 0.57);
-  -webkit-backdrop-filter: blur(18px) saturate(1.3);
-  backdrop-filter: blur(18px) saturate(1.3);
+  background-color: rgba(255, 255, 255, 0.75);
 }
 
 /* Thẻ lớn: thêm viền kính sáng + quầng bóng xanh mềm (border-box nên không đổi kích thước) */
