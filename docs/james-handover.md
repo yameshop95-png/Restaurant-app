@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: **2026-11-20** (sau khi PR #45 merge, main ở `79ced7e`).
+> Cập nhật lần cuối: **2026-11-20** (sau khi PR #46 merge, main ở `253add7`).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James luôn qua PR để Paul duyệt, chỉ merge khi Paul nói rõ cho từng PR.
 
@@ -19,6 +19,7 @@
 | #43 | Thẻ **Báo cáo Hiệu suất Tuần** ở mục Báo cáo (lãi gộp theo kênh web/tại quán, tổng đơn, đơn ≥ $50, doanh thu) + **xoá hẳn biểu đồ "Lợi nhuận theo tuần" khỏi Màn hình chính** (xoá cả file `WeeklyProfitChart.jsx`) | `099f41d` |
 | #44 | (A) Thẻ lãi theo món ở Báo cáo — **đã bị PR #45 gỡ** (xem mục 3); (B) mục tiêu lãi tuần trong thẻ Hiệu suất — **đã bị PR #45 thay bằng mục tiêu tự động** | `caf1ee6` |
 | #45 | 6 mục: tỉ lệ đơn huỷ; thẻ khách mới/quay lại; **mục tiêu lãi tự động theo dữ liệu**; thẻ nhịp tuần trong tháng; gỡ thẻ lãi theo món trùng ở Báo cáo; thêm biên lãi % ở Inventory | `79ced7e` |
+| #46 | Thẻ **Hoạt Động Khách Hàng Website** ở tab Customer Active (xem mục 3) + tracker web thu thêm: mã khách bền, nguồn truy cập, thiết bị, múi giờ, lượt xem theo trang + `sql/customer_activity.sql` mở rộng (cột mới + khoá `insights`; **Paul đã chạy SQL trên Supabase ngày 2026-11-20**) + gỡ khối thống kê tỉ lệ theo kỳ cũ ở giữa trang (số hôm nay/7 ngày đã gộp vào thẻ mới) | `253add7` |
 
 ## 2. PR đã đóng KHÔNG merge
 
@@ -47,6 +48,16 @@
 - **Khách mới/quay lại** (`CustomerStatsCard`): định danh bằng `customerKey` của app
   (SĐT chỉ lấy chữ số; không có SĐT thì tên chuẩn hoá). Đơn huỷ không tạo lịch sử khách;
   đơn thiếu cả tên lẫn SĐT bị loại khỏi thống kê và được đếm công khai ở cuối thẻ.
+- **Tab Customer Active — thẻ "Hoạt Động Khách Hàng Website"** (PR #46): đọc khoá `insights`
+  của RPC `customer_activity()` (30 ngày + xu hướng 8 tuần; các khoá cũ `live`/`periods`/`abandoned`
+  giữ nguyên; thẻ tự ẩn nếu phản hồi thiếu `insights`).
+  **"Tương tác sâu" = thời lượng phiên ≥ 60 giây HOẶC `max_stage ≥ 1`.**
+  Phễu 4 bước thật: Vào website → Có món trong giỏ → Vào trang đặt → Đã đặt xong (từ `periods.days30`) —
+  KHÔNG có bước "xem chi tiết sản phẩm" vì web là menu một trang, không đo được.
+  Nguồn truy cập phân loại ở `src/site/trackClassify.js`: google/facebook/instagram/zalo/direct/other
+  (UTM ưu tiên hơn referrer, first-touch theo phiên). Khách quay lại tính theo `vid` bền
+  (localStorage `site.vid`). Vị trí khách chỉ ở mức múi giờ — web không lấy được vị trí chính xác.
+  Khối thống kê tỉ lệ theo kỳ cũ ở giữa trang đã gỡ; thẻ đang-online trực tiếp và danh sách khách bỏ dở giữ nguyên.
 
 ## 4. PR nháp đang mở — chờ Paul, ĐỪNG merge
 
@@ -70,7 +81,8 @@
 
 - `npm run build`, `npm run test:sync` (7), `npm run test:performance` (54),
   `npm run test:dishprofit` (18 — test lớp dữ liệu `profitReport().dishes`, nuôi thẻ Inventory),
-  `npm run test:insights` (35), `npm run test:cache`.
+  `npm run test:insights` (35), `npm run test:cache`,
+  `npm run test:classify` (39 — phân loại nguồn/thiết bị của tracker web).
 - Không đụng khi chưa được giao: mã PIN, luồng đặt đơn, in bill, chuông báo, sync, cache.
 
 ---
