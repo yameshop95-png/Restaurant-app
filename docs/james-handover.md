@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: **2026-11-21** (sau khi PR #50 merge, main ở `62d51d0`).
+> Cập nhật lần cuối: **2026-11-21** (thêm DRAFT PR #51; main ở `e5a9a9f`).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James luôn qua PR để Paul duyệt, chỉ merge khi Paul nói rõ cho từng PR.
 
@@ -87,6 +87,7 @@
 
 - **PR #36** (`glass-dashboard-demo`): demo giao diện kính tối trên dashboard thật. Paul chưa chốt dùng hay không.
 - **PR #41** (`light-glass-demo`): demo kính sáng trắng–xanh trên app thật (đang ở v3, đã bỏ backdrop-filter ở thẻ cho nhẹ máy). Paul chưa chốt.
+- **PR #51** (`week-summary-into-donut`): bỏ 2 ô riêng Đã/Chưa thanh toán ở Home vì trùng số liệu với chú thích của donut Tiền tuần này (PR #50) — theo yêu cầu của Paul 21/11. Chỉ bỏ hiển thị, không đụng `stats`. Chờ Paul duyệt.
 
 ## 5. Việc còn mở / cảnh báo đã biết (chưa ai làm)
 
