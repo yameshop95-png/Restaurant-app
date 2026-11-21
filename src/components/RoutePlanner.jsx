@@ -12,13 +12,14 @@ const hhmm = (iso) => {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-// Đơn thuộc về chuyến giao hôm nay: giờ giao rơi vào hôm nay (giờ máy)
-const isToday = (iso, now) => {
+// Đơn thuộc về chuyến giao hôm nay: giờ giao rơi vào hôm nay hoặc sớm hơn — đơn đang giao tồn từ hôm trước vẫn hiện (tránh sót đơn); đơn hẹn giao sau hôm nay thì chưa hiện (giờ máy)
+const isTodayOrEarlier = (iso, now) => {
   const d = new Date(iso);
-  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+  const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  return day(d) <= day(now);
 };
 
-// Lộ trình giao cho các đơn đang đi giao (trạng thái "Đang giao") của ngày hôm nay
+// Lộ trình giao cho các đơn đang đi giao (trạng thái "Đang giao"): đơn của hôm nay và đơn tồn từ hôm trước
 export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
   const [start, setStart] = useState(null); // { lat, lng, label, kind: 'gps' | 'shop' }
   const [slotMinutes, setSlotMinutes] = useState(30);
@@ -27,9 +28,9 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
   const [geoVersion, setGeoVersion] = useState(0);
   const [shareMsg, setShareMsg] = useState(null);
 
-  // Chỉ đơn đang giao của hôm nay; đơn đang giao mà chưa có giờ giao vẫn hiện (không giấu đơn đang trên xe)
+  // Đơn đang giao có giờ giao hôm nay hoặc sớm hơn (đơn tồn hôm trước rơi vào khung "Đã trễ giờ"); đơn đang giao mà chưa có giờ giao vẫn hiện (không giấu đơn đang trên xe)
   const active = useMemo(
-    () => orders.filter((o) => o.status === 'delivering' && (!o.deliverAt || isToday(o.deliverAt, now))),
+    () => orders.filter((o) => o.status === 'delivering' && (!o.deliverAt || isTodayOrEarlier(o.deliverAt, now))),
     [orders, now]
   );
   // planRoute cần giờ giao để chia khung giờ; đơn chưa có giờ giao xếp vào một nhóm riêng ở cuối
