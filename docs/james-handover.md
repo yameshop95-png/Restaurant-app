@@ -96,8 +96,9 @@
   không giấu đơn đang trên xe); chỉ đường **từng chặng**; **Apple Maps mặc định, Google Maps phụ**
   (ý Paul); badge tab Đơn ship đếm cả đơn đang giao. Build + mọi suite pass (donut 23, classify 39,
   insights 35, dishprofit 18, performance 54, sync 7/7, cache 10/10). Chờ Paul bấm thử bản xem trước.
-  Lưu ý: đơn `delivering` có `deliverAt` thuộc **ngày hôm qua** (mang đi mà chưa giao xong) hiện
-  KHÔNG hiện trong lộ trình hôm nay — đúng quy tắc Paul đã duyệt, chờ anh quyết có nới hay không.
+  Bổ sung cùng ngày theo quyết định của Paul: đơn `delivering` tồn từ hôm trước (mang đi mà chưa
+  giao xong) **vẫn hiện** trong lộ trình hôm nay (rơi vào khung "Đã trễ giờ"); chỉ đơn hẹn giao
+  **sau** hôm nay mới chưa hiện. Head PR sau bổ sung: `ef9ca89`, test vẫn pass toàn bộ.
 
 ## 5. Việc còn mở / cảnh báo đã biết (chưa ai làm)
 
