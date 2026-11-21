@@ -24,8 +24,9 @@ const {
   PRINTER_NAME,
   PRINTER_IP = '192.168.1.100',
   PRINTER_PORT = 9100,
-  BACKUP_DIR = join(here, 'sao-luu'),
+  BACKUP_DIR: BACKUP_DIR_SET = '',
 } = process.env;
+const DEFAULT_BACKUP_DIR = join(here, 'sao-luu');
 if (!SUPABASE_URL || !SUPABASE_KEY || !STAFF_PIN) {
   console.error('Thiếu SUPABASE_URL, SUPABASE_KEY hoặc STAFF_PIN');
   process.exit(2);
@@ -137,10 +138,20 @@ async function backupIfDue() {
   lastBackupCheck = Date.now();
   if (new Date().getHours() < BACKUP_FROM_HOUR) return;
   const day = dayKey();
-  const xlsxFile = join(BACKUP_DIR, `sao-luu-${day}.xlsx`);
+  // Thư mục chỉ định trong start-bridge.bat (BACKUP_DIR) không ghi được thì dùng thư mục mặc định cạnh bridge.mjs
+  let backupDir = BACKUP_DIR_SET || DEFAULT_BACKUP_DIR;
+  if (backupDir !== DEFAULT_BACKUP_DIR) {
+    try {
+      await mkdir(backupDir, { recursive: true });
+    } catch (err) {
+      console.log(`[${stamp()}] Không ghi được vào ${backupDir} (${err.code ?? err.message}), dùng thư mục mặc định ${DEFAULT_BACKUP_DIR}`);
+      backupDir = DEFAULT_BACKUP_DIR;
+    }
+  }
+  const xlsxFile = join(backupDir, `sao-luu-${day}.xlsx`);
   if (existsSync(xlsxFile)) return;
   try {
-    await mkdir(BACKUP_DIR, { recursive: true });
+    await mkdir(backupDir, { recursive: true });
     const [orderRows, customerRows, menuRows] = await Promise.all([
       fetchAll('orders', 'number'),
       fetchAll('customers', 'id'),
@@ -152,18 +163,18 @@ async function backupIfDue() {
       if (rows?.length) inventory[t] = rows;
     }
     const json = { exportedAt: new Date().toISOString(), orders: orderRows, customers: customerRows, menu_items: menuRows, ...inventory };
-    await writeFile(join(BACKUP_DIR, `sao-luu-${day}.json`), JSON.stringify(json));
+    await writeFile(join(backupDir, `sao-luu-${day}.json`), JSON.stringify(json));
     await writeFile(xlsxFile, await backupXlsx({ orderRows, customerRows, menuRows }));
     console.log(
-      `[${stamp()}] Đã sao lưu vào ${BACKUP_DIR}: ${orderRows.length} đơn, ${customerRows.length} khách, ${menuRows.length} món` +
+      `[${stamp()}] Đã sao lưu vào ${backupDir}: ${orderRows.length} đơn, ${customerRows.length} khách, ${menuRows.length} món` +
         (Object.keys(inventory).length ? ', kèm dữ liệu kho' : ''),
     );
     // Xoá bản cũ hơn 30 ngày
     const oldest = new Date();
     oldest.setDate(oldest.getDate() - BACKUP_KEEP_DAYS);
-    for (const name of await readdir(BACKUP_DIR)) {
+    for (const name of await readdir(backupDir)) {
       const m = name.match(/^sao-luu-(\d{4}-\d{2}-\d{2})\.(xlsx|json)$/);
-      if (m && m[1] < dayKey(oldest)) await unlink(join(BACKUP_DIR, name)).catch(() => {});
+      if (m && m[1] < dayKey(oldest)) await unlink(join(backupDir, name)).catch(() => {});
     }
   } catch (err) {
     // Lỗi sao lưu không được làm ngừng việc in: ghi lại rồi thử lại sau 10 phút
