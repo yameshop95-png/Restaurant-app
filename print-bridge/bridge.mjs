@@ -116,7 +116,7 @@ async function fetchAll(table, order) {
   const rows = [];
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supabase.from(table).select('*').order(order).range(from, from + 999);
-    if (error) throw new Error(`đọc bảng ${table}: ${error.message}`);
+    if (error) throw new Error(`đọc bảng ${table}: ${error.message}${error.details ? ' – ' + error.details : ''}${error.code ? ' [mã ' + error.code + ']' : ''}`);
     rows.push(...data);
     if (data.length < 1000) return rows;
   }
@@ -167,7 +167,7 @@ async function backupIfDue() {
     }
   } catch (err) {
     // Lỗi sao lưu không được làm ngừng việc in: ghi lại rồi thử lại sau 10 phút
-    console.log(`[${stamp()}] Chưa sao lưu được: ${err.message}. Thử lại sau 10 phút`);
+    console.log(`[${stamp()}] Chưa sao lưu được: ${err.message}${err.cause ? ' (' + err.cause + ')' : ''}. Thử lại sau 10 phút`);
   }
 }
 

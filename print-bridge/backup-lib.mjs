@@ -4688,6 +4688,7 @@ function menuSheet(menu) {
 var STATUS_LABEL = {
   pending: "Ch\u1EDD x\u1EED l\xFD",
   done: "Ho\xE0n th\xE0nh",
+  delivering: "\u0110ang giao",
   shipped: "\u0110\xE3 ship",
   cancelled: "\u0110\xE3 hu\u1EF7"
 };
