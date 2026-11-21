@@ -123,6 +123,7 @@
 
 - **PR #36** (`glass-dashboard-demo`): demo giao diện kính tối trên dashboard thật. Paul chưa chốt dùng hay không.
 - **PR #41** (`light-glass-demo`): demo kính sáng trắng–xanh trên app thật (đang ở v3, đã bỏ backdrop-filter ở thẻ cho nhẹ máy). Paul chưa chốt.
+- **PR #59** (`route-all-delivering`): lộ trình giao hiện **mọi** đơn đang giao bất kể ngày giao (trước đây `RoutePlanner` lọc `isTodayOrEarlier` nên đơn hẹn ngày mai — vd đơn test CN 22/11 thử tối thứ Bảy — bấm "Đã mang đi" vẫn không hiện, danh sách trống không lời giải thích; Paul chốt: đã lên xe là phải hiện). Kèm: dòng giải thích khi trống + nhãn khung giờ ngày khác ghi thêm ngày (`slotOf` trong `lib/route.js`; batches truyền now = đầu ngày giao nên nhãn đợt không đổi). Build đạt, test:routelinks 45/45, batches 45/45. Chờ Paul OK mới merge.
 - (PR #54, #55, #56, #57, #58 đã merge ngày 21/11 — xem mục 1.)
 
 
