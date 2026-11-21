@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: **2026-11-21** (PR #52 + #53 + #54 + #55 + #56 + #57 + **#58 đã merge** — #58 tách xác nhận đơn khỏi nhắn tin, PC không có SMS vẫn xác nhận được; main ở `865c1e5`).
+> Cập nhật lần cuối: **2026-11-21** (PR #52 + #53 + #54 + #55 + #56 + #57 + #58 + **#59 đã merge** — #59 lộ trình giao hiện mọi đơn đang giao bất kể ngày giao; main ở `0194484`).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James đi qua PR nháp (build + test đạt), **báo Paul trước; Paul OK mới merge** — Paul đã
 > chốt lại quy ước này tối 21/11 (câu "tự merge luôn" cùng tối đã được anh rút lại, đừng dùng).
@@ -32,6 +32,7 @@
 | #56 | **Bỏ "Lộ trình giao" khỏi tab Đơn hàng** (ý Paul: muốn xem lộ trình thì qua Đơn ship): cờ `routeAllowed = fixedType === 'delivery'` trong `OrdersPage.jsx` — thanh Danh sách/Lộ trình và `RoutePlanner` chỉ còn render ở trang Đơn ship; bên Đơn hàng luôn ở dạng danh sách, chip trạng thái + nút trên thẻ đơn giữ nguyên; Đơn ship không đổi | `4483ca1` |
 | #57 | **Lưu toạ độ lên đơn** (sửa vấn đề 1 của mô phỏng 150 đơn — nhãn đợt lệch theo cache từng máy): trường `geo {lat,lng,zone,for}` trên đơn (data JSON, không migration; `for` = địa chỉ của toạ độ, sửa địa chỉ thì tự hết hiệu lực); lib mới `src/lib/orderGeo.js` (`storedGeoOf`/`geoRecordFor`); OrdersPage tính đợt **chỉ từ toạ độ trên đơn** + effect nền tự tra/ghi toạ độ cho đơn giao đang hoạt động qua prop `onPatchOrder` (= `markOrder` thầm lặng, thêm ở `App.jsx`); `RoutePlanner` ưu tiên toạ độ trên đơn, tra được thì ghi lại; test mới `test:ordergeo` 13/13; mô phỏng lại: lệch đợt 70/87 → **0/87** | `979ab9f` |
 | #58 | **Tách xác nhận đơn khỏi nhắn tin** (Paul báo: PC không có SMS nên đơn web nhận trên PC không xác nhận được — `confirmedAt` trước đây chỉ ghi khi gửi/copy tin trong khung nhắn, đơn kẹt ở Chờ xử lý, không qua Chờ nấu, không Hoàn thành được): bước "Đã nhận · chưa xác nhận" có 2 nút riêng **Nhắn khách** / **Xác nhận đơn** (ghi `confirmedAt` ngay); gửi/copy tin xác nhận ghi thêm trường `messagedAt` (đơn chưa xác nhận thì nhắn vẫn tự xác nhận như trước, không ghi đè mốc đã có); chip **"Chưa nhắn khách"** (`needsCustomerMessage` ở `orderStatus.js`) trên đơn web đã xác nhận mà chưa máy nào nhắn, để điện thoại nhắn bù; test:routelinks 39/39 | `865c1e5` |
+| #59 | **Lộ trình giao hiện mọi đơn đang giao** (Paul báo: bấm "Đã mang đi" cho đơn hẹn ngày mai — vd đơn test CN 22/11 thử tối thứ Bảy — mà Lộ trình giao trống, vì `RoutePlanner` lọc `isTodayOrEarlier`): bỏ hẳn bộ lọc ngày, `active` = mọi đơn `delivering`; thêm dòng giải thích khi chưa có đơn đang giao; `slotOf` (`lib/route.js`) ghi thêm ngày vào nhãn khung của ngày khác hôm nay (vd "08:00 – 08:30 · CN 22/11") — batches truyền now = đầu ngày giao nên nhãn đợt không đổi; test:routelinks 45/45, batches 45/45. Vòng giao của Paul: giao đơn đầu → "Đã giao xong" → đơn rời danh sách, đơn kế tự lên số 1 → bấm địa chỉ đi tiếp | `0194484` |
 
 ## 2. PR đã đóng KHÔNG merge
 
@@ -123,8 +124,7 @@
 
 - **PR #36** (`glass-dashboard-demo`): demo giao diện kính tối trên dashboard thật. Paul chưa chốt dùng hay không.
 - **PR #41** (`light-glass-demo`): demo kính sáng trắng–xanh trên app thật (đang ở v3, đã bỏ backdrop-filter ở thẻ cho nhẹ máy). Paul chưa chốt.
-- **PR #59** (`route-all-delivering`): lộ trình giao hiện **mọi** đơn đang giao bất kể ngày giao (trước đây `RoutePlanner` lọc `isTodayOrEarlier` nên đơn hẹn ngày mai — vd đơn test CN 22/11 thử tối thứ Bảy — bấm "Đã mang đi" vẫn không hiện, danh sách trống không lời giải thích; Paul chốt: đã lên xe là phải hiện). Kèm: dòng giải thích khi trống + nhãn khung giờ ngày khác ghi thêm ngày (`slotOf` trong `lib/route.js`; batches truyền now = đầu ngày giao nên nhãn đợt không đổi). Build đạt, test:routelinks 45/45, batches 45/45. Chờ Paul OK mới merge.
-- (PR #54, #55, #56, #57, #58 đã merge ngày 21/11 — xem mục 1.)
+- (PR #54, #55, #56, #57, #58, #59 đã merge ngày 21/11 — xem mục 1.)
 
 
 
