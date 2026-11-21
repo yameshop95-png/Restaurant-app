@@ -25,6 +25,12 @@ export const dayKeyOf = (iso) => {
 // chỉ hiện ở mục "Chờ xử lý".
 export const isCookingOrder = (o) => o.status === 'pending' && (o.source !== 'web' || !!o.confirmedAt);
 
+// Hai trạm "Chờ xử lý" và "Chờ nấu" tách hẳn nhau, một đơn chờ chỉ nằm ở đúng một trạm:
+// "Chờ xử lý" là hộp thư đến (đơn web chưa xác nhận — đang làm bước Nhận đơn / Nhắn khách);
+// xác nhận xong đơn rời hẳn sang "Chờ nấu" và nằm chờ ở đó tới khi bếp bấm "Hoàn thành".
+// Đơn nhân viên tự nhập đã xác nhận ngay từ đầu nên vào thẳng "Chờ nấu", không qua hộp thư đến.
+export const isInboxOrder = (o) => o.status === 'pending' && !isCookingOrder(o);
+
 // Đơn trễ (chỉ đơn giao hàng): giờ giao rơi vào ngày D mà đơn được tạo sau giờ chốt
 // 22:00 của tối D−1. Đơn chưa có giờ giao không xếp loại trễ (đã có chip "Thiếu giờ giao").
 export function isLateOrder(order) {
