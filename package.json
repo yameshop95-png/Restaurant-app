@@ -15,6 +15,7 @@
     "test:classify": "node tests/track-classify/run.mjs",
     "test:donut": "node tests/donut/run.mjs",
     "test:batches": "node tests/batches/run.mjs",
+    "test:routelinks": "node tests/route-links/run.mjs",
     "build:bridge": "esbuild print-bridge/src/backup-entry.js --bundle --platform=node --format=esm --target=node18 --outfile=print-bridge/backup-lib.mjs --banner:js=\"// TỰ SINH từ print-bridge/src/backup-entry.js (npm run build:bridge). Đừng sửa tay.\""
   },
   "dependencies": {
