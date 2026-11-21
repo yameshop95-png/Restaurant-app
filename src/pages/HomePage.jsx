@@ -335,7 +335,7 @@ function DashTiles({ orders, counts, customers, menu, settings, now, isOwner, we
   // Đơn sắp tới giờ cũng quét toàn bộ đơn: memo như trên, tránh quét lại mỗi lần vẽ
   const dueSoon = useMemo(() => upcomingOrders(orders, now, 60), [orders, now]);
   if (!onNavigate) return null;
-  const pending = counts ?? { pendingAll: 0, pendingDelivery: 0, pendingPickup: 0 };
+  const pending = counts ?? { pendingAll: 0, pendingDelivery: 0, pendingPickup: 0, cookingCount: 0 };
   const overdue = dueSoon.filter((o) => dueInfo(o, now)?.level === 'overdue').length;
   const menuList = menu ?? [];
   const soldOut = menuList.filter((m) => m.available === false).length;
@@ -347,6 +347,7 @@ function DashTiles({ orders, counts, customers, menu, settings, now, isOwner, we
       note: overdue ? `${overdue} đơn đã trễ giờ` : dueSoon.length ? `${dueSoon.length} đơn tới giờ trong 1 giờ` : `${pending.pendingPickup} đến lấy · ${pending.pendingDelivery} giao`,
       tone: overdue ? 'alert' : dueSoon.length ? 'warn' : 'normal',
     },
+    cooking: { value: `${pending.cookingCount ?? 0} đơn chờ nấu`, note: 'Đã xác nhận, đang chờ bếp nấu' },
     delivery: { value: `${pending.pendingDelivery} đơn chờ giao`, note: 'Lộ trình và đơn ship' },
     activity: { value: null, note: 'Khách đang xem website' },
     customers: { value: `${(customers ?? []).length} khách`, note: 'Danh bạ khách hàng' },
