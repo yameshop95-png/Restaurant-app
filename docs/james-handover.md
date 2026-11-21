@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: **2026-11-21** (PR #52 + PR #53 đã merge — quy trình giao hàng GĐ1 + GĐ2 đã lên main; main ở `c1223a9`).
+> Cập nhật lần cuối: **2026-11-21** (PR #52 + PR #53 đã merge; PR #54 nháp — tách trạm Chờ xử lý/Chờ nấu + mục Chờ nấu riêng — đang chờ Paul duyệt; main ở `d06a194`).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James luôn qua PR để Paul duyệt, chỉ merge khi Paul nói rõ cho từng PR.
 
@@ -94,7 +94,11 @@
   hiện ở nhóm cuối "Chưa có giờ giao" — không bao giờ giấu đơn đang trên xe). Chỉ đường **từng chặng**,
   mặc định **Apple Maps**, Google Maps là phụ; nút "Gửi lộ trình cho shipper" giữ nguyên.
   Hàng chờ nấu gộp chung đơn giao + đến lấy (bộ lọc "Chờ nấu": `pending` + đã xác nhận — web có
-  `confirmedAt`, đơn tại quán mặc định xác nhận; riêng view này gộp cả hai loại đơn). Gom đợt và
+  `confirmedAt`, đơn tại quán mặc định xác nhận; riêng view này gộp cả hai loại đơn).
+  **Hai trạm TÁCH HẲN nhau** (Paul chốt bổ sung 21/11, PR #54): "Chờ xử lý" chỉ còn đơn CHƯA xác nhận
+  (`isInboxOrder = pending && !isCookingOrder` trong `batches.js`); xác nhận xong đơn rời hẳn Chờ xử lý
+  và nằm chờ ở **mục Chờ nấu riêng** (trang `CookingPage`, có mục trong điều hướng + badge `cookingCount`)
+  cho tới khi nấu xong — đừng để hai trạm chồng nhau trở lại. Gom đợt và
   đơn trễ nằm ở `src/lib/batches.js` (GĐ2 = PR #53): đợt tối đa **15 đơn theo ngày giao**, thứ tự
   `planRoute`; **đơn trễ** = đơn giao tạo SAU 22:00 ngày trước ngày giao (`LATE_CUTOFF_HOUR = 22`),
   hiện riêng trên cùng hàng chờ nấu và không vào đợt. Thu tiền giữ cờ `paid` riêng — đừng gắn
@@ -106,6 +110,11 @@
 
 - **PR #36** (`glass-dashboard-demo`): demo giao diện kính tối trên dashboard thật. Paul chưa chốt dùng hay không.
 - **PR #41** (`light-glass-demo`): demo kính sáng trắng–xanh trên app thật (đang ở v3, đã bỏ backdrop-filter ở thẻ cho nhẹ máy). Paul chưa chốt.
+- **PR #54** (`cooking-section`, base `d06a194`): **tách trạm Chờ xử lý / Chờ nấu + mục Chờ nấu riêng**
+  theo mô hình Paul chốt (mục 3): `isInboxOrder` trong `batches.js` (mỗi đơn chờ thuộc đúng MỘT trạm);
+  trang `CookingPage` khoá `fixedFilter="cooking"`; mục Chờ nấu ở menu trái (sau Đơn hàng), tab ghim
+  thứ 5 ở thanh dưới, ô riêng ở trang chủ; badge/banner hộp thư đến đếm theo trạm mới. Test:batches
+  mở rộng lên 45 đạt (thêm khẳng định tách trạm); mọi suite pass. Chờ Paul duyệt.
 
 
 
