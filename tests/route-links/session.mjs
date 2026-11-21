@@ -6,6 +6,7 @@
 // Chạy qua run.mjs (npm run test:routelinks).
 import { directionsUrl, routeSegments, MAX_ROUTE_STOPS } from '../../src/lib/geo.js';
 import { isShippedToday, needsCustomerMessage } from '../../src/lib/orderStatus.js';
+import { planRoute } from '../../src/lib/route.js';
 import { routeText } from '../../src/lib/shareOrder.js';
 import { orderTotal } from '../../src/lib/stats.js';
 
@@ -182,6 +183,36 @@ for (const app of ['google', 'apple']) {
   check('chip: đơn nhân viên nhập → ẩn', needsCustomerMessage({ status: 'pending', confirmedAt: base.confirmedAt }) === false);
   check('chip: đơn đã xong (done) → ẩn', needsCustomerMessage({ ...base, status: 'done' }) === false);
   check('chip: đơn đã huỷ → ẩn', needsCustomerMessage({ ...base, status: 'cancelled' }) === false);
+}
+
+// 7) planRoute: đơn hẹn NGÀY MAI vẫn nằm trong lộ trình (lộ trình hiện mọi đơn
+//    đang giao), khung giờ ghi thêm ngày; đơn hôm nay giữ nhãn thường; đơn quá
+//    giờ vào khung "Đã trễ giờ" xếp đầu
+{
+  const now = new Date(2026, 10, 21, 12, 0); // Thứ Bảy 21/11/2026, 12:00 giờ máy
+  const iso = (d, h, m = 0) => new Date(2026, 10, d, h, m).toISOString();
+  const orders = [
+    { id: 'today', deliverAt: iso(21, 13) },
+    { id: 'tmr', deliverAt: iso(22, 8) },
+    { id: 'late', deliverAt: iso(20, 8) },
+  ];
+  const geo = new Map([
+    ['today', { lat: -36.12, lng: 146.88, zone: 'Wodonga' }],
+    ['tmr', { lat: -36.08, lng: 146.91, zone: 'Albury' }],
+    ['late', null],
+  ]);
+  const plan = planRoute(orders, geo, null, now, 30);
+  const allStops = plan.slots.flatMap((s) => s.stops);
+  const labelOf = (id) => plan.slots.find((s) => s.stops.some((x) => x.order.id === id))?.label;
+  check('lộ trình: đủ 3 đơn (hôm nay + ngày mai + trễ)', allStops.length === 3);
+  check('lộ trình: đơn ngày mai có mặt', allStops.some((s) => s.order.id === 'tmr'));
+  check('lộ trình: khung hôm nay không ghi ngày', labelOf('today') === '13:00 – 13:30');
+  check('lộ trình: khung ngày mai ghi thêm "CN 22/11"', labelOf('tmr') === '08:00 – 08:30 · CN 22/11');
+  check('lộ trình: đơn quá giờ vào khung Đã trễ giờ', labelOf('late') === 'Đã trễ giờ');
+  check(
+    'lộ trình: khung trễ xếp đầu, khung ngày mai xếp cuối',
+    plan.slots[0].label === 'Đã trễ giờ' && plan.slots[plan.slots.length - 1].label.includes('22/11')
+  );
 }
 
 console.log(`\nKẾT QUẢ: ${passed} đạt, ${failed} trượt`);

@@ -16,7 +16,17 @@ function slotOf(order, now, slotMinutes) {
   // Chia khung tính từ nửa đêm theo giờ máy, để khung 60 phút luôn bắt đầu ở phút :00
   const midnight = new Date(t).setHours(0, 0, 0, 0);
   const start = midnight + Math.floor((t - midnight) / slotMs) * slotMs;
-  return { key: start, label: `${hhmm(new Date(start))} – ${hhmm(new Date(start + slotMs))}` };
+  const range = `${hhmm(new Date(start))} – ${hhmm(new Date(start + slotMs))}`;
+  // Đơn hẹn ngày khác hôm nay (vd đơn ngày mai đã mang đi sớm): ghi thêm ngày vào
+  // nhãn khung để khỏi lẫn với khung cùng giờ của hôm nay. Người gọi gom đợt
+  // (batches.js) truyền now = đầu ngày giao và chỉ đơn trong ngày đó nên nhãn
+  // của đợt không đổi.
+  if (new Date(t).toDateString() !== now.toDateString()) {
+    const d = new Date(t);
+    const wd = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][d.getDay()];
+    return { key: start, label: `${range} · ${wd} ${d.getDate()}/${d.getMonth() + 1}` };
+  }
+  return { key: start, label: range };
 }
 
 // geo: Map orderId -> { lat, lng, zone } | null (không tìm thấy trên bản đồ)
