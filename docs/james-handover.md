@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: **2026-11-21** (PR #52 + #53 + #54 + #55 + **#56 đã merge** — #56 bỏ Lộ trình giao khỏi Đơn hàng, lộ trình chỉ còn ở Đơn ship; main ở `4483ca1`).
+> Cập nhật lần cuối: **2026-11-21** (PR #52 + #53 + #54 + #55 + #56 + **#57 đã merge** — #57 lưu toạ độ lên đơn, nhãn đợt hết phụ thuộc cache từng máy; main ở `979ab9f`).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James đi qua PR nháp (build + test đạt), **báo Paul trước; Paul OK mới merge** — Paul đã
 > chốt lại quy ước này tối 21/11 (câu "tự merge luôn" cùng tối đã được anh rút lại, đừng dùng).
@@ -30,6 +30,7 @@
 | #54 | **Tách trạm Chờ xử lý / Chờ nấu + mục Chờ nấu riêng** (mục 3): `isInboxOrder` trong `batches.js` — mỗi đơn chờ thuộc đúng MỘT trạm; trang `CookingPage` khoá `fixedFilter="cooking"`, mục Chờ nấu ở menu trái + tab ghim thứ 5 + ô trang chủ, badge `cookingCount`; badge/banner hộp thư đến đếm theo trạm inbox; `test:batches` mở rộng lên 45 | `07b8af4` |
 | #55 | **Sửa 2 lỗi nghiêm trọng** (mô phỏng 100 đơn): đóng dấu `shippedAt` ở `setStatus` (`useOrders.js`) + tiến độ/đối soát chuyến chỉ tính đơn giao hôm nay (`isShippedToday`); link lộ trình chia đoạn `routeSegments` (`geo.js`) cho nút mở lộ trình + tin nhắn shipper; thêm `test:routelinks` (33) | `f75b56f` |
 | #56 | **Bỏ "Lộ trình giao" khỏi tab Đơn hàng** (ý Paul: muốn xem lộ trình thì qua Đơn ship): cờ `routeAllowed = fixedType === 'delivery'` trong `OrdersPage.jsx` — thanh Danh sách/Lộ trình và `RoutePlanner` chỉ còn render ở trang Đơn ship; bên Đơn hàng luôn ở dạng danh sách, chip trạng thái + nút trên thẻ đơn giữ nguyên; Đơn ship không đổi | `4483ca1` |
+| #57 | **Lưu toạ độ lên đơn** (sửa vấn đề 1 của mô phỏng 150 đơn — nhãn đợt lệch theo cache từng máy): trường `geo {lat,lng,zone,for}` trên đơn (data JSON, không migration; `for` = địa chỉ của toạ độ, sửa địa chỉ thì tự hết hiệu lực); lib mới `src/lib/orderGeo.js` (`storedGeoOf`/`geoRecordFor`); OrdersPage tính đợt **chỉ từ toạ độ trên đơn** + effect nền tự tra/ghi toạ độ cho đơn giao đang hoạt động qua prop `onPatchOrder` (= `markOrder` thầm lặng, thêm ở `App.jsx`); `RoutePlanner` ưu tiên toạ độ trên đơn, tra được thì ghi lại; test mới `test:ordergeo` 13/13; mô phỏng lại: lệch đợt 70/87 → **0/87** | `979ab9f` |
 
 ## 2. PR đã đóng KHÔNG merge
 
@@ -121,8 +122,7 @@
 
 - **PR #36** (`glass-dashboard-demo`): demo giao diện kính tối trên dashboard thật. Paul chưa chốt dùng hay không.
 - **PR #41** (`light-glass-demo`): demo kính sáng trắng–xanh trên app thật (đang ở v3, đã bỏ backdrop-filter ở thẻ cho nhẹ máy). Paul chưa chốt.
-- **PR #57** (`order-geo-store`, 21/11): **lưu toạ độ lên đơn** (trường `geo {lat,lng,zone,for}` trong data JSON — không migration) để nhãn đợt hết phụ thuộc cache từng máy (phát hiện mô phỏng 150 đơn: 70/87 đơn lệch đợt giữa máy cache đầy/lạnh). `computeBatches` ở OrdersPage chỉ đọc `storedGeoOf` (lib/orderGeo.js); effect nền tự tra + ghi toạ độ lên đơn đang hoạt động qua prop mới `onPatchOrder` (= `markOrder` thầm lặng, App.jsx); RoutePlanner ưu tiên toạ độ trên đơn, tra được thì ghi lại. Kiểm chứng: test:ordergeo 13/13 + mọi suite cũ đạt + build đạt; chạy lại mô phỏng 150: lệch đợt **0/87**, Đợt 1 giống hệt giữa hai máy. Chờ Paul OK mới merge.
-- (PR #54, #55, #56 đã merge ngày 21/11 — xem mục 1.)
+- (PR #54, #55, #56, #57 đã merge ngày 21/11 — xem mục 1.)
 
 
 
@@ -150,8 +150,9 @@
   gom đợt tự động + mục đơn trễ + tiến độ/tóm tắt chuyến. Việc giao hàng còn lại chưa ai chốt:
   nút **"Giao không được"** (khách vắng nhà) — cần Paul quyết đơn giao hỏng sẽ nằm ở đâu trước khi làm.
 - **Mô phỏng 100 đơn cuối tuần (21/11, báo cáo `restaurant-app-mo-phong-100-don-2026-11-21.md`)** — ngoài
-  2 lỗi nghiêm trọng đã sửa ở PR #55 (đã merge), còn 3 điểm bất tiện chưa ai sửa: nhãn đợt ở màn hình Chờ nấu phụ
-  thuộc cache toạ độ của máy (máy lạnh làm 41/58 đơn đổi đợt/vị trí so với máy đã có cache); đơn giao
+  2 lỗi nghiêm trọng đã sửa ở PR #55 (đã merge), điểm "nhãn đợt phụ thuộc cache toạ độ của máy" **đã sửa
+  ở PR #57 (đã merge)** — mô phỏng 150 đơn xác nhận lại: lệch đợt giữa hai máy 70/87 → 0/87. Còn 2 điểm
+  bất tiện chưa ai sửa: đơn giao
   thiếu `deliverAt` xếp lên đầu hàng chờ nấu (dự phòng theo `createdAt`) nhưng không vào đợt nào; đơn
   trễ không có kiểm tra độ gấp (đơn hẹn giao sau 30 phút vẫn nhận lặng lẽ) và nhóm trễ phình to thì
   không có đợt/lộ trình tính sẵn. (Ý "đợt trải giờ rộng" Paul không lo: bếp của anh nấu trước giờ
