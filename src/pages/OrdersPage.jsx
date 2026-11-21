@@ -28,7 +28,7 @@ import RoutePlanner from '../components/RoutePlanner';
 import { normalizeText } from '../hooks/useCustomers';
 import useSwipe from '../hooks/useSwipe';
 import useWide from '../hooks/useWide';
-import { computeBatches, isCookingOrder } from '../lib/batches';
+import { computeBatches, isCookingOrder, isInboxOrder } from '../lib/batches';
 import { dishThumb } from '../lib/dishPhotos';
 import { dueInfo, formatDue } from '../lib/due';
 import { cachedGeocode } from '../lib/geo';
@@ -52,7 +52,9 @@ const STATUS = {
 const PAGE = 30;
 
 const FILTERS = [
-  { id: 'pending', label: 'Chờ xử lý', match: (o) => o.status === 'pending' },
+  // Hai trạm đầu tách hẳn nhau (xem isInboxOrder / isCookingOrder ở lib/batches):
+  // "Chờ xử lý" chỉ còn đơn web chưa xác nhận; xác nhận xong đơn sang hẳn "Chờ nấu".
+  { id: 'pending', label: 'Chờ xử lý', match: isInboxOrder },
   // Hàng chờ nấu: đơn chờ xử lý đã xác nhận, GỘP cả đơn giao và đơn đến lấy (xem isCookingOrder)
   { id: 'cooking', label: 'Chờ nấu', match: isCookingOrder },
   { id: 'done', label: 'Hoàn thành', match: (o) => o.status === 'done' },
@@ -596,8 +598,10 @@ function matchesDate(order, date) {
 }
 
 // Tab "Đơn hàng": 2 tab con Đến lấy / Giao hàng. Tab "Đơn ship": chỉ đơn giao hàng (fixedType = 'delivery').
+// Mục "Chờ nấu": khoá cứng vào trạm chờ nấu (fixedFilter = 'cooking'), ẩn cả tab loại đơn lẫn hàng chip lọc.
 export default function OrdersPage({
   fixedType,
+  fixedFilter,
   orders,
   customers,
   menu,
@@ -612,7 +616,7 @@ export default function OrdersPage({
   const [chosenType, setChosenType] = useState('pickup');
   const zones = settings.shippingZones ?? DEFAULT_ZONES;
   const type = fixedType ?? chosenType;
-  const [filter, setFilterState] = useState('pending');
+  const [filter, setFilterState] = useState(fixedFilter ?? 'pending');
   const [slide, setSlide] = useState(null); // hướng chuyển trang để chạy hiệu ứng trượt
   const tabsRef = useRef(null);
   const setFilter = (id) => {
@@ -664,8 +668,9 @@ export default function OrdersPage({
   const searching = query.trim() !== '' || date !== '';
   // Lọc + sắp xếp chỉ chạy lại khi đơn / bộ lọc đổi, không chạy lại mỗi lần đồng hồ nhảy
   const visible = useMemo(() => {
-    // Hàng "Chờ nấu" là hàng chung của bếp: gộp cả đơn giao và đơn đến lấy, không chia theo tab loại đơn
-    const pool = searching ? ofType : filter === 'cooking' ? orders : ofType;
+    // Hàng "Chờ nấu" là hàng chung của bếp: gộp cả đơn giao và đơn đến lấy, không chia theo tab loại đơn.
+    // Ở mục "Chờ nấu" riêng (fixedFilter), tìm kiếm cũng quét toàn bộ đơn như hàng nấu gộp.
+    const pool = searching ? (fixedFilter ? orders : ofType) : filter === 'cooking' ? orders : ofType;
     const list = searching
       ? pool.filter((o) => matchesQuery(o, searchQ) && matchesDate(o, date))
       : pool.filter(FILTERS.find((f) => f.id === filter).match);
@@ -675,7 +680,7 @@ export default function OrdersPage({
       list.sort((a, b) => dueTime(a) - dueTime(b));
     else list.sort((a, b) => dueTime(b) - dueTime(a));
     return list;
-  }, [orders, ofType, searching, searchQ, date, filter]);
+  }, [orders, ofType, searching, searchQ, date, filter, fixedFilter]);
   const tabCounts = useMemo(
     () =>
       Object.fromEntries(
@@ -752,7 +757,7 @@ export default function OrdersPage({
 
   return (
     <div className="staff-stagger mx-auto max-w-2xl pb-24 md:max-w-5xl xl:max-w-7xl">
-      {!fixedType && (
+      {!fixedType && !fixedFilter && (
         <div className="mb-3 grid grid-cols-2 gap-2">
           {Object.entries(ORDER_TYPES).map(([id, info]) => {
             const active = type === id;
@@ -843,6 +848,7 @@ export default function OrdersPage({
             </div>
           )}
 
+          {!fixedFilter && (
           <div ref={tabsRef} data-no-swipe className={`mb-4 flex gap-2 overflow-x-auto ${searching ? 'hidden' : ''}`}>
             {FILTERS.map((f) => {
               const n = tabCounts[f.id];
@@ -861,10 +867,11 @@ export default function OrdersPage({
               );
             })}
           </div>
+          )}
 
           <div className="overflow-x-clip">
             <div
-              {...(searching ? {} : swipe)}
+              {...(searching || fixedFilter ? {} : swipe)}
               key={searching ? 'search' : filter}
               className={`min-h-[60vh] touch-pan-y ${!searching && slide ? (slide === 'next' ? 'animate-slide-next' : 'animate-slide-prev') : ''}`}
             >
@@ -1015,7 +1022,7 @@ export default function OrdersPage({
                   Xem thêm ({moreCount} đơn nữa)
                 </button>
               )}
-              {!searching && (
+              {!searching && !fixedFilter && (
                 <p className="mt-4 text-center text-xs text-slate-400 lg:hidden">
                   Vuốt trái / phải để chuyển trạng thái
                 </p>
