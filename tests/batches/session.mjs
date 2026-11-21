@@ -1,7 +1,7 @@
 // Test gom đợt giao tự động (src/lib/batches.js) — Giai đoạn 2 quy trình giao hàng.
 // Dữ liệu giả quanh ngày giao Thứ Bảy 21/11/2026, giờ chốt 22:00 tối thứ Sáu 20/11.
 // Chạy qua run.mjs (npm run test:batches).
-import { BATCH_MAX, computeBatches, isCookingOrder, isLateOrder } from '../../src/lib/batches.js';
+import { BATCH_MAX, computeBatches, isCookingOrder, isInboxOrder, isLateOrder } from '../../src/lib/batches.js';
 
 let passed = 0;
 let failed = 0;
@@ -118,6 +118,27 @@ const delivery = (id, deliverAt, createdAt, extra = {}) => ({
   check('đến lấy: isLateOrder = false', !isLateOrder(pickup));
   const { byOrder, batches, lateIds } = computeBatches([pickup]);
   check('đến lấy: không có đợt nào', batches.length === 0 && !byOrder.has('pickup1') && !lateIds.has('pickup1'));
+}
+
+// 8) Hai trạm tách hẳn nhau: một đơn chờ chỉ thuộc đúng một trong Chờ xử lý / Chờ nấu
+{
+  const t = at(2026, 10, 20, 10);
+  const shapes = [
+    ['web mới chưa nhận', { status: 'pending', source: 'web' }, 'inbox'],
+    ['web đã nhận chưa xác nhận', { status: 'pending', source: 'web', receivedAt: t }, 'inbox'],
+    ['web đã xác nhận', { status: 'pending', source: 'web', receivedAt: t, confirmedAt: t }, 'cooking'],
+    ['tại quán (nhân viên nhập)', { status: 'pending', source: 'staff' }, 'cooking'],
+    ['đã Hoàn thành', { status: 'done', source: 'web', confirmedAt: t }, 'none'],
+    ['đang giao', { status: 'delivering', source: 'web', confirmedAt: t }, 'none'],
+    ['đã ship', { status: 'shipped', source: 'web', confirmedAt: t }, 'none'],
+    ['đã huỷ', { status: 'cancelled', source: 'web' }, 'none'],
+  ];
+  for (const [name, order, want] of shapes) {
+    const inbox = isInboxOrder(order);
+    const cooking = isCookingOrder(order);
+    check(`trạm: ${name} → ${want}`, inbox === (want === 'inbox') && cooking === (want === 'cooking'));
+    check(`trạm: ${name} → không thuộc cả hai trạm`, !(inbox && cooking));
+  }
 }
 
 console.log(`\nKẾT QUẢ: ${passed} đạt, ${failed} trượt`);
