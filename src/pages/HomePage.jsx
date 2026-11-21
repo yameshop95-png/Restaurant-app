@@ -428,27 +428,8 @@ export default function HomePage({ orders, now, settings, isOwner, isManager, on
 
       {seeWeekMoney ? (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:gap-6">
-            <Card title="Đã thanh toán">
-              <div className="px-5 pb-5 pt-1">
-                <p className="text-2xl font-bold tracking-tight text-emerald-600">
-                  <CountUp value={stats.weekPaid.total} format={formatMoney} />
-                </p>
-                <p className="text-sm text-slate-500">{stats.weekPaid.count} đơn</p>
-              </div>
-            </Card>
-            <section
-              className={`rounded-3xl px-5 pb-5 pt-4 shadow-sm ${
-                stats.weekUnpaid.count ? 'border border-red-500/60 bg-card text-red-600' : 'border border-slate-200 bg-card text-slate-500'
-              }`}
-            >
-              <h2 className="text-[13px] font-medium text-slate-500">Chưa thanh toán</h2>
-              <p className={`mt-1 text-2xl font-bold tracking-tight ${stats.weekUnpaid.count ? 'text-red-600' : 'text-slate-900'}`}>
-                <CountUp value={stats.weekUnpaid.total} format={formatMoney} />
-              </p>
-              <p className="text-sm text-slate-500">{stats.weekUnpaid.count} đơn</p>
-            </section>
-          </div>
+          {/* Đã/Chưa thanh toán đã gộp vào chú thích của WeekMoneyDonut bên dưới
+              (đủ số tiền + số đơn + %) — bỏ 2 ô riêng ở đây để khỏi trùng thông tin. */}
           {stats.olderUnpaid.count > 0 && (
             <p className="-mt-1 rounded-2xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-600">
               {isOwner
