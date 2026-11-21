@@ -1,4 +1,4 @@
-import { directionsUrl } from './geo';
+import { directionsUrl, routeSegments } from './geo';
 import { paymentLabel } from './orderStatus';
 import { formatMoney, itemsTotal, orderTotal } from './stats';
 
@@ -51,10 +51,22 @@ export function routeText(plan, start, shopName, mapsApp) {
   const toCollect = stops.filter((s) => !s.order.paid).reduce((sum, s) => sum + orderTotal(s.order), 0);
   const located = stops.filter((s) => s.geo);
   const now = new Date();
+  // Chuyến dài hơn giới hạn điểm của một link chỉ đường: gửi một link cho mỗi đoạn
+  // (nối tiếp nhau, xem routeSegments ở lib/geo) để shipper không bị thiếu điểm cuối.
+  // Chuyến ngắn vẫn giữ đúng một dòng "Chỉ đường:" như trước.
+  const segments = routeSegments(start, located.map((s) => s.geo));
+  const routeLines =
+    segments.length === 1
+      ? [`Chỉ đường: ${directionsUrl(segments[0].origin, segments[0].points, mapsApp)}`]
+      : segments.map((seg, i) => {
+          const before = segments.slice(0, i).reduce((n, s) => n + s.points.length, 0);
+          const from = i === 0 ? 1 : before;
+          return `Chỉ đường đoạn ${i + 1} (điểm ${from}–${before + seg.points.length}): ${directionsUrl(seg.origin, seg.points, mapsApp)}`;
+        });
   const head = [
     `${shopName ? `[${shopName}] ` : ''}Lộ trình giao ${when(now.toISOString())} – ${stops.length} điểm`,
     toCollect > 0 && `Tổng cần thu: ${formatMoney(toCollect)}`,
-    located.length > 0 && `Chỉ đường: ${directionsUrl(start, located.map((s) => s.geo), mapsApp)}`,
+    ...routeLines,
   ];
   const body = stops.map(({ order: o, index }) =>
     [

@@ -57,7 +57,8 @@ export default function useOrders(account) {
   //          items: [{ name, price, qty, note? }], status: 'pending' | 'done' | 'delivering' | 'shipped' | 'cancelled',
   //          paid: boolean, paymentMethod: 'cash' | 'transfer' | 'payid' | null, paidAt (ISO), createdAt,
   //          createdBy: tên người tạo đơn,
-  //          receivedAt (ISO): đã bấm "Đã nhận đơn"; confirmedAt (ISO): đã nhắn xác nhận cho khách (chỉ đơn online) }
+  //          receivedAt (ISO): đã bấm "Đã nhận đơn"; confirmedAt (ISO): đã nhắn xác nhận cho khách (chỉ đơn online),
+  //          shippedAt (ISO | null): đã bấm "Đã giao xong" / "Đã lấy" — setStatus tự ghi khi vào trạng thái shipped }
   const addOrder = ({ type, customer, deliverAt, table, note, items, shippingFee, discount }) =>
     setOrders((prev) => [
       {
@@ -85,7 +86,16 @@ export default function useOrders(account) {
   // Gắn thêm trường cho đơn (vd receivedAt / confirmedAt: các bước nhận đơn và xác nhận đơn online)
   const markOrder = (id, patch) => setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, ...patch } : o)));
 
-  const setStatus = (id, status) => setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+  // Đổi trạng thái: vào "shipped" thì ghi mốc shippedAt là lúc bấm (như paidAt khi
+  // thanh toán), rời khỏi "shipped" (nút quay lại / hoàn tác) thì xoá mốc. Mọi đường
+  // đổi trạng thái đều qua đây (nút trên thẻ đơn và nút "Đã giao xong" ở lộ trình
+  // cùng gọi onSetStatus → hàm này) nên tiến độ chuyến có mốc giao xong đáng tin.
+  const setStatus = (id, status) =>
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === id ? { ...o, status, shippedAt: status === 'shipped' ? new Date().toISOString() : null } : o,
+      ),
+    );
 
   // paidAt mặc định là lúc bấm; truyền vào khi cần khôi phục giá trị cũ (hoàn tác)
   const setPaid = (id, paid, paymentMethod = null, paidAt = paid ? new Date().toISOString() : null) =>

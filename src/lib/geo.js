@@ -105,3 +105,16 @@ export function directionsUrl(start, points, app = 'google') {
   if (between.length) params.set('waypoints', between.join('|'));
   return `https://www.google.com/maps/dir/?${params}`;
 }
+
+// Chia lộ trình dài thành các đoạn, mỗi đoạn tối đa maxStops điểm, để link chỉ đường
+// không bị directionsUrl cắt mất điểm cuối khi chuyến có hơn MAX_ROUTE_STOPS điểm.
+// Đoạn sau lấy điểm cuối của đoạn trước làm điểm bắt đầu (origin) nên các đoạn nối
+// nhau liền mạch, không điểm nào bị sót hay lặp. Trả về [{ origin, points }] — đưa
+// thẳng vào directionsUrl(origin, points, app) cho từng đoạn.
+export function routeSegments(start, points, maxStops = MAX_ROUTE_STOPS) {
+  const segments = [];
+  for (let i = 0; i < points.length; i += maxStops) {
+    segments.push({ origin: i === 0 ? start : points[i - 1], points: points.slice(i, i + maxStops) });
+  }
+  return segments;
+}

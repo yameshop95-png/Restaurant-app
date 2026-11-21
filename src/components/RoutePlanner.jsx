@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { AlarmClock, Check, Loader2, LocateFixed, MapPin, Navigation, Phone, Route, Send, Store } from 'lucide-react';
 import { dueInfo, formatDue } from '../lib/due';
-import { cachedGeocode, currentPosition, directionsUrl, geocode, MAX_ROUTE_STOPS } from '../lib/geo';
+import { cachedGeocode, currentPosition, directionsUrl, geocode, routeSegments } from '../lib/geo';
+import { isShippedToday } from '../lib/orderStatus';
 import { mapsUrl, routeText, shareText } from '../lib/shareOrder';
 import { planRoute, SLOT_OPTIONS } from '../lib/route';
 import { formatMoney, orderTotal } from '../lib/stats';
@@ -37,14 +38,13 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
   const plannable = useMemo(() => active.filter((o) => o.deliverAt), [active]);
   const noTime = useMemo(() => active.filter((o) => !o.deliverAt), [active]);
 
-  // Đơn đã giao xong thuộc chuyến hôm nay: đã ship, đơn giao hàng, giờ giao hôm nay hoặc
-  // sớm hơn (kể cả đơn tồn từ hôm trước vừa giao xong). App không lưu giờ bấm "Đã giao
-  // xong" nên tiến độ chuyến chỉ tính gần đúng từ dữ liệu này, không có trạng thái chuyến riêng.
+  // Đơn đã giao xong thuộc chuyến hôm nay: đơn giao hàng được bấm "Đã giao xong" trong
+  // ngày hôm nay (theo mốc shippedAt). Đơn đã ship từ các ngày trước — kể cả đơn tồn
+  // vừa giao bù — chỉ tính vào ngày thật sự giao xong, nên lịch sử không làm sai
+  // tiến độ và tiền của chuyến hiện tại. Đơn ship trước khi app có shippedAt thì
+  // không có mốc, không được tính (đúng ý: đó là lịch sử).
   const shippedRun = useMemo(
-    () =>
-      orders.filter(
-        (o) => o.type === 'delivery' && o.status === 'shipped' && (!o.deliverAt || isTodayOrEarlier(o.deliverAt, now)),
-      ),
+    () => orders.filter((o) => o.type === 'delivery' && isShippedToday(o, now)),
     [orders, now]
   );
   const runPaidTotal = shippedRun.filter((o) => o.paid).reduce((s, o) => s + orderTotal(o), 0);
@@ -91,6 +91,16 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
     }
     return map;
   }, [stops, start]);
+
+  // Link lộ trình đầy đủ: chuyến dài hơn giới hạn điểm của một link thì chia thành
+  // nhiều đoạn nối tiếp nhau (xem routeSegments ở lib/geo) để không điểm nào bị cắt.
+  // from/to là khoảng điểm (theo thứ tự các điểm có toạ độ) mà đoạn đó phụ trách;
+  // đoạn sau tính từ điểm cuối của đoạn trước vì đó là điểm bắt đầu của nó.
+  const segments = routeSegments(start, located.map((s) => s.geo));
+  const segSpans = segments.map((seg, i) => {
+    const before = segments.slice(0, i).reduce((n, s) => n + s.points.length, 0);
+    return { ...seg, from: i === 0 ? 1 : before, to: before + seg.points.length };
+  });
 
   const run = async () => {
     const warnings = [];
@@ -208,28 +218,35 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
             {w}
           </p>
         ))}
-        {located.length > 0 && (
+        {segments.length > 0 && (
           <>
-            {/* Mặc định mở Apple Maps; Google Maps là lựa chọn phụ */}
-            <a
-              href={directionsUrl(start, located.map((s) => s.geo), 'apple')}
-              target="_blank"
-              rel="noreferrer"
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-blue-500 py-3 font-semibold text-blue-600 active:bg-blue-50"
-            >
-              <Navigation size={18} />
-              Mở lộ trình trên Apple Maps
-              {located.length > MAX_ROUTE_STOPS ? ` (${MAX_ROUTE_STOPS} điểm đầu)` : ''}
-            </a>
-            <a
-              href={directionsUrl(start, located.map((s) => s.geo), 'google')}
-              target="_blank"
-              rel="noreferrer"
-              className="block text-center text-sm font-semibold text-slate-500 underline-offset-2 active:underline"
-            >
-              hoặc mở lộ trình bằng Google Maps
-              {located.length > MAX_ROUTE_STOPS ? ` (${MAX_ROUTE_STOPS} điểm đầu)` : ''}
-            </a>
+            {/* Mặc định mở Apple Maps; Google Maps là lựa chọn phụ. Chuyến dài hơn
+                giới hạn của một link thì mỗi đoạn một cặp nút như dưới đây. */}
+            {segSpans.map((seg, i) => (
+              <Fragment key={i}>
+                <a
+                  href={directionsUrl(seg.origin, seg.points, 'apple')}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-blue-500 py-3 font-semibold text-blue-600 active:bg-blue-50"
+                >
+                  <Navigation size={18} />
+                  {segments.length > 1
+                    ? `Mở lộ trình đoạn ${i + 1} trên Apple Maps (điểm ${seg.from}–${seg.to})`
+                    : 'Mở lộ trình trên Apple Maps'}
+                </a>
+                <a
+                  href={directionsUrl(seg.origin, seg.points, 'google')}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block text-center text-sm font-semibold text-slate-500 underline-offset-2 active:underline"
+                >
+                  {segments.length > 1
+                    ? `hoặc mở đoạn ${i + 1} bằng Google Maps (điểm ${seg.from}–${seg.to})`
+                    : 'hoặc mở lộ trình bằng Google Maps'}
+                </a>
+              </Fragment>
+            ))}
           </>
         )}
         <button
