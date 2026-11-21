@@ -12,3 +12,5 @@ export const ReportPage = lazy(() => import('./ReportPage'));
 export const InventoryPage = lazy(() => import('./InventoryPage'));
 export const PrepPage = lazy(() => import('./PrepPage'));
 export const DeliveryPage = (props) => <OrdersPage {...props} fixedType="delivery" />;
+// Mục "Chờ nấu" riêng trong điều hướng: cùng OrdersPage nhưng khoá vào trạm chờ nấu (gộp cả 2 loại đơn)
+export const CookingPage = (props) => <OrdersPage {...props} fixedFilter="cooking" />;

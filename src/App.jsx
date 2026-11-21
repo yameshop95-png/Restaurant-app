@@ -20,10 +20,12 @@ import { exportAll } from './lib/backup';
 import { alertBeep, dueInfo, unlockAudio, upcomingOrders } from './lib/due';
 import { sendToShopPrinter } from './lib/printQueue';
 import { paymentLabel, statusLabel } from './lib/orderStatus';
+import { isCookingOrder } from './lib/batches';
 import {
   HomePage,
   OrdersPage,
   DeliveryPage,
+  CookingPage,
   ReportPage,
   CustomersPage,
   CustomerActivityPage,
@@ -54,6 +56,7 @@ function savePrinted(set) {
 const PAGES = {
   home: HomePage,
   orders: OrdersPage,
+  cooking: CookingPage,
   delivery: DeliveryPage,
   prep: PrepPage,
   report: ReportPage,
@@ -247,11 +250,19 @@ function Shop({ account, onLogout }) {
     const pendingDelivery = pending.filter((o) => o.type === 'delivery').length;
     // Badge tab Đơn ship: cả đơn giao đang chờ lẫn đơn đang đi giao đều cần để mắt tới
     const deliveringDelivery = orders.filter((o) => o.status === 'delivering' && o.type === 'delivery').length;
+    // Hai trạm tách nhau: hộp thư đến (Chờ xử lý) chỉ đếm đơn web chưa xác nhận;
+    // đơn đã xác nhận đếm ở badge mục Chờ nấu. pending* giữ nguyên nghĩa tổng đơn đang chờ cho các ô tổng quan.
+    const cooking = pending.filter(isCookingOrder);
+    const inbox = pending.filter((o) => !isCookingOrder(o));
     return {
       pendingPickup: pending.filter((o) => o.type !== 'delivery').length,
       pendingDelivery,
       pendingAll: pending.length,
       deliveryAction: pendingDelivery + deliveringDelivery,
+      inboxPickup: inbox.filter((o) => o.type !== 'delivery').length,
+      inboxDelivery: inbox.filter((o) => o.type === 'delivery').length,
+      inboxAll: inbox.length,
+      cookingCount: cooking.length,
     };
   }, [orders]);
 
@@ -265,7 +276,8 @@ function Shop({ account, onLogout }) {
 
   // Báo cáo chỉ dành cho chủ quán
   const ActivePage = PAGES[!isOwner && (activeTab === 'report' || activeTab === 'inventory') ? 'home' : activeTab];
-  const pendingTotal = counts.pendingAll;
+  // Chuông ở thanh trên = số đơn trong hộp thư đến (chưa nhận / chưa xác nhận), bấm vào là mở trạm Đơn hàng
+  const pendingTotal = counts.inboxAll;
 
   return (
     <div className="min-h-screen">

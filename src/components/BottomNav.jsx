@@ -1,9 +1,11 @@
-import { Bike, ClipboardList, LayoutDashboard, Menu, UtensilsCrossed } from 'lucide-react';
+import { Bike, ClipboardList, CookingPot, LayoutDashboard, Menu, UtensilsCrossed } from 'lucide-react';
 
-// Thanh tab dưới đáy màn hình điện thoại cho các mục dùng nhiều; "Thêm" mở menu đầy đủ
+// Thanh tab dưới đáy màn hình điện thoại cho các mục dùng nhiều; "Thêm" mở menu đầy đủ.
+// Chờ nấu là trạm làm việc chính của bếp nên ghim thẳng lên thanh này, cạnh Đơn hàng / Đơn ship.
 const TABS = [
   { id: 'home', label: 'Tổng quan', icon: LayoutDashboard },
-  { id: 'orders', label: 'Đơn hàng', icon: ClipboardList, badgeKey: 'pendingAll' },
+  { id: 'orders', label: 'Đơn hàng', icon: ClipboardList, badgeKey: 'inboxAll' },
+  { id: 'cooking', label: 'Chờ nấu', icon: CookingPot, badgeKey: 'cookingCount' },
   { id: 'delivery', label: 'Đơn ship', icon: Bike, badgeKey: 'pendingDelivery' },
   { id: 'menu', label: 'Món ăn', icon: UtensilsCrossed },
 ];
