@@ -2,9 +2,10 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: **2026-11-21** (PR #52 + #53 + **#54 + #55 đã merge** — #54 tách trạm Chờ xử lý/Chờ nấu + mục Chờ nấu riêng, #55 sửa 2 lỗi nghiêm trọng từ mô phỏng 100 đơn; main ở `f75b56f`).
+> Cập nhật lần cuối: **2026-11-21** (PR #52 + #53 + #54 + #55 + **#56 đã merge** — #56 bỏ Lộ trình giao khỏi Đơn hàng, lộ trình chỉ còn ở Đơn ship; main ở `4483ca1`).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
-> thay đổi của James luôn qua PR để Paul duyệt, chỉ merge khi Paul nói rõ cho từng PR.
+> thay đổi của James đi qua PR; **từ tối 21/11 Paul dặn James tự merge luôn, không cần hỏi lại mục allow**
+> (trước đó là chỉ merge khi Paul nói rõ cho từng PR).
 
 ---
 
@@ -28,6 +29,7 @@
 | #53 | **Quy trình giao hàng GĐ2** (mục 3): bộ lọc **"Chờ nấu"** ở Đơn hàng + module `src/lib/batches.js` tự gom đợt giao (tối đa 15 đơn/ngày) + mục **"Đơn trễ"** riêng + tiến độ và thẻ tóm tắt chuyến ở `RoutePlanner`; thêm `test:batches` (29) | `c1223a9` |
 | #54 | **Tách trạm Chờ xử lý / Chờ nấu + mục Chờ nấu riêng** (mục 3): `isInboxOrder` trong `batches.js` — mỗi đơn chờ thuộc đúng MỘT trạm; trang `CookingPage` khoá `fixedFilter="cooking"`, mục Chờ nấu ở menu trái + tab ghim thứ 5 + ô trang chủ, badge `cookingCount`; badge/banner hộp thư đến đếm theo trạm inbox; `test:batches` mở rộng lên 45 | `07b8af4` |
 | #55 | **Sửa 2 lỗi nghiêm trọng** (mô phỏng 100 đơn): đóng dấu `shippedAt` ở `setStatus` (`useOrders.js`) + tiến độ/đối soát chuyến chỉ tính đơn giao hôm nay (`isShippedToday`); link lộ trình chia đoạn `routeSegments` (`geo.js`) cho nút mở lộ trình + tin nhắn shipper; thêm `test:routelinks` (33) | `f75b56f` |
+| #56 | **Bỏ "Lộ trình giao" khỏi tab Đơn hàng** (ý Paul: muốn xem lộ trình thì qua Đơn ship): cờ `routeAllowed = fixedType === 'delivery'` trong `OrdersPage.jsx` — thanh Danh sách/Lộ trình và `RoutePlanner` chỉ còn render ở trang Đơn ship; bên Đơn hàng luôn ở dạng danh sách, chip trạng thái + nút trên thẻ đơn giữ nguyên; Đơn ship không đổi | `4483ca1` |
 
 ## 2. PR đã đóng KHÔNG merge
 
