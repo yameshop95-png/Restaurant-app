@@ -57,7 +57,10 @@ export default function useOrders(account) {
   //          items: [{ name, price, qty, note? }], status: 'pending' | 'done' | 'delivering' | 'shipped' | 'cancelled',
   //          paid: boolean, paymentMethod: 'cash' | 'transfer' | 'payid' | null, paidAt (ISO), createdAt,
   //          createdBy: tên người tạo đơn,
-  //          receivedAt (ISO): đã bấm "Đã nhận đơn"; confirmedAt (ISO): đã nhắn xác nhận cho khách (chỉ đơn online),
+  //          receivedAt (ISO): đã bấm "Đã nhận đơn"; confirmedAt (ISO): đã xác nhận đơn (chỉ đơn online) —
+  //          xác nhận không còn trói vào nhắn tin (PC không có SMS vẫn xác nhận được);
+  //          messagedAt (ISO): đã thật sự nhắn tin xác nhận cho khách ở máy nào đó (chip "Chưa nhắn khách"
+  //          hiện khi có confirmedAt mà chưa có messagedAt),
   //          shippedAt (ISO | null): đã bấm "Đã giao xong" / "Đã lấy" — setStatus tự ghi khi vào trạng thái shipped,
   //          geo ({ lat, lng, zone, for } | undefined): toạ độ địa chỉ giao đã tra, lưu trên đơn để mọi máy
   //          tính đợt/lộ trình giống nhau (xem lib/orderGeo.js); `for` là địa chỉ mà toạ độ thuộc về }

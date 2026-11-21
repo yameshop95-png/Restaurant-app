@@ -34,7 +34,7 @@ import { dueInfo, formatDue } from '../lib/due';
 import { cachedGeocode, geocode } from '../lib/geo';
 import { geoRecordFor, storedGeoOf } from '../lib/orderGeo';
 import { exportOrderList } from '../lib/orderListExcel';
-import { ORDER_TYPES, PAYMENT_METHODS, paymentLabel, PREVIOUS_STATUS, statusLabel } from '../lib/orderStatus';
+import { needsCustomerMessage, ORDER_TYPES, PAYMENT_METHODS, paymentLabel, PREVIOUS_STATUS, statusLabel } from '../lib/orderStatus';
 import { sendManyToShopPrinter, sendToShopPrinter } from '../lib/printQueue';
 import { DEFAULT_ZONES } from '../lib/shippingZones';
 import { mapsUrl, shareOrder } from '../lib/shareOrder';
@@ -351,6 +351,14 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
         </div>
       )}
 
+      {/* Đã xác nhận trên máy không có SMS (vd PC) mà chưa máy nào nhắn cho khách:
+          nhắc để điện thoại nhắn bù, tránh xác nhận xong rồi quên nhắn */}
+      {needsCustomerMessage(order) && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">Chưa nhắn khách</span>
+        </div>
+      )}
+
       {shareMsg && (
         <p className="mt-2 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800">{shareMsg}</p>
       )}
@@ -483,7 +491,7 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
         <div className="mt-2 space-y-2">
           {stage === 'received' && (
             <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              Kiểm tra làm được và đủ món, rồi nhắn xác nhận cho khách.
+              Kiểm tra làm được và đủ món rồi bấm Xác nhận đơn. Nhắn khách làm lúc nào cũng được, máy nào cũng được.
             </p>
           )}
           <div className="flex gap-2">
@@ -502,12 +510,23 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
               </button>
             )}
             {stage === 'received' && (
-              <button
-                onClick={() => setMessaging(true)}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600"
-              >
-                <MessageSquare size={18} /> Xác nhận &amp; nhắn khách
-              </button>
+              <>
+                <button
+                  onClick={() => setMessaging(true)}
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 px-4 py-3 font-semibold text-slate-700 active:bg-slate-100"
+                >
+                  <MessageSquare size={18} /> Nhắn khách
+                </button>
+                <button
+                  onClick={() => {
+                    const at = new Date().toISOString();
+                    onMarkStep(order.id, { receivedAt: order.receivedAt ?? at, confirmedAt: at }, 'đã xác nhận đơn');
+                  }}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600"
+                >
+                  <Check size={18} /> Xác nhận đơn
+                </button>
+              </>
             )}
             {(!stage || stage === 'confirmed') && (
               <button
@@ -536,10 +555,19 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
           shopAddress={shopAddress}
           onClose={() => setMessaging(false)}
           onSent={(kind) => {
-            // Nhắn xác nhận từ bất cứ đường nào (nút chính, "Thêm → Nhắn khách", Copy) cũng tính là đã nhận và đã xác nhận
-            if (kind !== 'confirm' || order.source !== 'web' || order.status !== 'pending' || order.confirmedAt) return;
+            // Gửi/copy tin XÁC NHẬN từ bất cứ đường nào (nút Nhắn khách, "Thêm → Nhắn khách", Copy):
+            // ghi messagedAt để chip "Chưa nhắn khách" biến mất. Đơn chưa xác nhận thì nhắn cũng
+            // tính là đã nhận + đã xác nhận như trước; đơn đã xác nhận sẵn (vd xác nhận trên PC
+            // không có SMS) thì chỉ ghi thêm messagedAt, không đổi mốc xác nhận.
+            if (kind !== 'confirm' || order.source !== 'web' || order.status !== 'pending') return;
             const at = new Date().toISOString();
-            onMarkStep(order.id, { receivedAt: order.receivedAt ?? at, confirmedAt: at }, 'đã nhắn xác nhận cho khách');
+            const patch = {};
+            if (!order.messagedAt) patch.messagedAt = at;
+            if (!order.confirmedAt) {
+              patch.receivedAt = order.receivedAt ?? at;
+              patch.confirmedAt = at;
+            }
+            if (Object.keys(patch).length) onMarkStep(order.id, patch, 'đã nhắn xác nhận cho khách');
           }}
         />
       )}
