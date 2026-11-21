@@ -5,7 +5,7 @@
 //     lib/orderStatus.js, dựa vào mốc shippedAt) — lịch sử không làm sai số liệu.
 // Chạy qua run.mjs (npm run test:routelinks).
 import { directionsUrl, routeSegments, MAX_ROUTE_STOPS } from '../../src/lib/geo.js';
-import { isShippedToday } from '../../src/lib/orderStatus.js';
+import { isShippedToday, needsCustomerMessage } from '../../src/lib/orderStatus.js';
 import { routeText } from '../../src/lib/shareOrder.js';
 import { orderTotal } from '../../src/lib/stats.js';
 
@@ -170,6 +170,18 @@ for (const app of ['google', 'apple']) {
   check('sau Đợt 1: Đã thu đúng $100 (5 × $20)', paidSum === 100);
   check('sau Đợt 1: Chưa thu đúng $200 (10 × $20)', unpaidSum === 200);
   check('đơn tồn đang giao không lọt vào nhóm đã giao', !done.some((o) => o.id === 'stale'));
+}
+
+// 6) needsCustomerMessage: chip "Chưa nhắn khách" — đơn web đã xác nhận mà chưa
+//    máy nào nhắn tin xác nhận (tách xác nhận khỏi nhắn tin cho PC không có SMS)
+{
+  const base = { source: 'web', status: 'pending', confirmedAt: '2026-11-21T01:00:00.000Z' };
+  check('chip: web + chờ + đã xác nhận + chưa nhắn → hiện', needsCustomerMessage(base) === true);
+  check('chip: đã nhắn (có messagedAt) → ẩn', needsCustomerMessage({ ...base, messagedAt: '2026-11-21T01:05:00.000Z' }) === false);
+  check('chip: chưa xác nhận → ẩn', needsCustomerMessage({ source: 'web', status: 'pending' }) === false);
+  check('chip: đơn nhân viên nhập → ẩn', needsCustomerMessage({ status: 'pending', confirmedAt: base.confirmedAt }) === false);
+  check('chip: đơn đã xong (done) → ẩn', needsCustomerMessage({ ...base, status: 'done' }) === false);
+  check('chip: đơn đã huỷ → ẩn', needsCustomerMessage({ ...base, status: 'cancelled' }) === false);
 }
 
 console.log(`\nKẾT QUẢ: ${passed} đạt, ${failed} trượt`);

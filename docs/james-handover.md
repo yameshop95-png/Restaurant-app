@@ -122,6 +122,7 @@
 
 - **PR #36** (`glass-dashboard-demo`): demo giao diện kính tối trên dashboard thật. Paul chưa chốt dùng hay không.
 - **PR #41** (`light-glass-demo`): demo kính sáng trắng–xanh trên app thật (đang ở v3, đã bỏ backdrop-filter ở thẻ cho nhẹ máy). Paul chưa chốt.
+- **PR #58** (`confirm-without-sms`): tách xác nhận đơn khỏi nhắn tin — PC không có SMS vẫn bấm "Xác nhận đơn" được (trước đây `confirmedAt` chỉ ghi khi gửi/copy tin trong khung nhắn, nên đơn web nhận trên PC kẹt ở Chờ xử lý, không qua Chờ nấu, không Hoàn thành được). Thêm trường `messagedAt` + chip "Chưa nhắn khách" (`needsCustomerMessage` ở `orderStatus.js`) để máy khác nhắn bù. Build đạt, test:routelinks 39/39, batches 45/45, ordergeo 13/13. Chờ Paul OK mới merge.
 - (PR #54, #55, #56, #57 đã merge ngày 21/11 — xem mục 1.)
 
 
