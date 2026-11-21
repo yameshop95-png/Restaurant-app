@@ -244,10 +244,14 @@ function Shop({ account, onLogout }) {
 
   const counts = useMemo(() => {
     const pending = orders.filter((o) => o.status === 'pending');
+    const pendingDelivery = pending.filter((o) => o.type === 'delivery').length;
+    // Badge tab Đơn ship: cả đơn giao đang chờ lẫn đơn đang đi giao đều cần để mắt tới
+    const deliveringDelivery = orders.filter((o) => o.status === 'delivering' && o.type === 'delivery').length;
     return {
       pendingPickup: pending.filter((o) => o.type !== 'delivery').length,
-      pendingDelivery: pending.filter((o) => o.type === 'delivery').length,
+      pendingDelivery,
       pendingAll: pending.length,
+      deliveryAction: pendingDelivery + deliveringDelivery,
     };
   }, [orders]);
 

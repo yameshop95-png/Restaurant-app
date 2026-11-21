@@ -3,6 +3,7 @@
 export const STATUS_LABEL = {
   pending: 'Chờ xử lý',
   done: 'Hoàn thành',
+  delivering: 'Đang giao',
   shipped: 'Đã ship',
   cancelled: 'Đã huỷ',
 };
@@ -17,8 +18,10 @@ export const ORDER_TYPES = {
 };
 export const orderType = (type) => (type === 'delivery' ? 'delivery' : 'pickup');
 
-// Bước trước của từng trạng thái, dùng cho nút "quay lại" trên thẻ đơn
-export const PREVIOUS_STATUS = { done: 'pending', shipped: 'done', cancelled: 'pending' };
+// Bước trước của từng trạng thái, dùng cho nút "quay lại" trên thẻ đơn.
+// Riêng "shipped": đơn giao hàng quay về "delivering", đơn đến lấy quay về "done" —
+// OrdersPage tự phân biệt theo loại đơn (xem previousStatus ở đó), ở đây giữ giá trị của đơn đến lấy.
+export const PREVIOUS_STATUS = { done: 'pending', delivering: 'done', shipped: 'done', cancelled: 'pending' };
 
 export const PAYMENT_METHODS = [
   { id: 'cash', label: 'Tiền mặt' },

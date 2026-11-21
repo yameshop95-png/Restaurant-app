@@ -37,11 +37,12 @@ import { DEFAULT_ZONES } from '../lib/shippingZones';
 import { mapsUrl, shareOrder } from '../lib/shareOrder';
 import { formatMoney, itemsTotal, orderTotal } from '../lib/stats';
 
-// Trạng thái xử lý đơn: Chờ xử lý → Hoàn thành (nấu xong) → Đã ship / Đã lấy. Thanh toán là cờ riêng (`paid`).
+// Trạng thái xử lý đơn: Chờ xử lý → Hoàn thành (nấu xong) → Đang giao (chỉ đơn giao hàng) → Đã ship / Đã lấy. Thanh toán là cờ riêng (`paid`).
 const STATUS = {
   // Trạng thái chỉ là nhãn xám; màu dành cho thanh toán và cảnh báo
   pending: { label: 'Chờ xử lý', badge: 'bg-slate-100 text-slate-800' },
   done: { label: 'Hoàn thành', badge: 'bg-slate-100 text-slate-800' },
+  delivering: { label: 'Đang giao', badge: 'bg-slate-100 text-slate-800' },
   shipped: { label: 'Đã ship', badge: 'bg-slate-100 text-slate-800' },
   cancelled: { label: 'Đã huỷ', badge: 'bg-slate-50 text-slate-500' },
 };
@@ -51,6 +52,7 @@ const PAGE = 30;
 const FILTERS = [
   { id: 'pending', label: 'Chờ xử lý', match: (o) => o.status === 'pending' },
   { id: 'done', label: 'Hoàn thành', match: (o) => o.status === 'done' },
+  { id: 'delivering', label: 'Đang giao', match: (o) => o.status === 'delivering' },
   { id: 'shipped', label: 'Đã ship', match: (o) => o.status === 'shipped' },
   { id: 'paid', label: 'Đã thanh toán', match: (o) => o.paid && o.status !== 'cancelled' },
   { id: 'cancelled', label: 'Đã huỷ', match: (o) => o.status === 'cancelled' },
@@ -77,13 +79,18 @@ const DUE_STYLE = {
 
 const BACK_LABEL = {
   done: 'Chuyển về Chờ xử lý',
+  delivering: 'Chưa mang đi – chuyển về Hoàn thành',
   shipped: 'Chưa ship – chuyển về Hoàn thành',
   cancelled: 'Khôi phục đơn (về Chờ xử lý)',
 };
-const backLabel = (order) =>
-  order.type === 'pickup' && order.status === 'shipped'
-    ? 'Khách chưa lấy – chuyển về Hoàn thành'
-    : BACK_LABEL[order.status];
+// Bước quay lại theo loại đơn: đơn giao hàng đi qua "Đang giao" trước "Đã ship", đơn đến lấy thì không
+const previousStatus = (order) =>
+  order.status === 'shipped' && order.type === 'delivery' ? 'delivering' : PREVIOUS_STATUS[order.status];
+const backLabel = (order) => {
+  if (order.type === 'pickup' && order.status === 'shipped') return 'Khách chưa lấy – chuyển về Hoàn thành';
+  if (order.type === 'delivery' && order.status === 'shipped') return 'Chưa giao – chuyển về Đang giao';
+  return BACK_LABEL[order.status];
+};
 
 // Đơn online chờ xử lý đi qua 3 bước: chưa nhận → đã nhận → đã xác nhận
 const stageOf = (order) =>
@@ -96,7 +103,7 @@ const stageOf = (order) =>
     : null;
 
 const STAGE_LABEL = { new: 'Chưa nhận đơn', received: 'Đã nhận · chưa xác nhận', confirmed: 'Đã xác nhận' };
-const DOT = { pending: 'bg-amber-500', done: 'bg-emerald-500', shipped: 'bg-slate-500', cancelled: 'bg-red-500' };
+const DOT = { pending: 'bg-amber-500', done: 'bg-emerald-500', delivering: 'bg-blue-500', shipped: 'bg-slate-500', cancelled: 'bg-red-500' };
 
 // Nhãn trạng thái nhỏ có chấm màu
 function StatusPill({ order }) {
@@ -313,6 +320,19 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
         </div>
       )}
 
+      {/* Đơn giao hàng còn chờ xử lý mà thiếu địa chỉ / giờ giao: báo ngay từ bước xác nhận,
+          kẻo tới lúc đi giao mới phát hiện và bị loại khỏi lộ trình */}
+      {order.type === 'delivery' && order.status === 'pending' && (!order.customer?.address || !order.deliverAt) && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {!order.customer?.address && (
+            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">Thiếu địa chỉ giao</span>
+          )}
+          {!order.deliverAt && (
+            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">Thiếu giờ giao</span>
+          )}
+        </div>
+      )}
+
       {shareMsg && (
         <p className="mt-2 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800">{shareMsg}</p>
       )}
@@ -361,15 +381,21 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
         <span className="text-xl font-bold text-slate-900">{formatMoney(orderTotal(order))}</span>
       </div>
 
-      {order.status === 'done' && (
+      {(order.status === 'done' || order.status === 'delivering') && (
         <div className="mt-3 flex gap-2">
           <button
-            onClick={() => onSetStatus(order.id, 'shipped')}
+            onClick={() =>
+              onSetStatus(order.id, order.status === 'done' && order.type === 'delivery' ? 'delivering' : 'shipped')
+            }
             className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600"
           >
-            {order.type === 'delivery' ? (
+            {order.status === 'delivering' ? (
               <>
-                <Truck size={18} /> Đã ship
+                <Truck size={18} /> Đã giao xong
+              </>
+            ) : order.type === 'delivery' ? (
+              <>
+                <Truck size={18} /> Đã mang đi
               </>
             ) : (
               <>
@@ -411,7 +437,7 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
         </div>
       )}
 
-      {/* Ở bước "Hoàn thành", nút thanh toán đã nằm cạnh nút "Đã ship" phía trên */}
+      {/* Ở bước "Hoàn thành" / "Đang giao", nút thanh toán đã nằm cạnh nút trạng thái phía trên */}
       {!cancelled &&
         (order.paid ? (
           <button
@@ -424,6 +450,7 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
           </button>
         ) : (
           order.status !== 'done' &&
+          order.status !== 'delivering' &&
           !choosingPay && (
             <button
               onClick={askPayment}
@@ -476,9 +503,9 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
         </div>
       )}
 
-      {PREVIOUS_STATUS[order.status] && (
+      {previousStatus(order) && (
         <button
-          onClick={() => onSetStatus(order.id, PREVIOUS_STATUS[order.status])}
+          onClick={() => onSetStatus(order.id, previousStatus(order))}
           className="mt-2 flex w-full items-center justify-center gap-1 py-1 text-sm text-slate-400 active:text-slate-600"
         >
           <RotateCcw size={13} /> {backLabel(order)}
@@ -627,7 +654,8 @@ export default function OrdersPage({
       : ofType.filter(FILTERS.find((f) => f.id === filter).match);
     // Đơn chưa xong (Chờ xử lý / Hoàn thành): giờ lấy / giờ giao sớm nhất lên trước.
     // Đơn đã xong, đã huỷ và kết quả tìm kiếm: mới nhất lên trước.
-    if (!searching && (filter === 'pending' || filter === 'done')) list.sort((a, b) => dueTime(a) - dueTime(b));
+    if (!searching && (filter === 'pending' || filter === 'done' || filter === 'delivering'))
+      list.sort((a, b) => dueTime(a) - dueTime(b));
     else list.sort((a, b) => dueTime(b) - dueTime(a));
     return list;
   }, [ofType, searching, searchQ, date, filter]);
@@ -787,7 +815,7 @@ export default function OrdersPage({
               {visible.length > 0 && (
                 <div className="mb-3 px-1">
                   <p className="mb-2 text-sm text-slate-500">
-                    {!searching && (filter === 'pending' || filter === 'done')
+                    {!searching && (filter === 'pending' || filter === 'done' || filter === 'delivering')
                       ? `Xếp theo ${ORDER_TYPES[type].timeLabel.toLowerCase()} sớm nhất`
                       : 'Mới nhất lên trước'}
                   </p>

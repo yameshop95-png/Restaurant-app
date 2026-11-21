@@ -16,7 +16,8 @@ export const NAV_ITEMS = [
   { id: 'home', label: 'Màn hình chính', icon: LayoutDashboard },
   // Đơn hàng: 2 tab con Đến lấy / Giao hàng, nên đếm tất cả đơn chờ
   { id: 'orders', label: 'Đơn hàng', icon: ClipboardList, badgeKey: 'pendingAll' },
-  { id: 'delivery', label: 'Đơn ship', icon: Bike, badgeKey: 'pendingDelivery' },
+  // Đơn ship: đếm đơn giao đang chờ + đang đi giao (đơn đang trên xe vẫn phải thấy ở badge)
+  { id: 'delivery', label: 'Đơn ship', icon: Bike, badgeKey: 'deliveryAction' },
   { id: 'prep', label: 'Phiếu làm hàng', icon: ChefHat },
   { id: 'activity', label: 'Customer Active', icon: Activity },
   { id: 'customers', label: 'Khách hàng', icon: Users },
