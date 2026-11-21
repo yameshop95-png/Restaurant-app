@@ -599,6 +599,8 @@ function matchesDate(order, date) {
 
 // Tab "Đơn hàng": 2 tab con Đến lấy / Giao hàng. Tab "Đơn ship": chỉ đơn giao hàng (fixedType = 'delivery').
 // Mục "Chờ nấu": khoá cứng vào trạm chờ nấu (fixedFilter = 'cooking'), ẩn cả tab loại đơn lẫn hàng chip lọc.
+// "Lộ trình giao" chỉ có ở tab "Đơn ship": bên "Đơn hàng" (kể cả tab con Giao hàng) chỉ xem danh sách,
+// tránh hai nơi cùng một lộ trình / cùng nút "Đã giao xong" gây nhầm — muốn xem lộ trình thì qua Đơn ship.
 export default function OrdersPage({
   fixedType,
   fixedFilter,
@@ -616,6 +618,9 @@ export default function OrdersPage({
   const [chosenType, setChosenType] = useState('pickup');
   const zones = settings.shippingZones ?? DEFAULT_ZONES;
   const type = fixedType ?? chosenType;
+  // Chỉ trang "Đơn ship" (fixedType = 'delivery') mới có chế độ xem lộ trình; các trang dùng chung
+  // OrdersPage khác (Đơn hàng, Chờ nấu) luôn ở chế độ danh sách dù đơn đang xem là đơn giao hàng.
+  const routeAllowed = fixedType === 'delivery';
   const [filter, setFilterState] = useState(fixedFilter ?? 'pending');
   const [slide, setSlide] = useState(null); // hướng chuyển trang để chạy hiệu ứng trượt
   const tabsRef = useRef(null);
@@ -789,7 +794,7 @@ export default function OrdersPage({
         </div>
       )}
 
-      {type === 'delivery' && (
+      {routeAllowed && type === 'delivery' && (
         <div className="mb-3 flex rounded-2xl bg-card p-1 shadow-sm">
           {[
             ['list', 'Danh sách'],
@@ -806,7 +811,7 @@ export default function OrdersPage({
         </div>
       )}
 
-      {view === 'route' ? (
+      {routeAllowed && view === 'route' ? (
         <RoutePlanner orders={ofType} now={now} settings={settings} onSetStatus={onSetStatus} />
       ) : (
         <>
