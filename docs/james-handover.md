@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: **2026-11-21** (PR #51 đã merge; main ở `96892da`).
+> Cập nhật lần cuối: **2026-11-21** (PR #51 đã merge; thêm kết quả audit lộ trình giao; main ở `2aa6a1e`).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James luôn qua PR để Paul duyệt, chỉ merge khi Paul nói rõ cho từng PR.
 
@@ -101,6 +101,12 @@
   + bảng tổng hợp tháng (backtest 50k: app chậm rõ ở Home; 100k: Home gãy).
 - Chuông đơn web **chưa khử trùng giữa các máy**: 1 đơn web kêu trên mọi máy mỗi 3,5 giây tới khi có người bấm Nhận
   (chưa chốt có chỉ định 1 máy kêu hay không).
+- **Lộ trình giao** (audit của James 21/11, báo cáo `restaurant-app-route-audit-2026-11-21.md`): tab Đơn ship
+  và mục Giao hàng của tab Đơn hàng là **cùng một `OrdersPage` + `RoutePlanner`** (Đơn ship = `fixedType="delivery"`)
+  — đừng xây tính năng lộ trình ở hai nơi. Lỗ hổng đã biết: lộ trình **không lọc theo ngày** (đơn tuần trước lẫn vào
+  khung "Đã trễ giờ"); đơn thiếu địa chỉ/giờ giao **bị loại âm thầm** khỏi lộ trình; link Maps tối đa 10 điểm
+  (`MAX_ROUTE_STOPS`); đơn `pending` (bếp chưa xong) vẫn bấm "Đã ship" được. Paul đang cân nhắc đề xuất
+  quy trình chuyến 5 bước (chỉ ở tab Đơn ship) + lộ trình làm 3 giai đoạn — **chưa duyệt, đừng tự làm trước**.
 
 ## 6. Kiểm chứng quen dùng
 
