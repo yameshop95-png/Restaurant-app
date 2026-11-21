@@ -16,7 +16,8 @@ function Badge({ count, active }) {
 }
 
 export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now, settings, account, onLogout, isOpen, onClose }) {
-  const totalPending = counts.pendingAll;
+  // Banner "đơn mới chờ xử lý" là mặt tiền của hộp thư đến: chỉ đếm đơn chưa xác nhận
+  const totalPending = counts.inboxAll;
   const overdue = upcoming.filter((o) => new Date(o.deliverAt) < now).length;
   // Bấm vào ô "cần giao" thì mở tab của đơn gấp nhất
   const urgentTab = upcoming[0]?.type === 'delivery' ? 'delivery' : 'orders';
@@ -94,7 +95,7 @@ export default function Sidebar({ activeTab, onTabChange, counts, upcoming, now,
             <div className="min-w-0">
               <p className="text-sm font-bold">{totalPending} đơn mới chờ xử lý</p>
               <p className="text-xs text-slate-500">
-                {counts.pendingPickup} đến lấy · {counts.pendingDelivery} giao hàng
+                {counts.inboxPickup} đến lấy · {counts.inboxDelivery} giao hàng
               </p>
             </div>
           </button>
