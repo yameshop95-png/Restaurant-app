@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: **2026-11-21** (PR #52 + #53 + #54 + #55 + #56 + **#57 đã merge** — #57 lưu toạ độ lên đơn, nhãn đợt hết phụ thuộc cache từng máy; main ở `979ab9f`).
+> Cập nhật lần cuối: **2026-11-21** (PR #52 + #53 + #54 + #55 + #56 + #57 + **#58 đã merge** — #58 tách xác nhận đơn khỏi nhắn tin, PC không có SMS vẫn xác nhận được; main ở `865c1e5`).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James đi qua PR nháp (build + test đạt), **báo Paul trước; Paul OK mới merge** — Paul đã
 > chốt lại quy ước này tối 21/11 (câu "tự merge luôn" cùng tối đã được anh rút lại, đừng dùng).
@@ -31,6 +31,7 @@
 | #55 | **Sửa 2 lỗi nghiêm trọng** (mô phỏng 100 đơn): đóng dấu `shippedAt` ở `setStatus` (`useOrders.js`) + tiến độ/đối soát chuyến chỉ tính đơn giao hôm nay (`isShippedToday`); link lộ trình chia đoạn `routeSegments` (`geo.js`) cho nút mở lộ trình + tin nhắn shipper; thêm `test:routelinks` (33) | `f75b56f` |
 | #56 | **Bỏ "Lộ trình giao" khỏi tab Đơn hàng** (ý Paul: muốn xem lộ trình thì qua Đơn ship): cờ `routeAllowed = fixedType === 'delivery'` trong `OrdersPage.jsx` — thanh Danh sách/Lộ trình và `RoutePlanner` chỉ còn render ở trang Đơn ship; bên Đơn hàng luôn ở dạng danh sách, chip trạng thái + nút trên thẻ đơn giữ nguyên; Đơn ship không đổi | `4483ca1` |
 | #57 | **Lưu toạ độ lên đơn** (sửa vấn đề 1 của mô phỏng 150 đơn — nhãn đợt lệch theo cache từng máy): trường `geo {lat,lng,zone,for}` trên đơn (data JSON, không migration; `for` = địa chỉ của toạ độ, sửa địa chỉ thì tự hết hiệu lực); lib mới `src/lib/orderGeo.js` (`storedGeoOf`/`geoRecordFor`); OrdersPage tính đợt **chỉ từ toạ độ trên đơn** + effect nền tự tra/ghi toạ độ cho đơn giao đang hoạt động qua prop `onPatchOrder` (= `markOrder` thầm lặng, thêm ở `App.jsx`); `RoutePlanner` ưu tiên toạ độ trên đơn, tra được thì ghi lại; test mới `test:ordergeo` 13/13; mô phỏng lại: lệch đợt 70/87 → **0/87** | `979ab9f` |
+| #58 | **Tách xác nhận đơn khỏi nhắn tin** (Paul báo: PC không có SMS nên đơn web nhận trên PC không xác nhận được — `confirmedAt` trước đây chỉ ghi khi gửi/copy tin trong khung nhắn, đơn kẹt ở Chờ xử lý, không qua Chờ nấu, không Hoàn thành được): bước "Đã nhận · chưa xác nhận" có 2 nút riêng **Nhắn khách** / **Xác nhận đơn** (ghi `confirmedAt` ngay); gửi/copy tin xác nhận ghi thêm trường `messagedAt` (đơn chưa xác nhận thì nhắn vẫn tự xác nhận như trước, không ghi đè mốc đã có); chip **"Chưa nhắn khách"** (`needsCustomerMessage` ở `orderStatus.js`) trên đơn web đã xác nhận mà chưa máy nào nhắn, để điện thoại nhắn bù; test:routelinks 39/39 | `865c1e5` |
 
 ## 2. PR đã đóng KHÔNG merge
 
@@ -122,8 +123,7 @@
 
 - **PR #36** (`glass-dashboard-demo`): demo giao diện kính tối trên dashboard thật. Paul chưa chốt dùng hay không.
 - **PR #41** (`light-glass-demo`): demo kính sáng trắng–xanh trên app thật (đang ở v3, đã bỏ backdrop-filter ở thẻ cho nhẹ máy). Paul chưa chốt.
-- **PR #58** (`confirm-without-sms`): tách xác nhận đơn khỏi nhắn tin — PC không có SMS vẫn bấm "Xác nhận đơn" được (trước đây `confirmedAt` chỉ ghi khi gửi/copy tin trong khung nhắn, nên đơn web nhận trên PC kẹt ở Chờ xử lý, không qua Chờ nấu, không Hoàn thành được). Thêm trường `messagedAt` + chip "Chưa nhắn khách" (`needsCustomerMessage` ở `orderStatus.js`) để máy khác nhắn bù. Build đạt, test:routelinks 39/39, batches 45/45, ordergeo 13/13. Chờ Paul OK mới merge.
-- (PR #54, #55, #56, #57 đã merge ngày 21/11 — xem mục 1.)
+- (PR #54, #55, #56, #57, #58 đã merge ngày 21/11 — xem mục 1.)
 
 
 
