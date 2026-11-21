@@ -4,8 +4,8 @@
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
 > Cập nhật lần cuối: **2026-11-21** (PR #52 + #53 + #54 + #55 + **#56 đã merge** — #56 bỏ Lộ trình giao khỏi Đơn hàng, lộ trình chỉ còn ở Đơn ship; main ở `4483ca1`).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
-> thay đổi của James đi qua PR; **từ tối 21/11 Paul dặn James tự merge luôn, không cần hỏi lại mục allow**
-> (trước đó là chỉ merge khi Paul nói rõ cho từng PR).
+> thay đổi của James đi qua PR nháp (build + test đạt), **báo Paul trước; Paul OK mới merge** — Paul đã
+> chốt lại quy ước này tối 21/11 (câu "tự merge luôn" cùng tối đã được anh rút lại, đừng dùng).
 
 ---
 
