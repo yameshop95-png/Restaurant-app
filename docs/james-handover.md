@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: **2026-11-21** (PR #51 đã merge; PR #52 nháp — quy trình giao hàng GĐ1 — đang chờ Paul duyệt; main ở `bbc8d74`).
+> Cập nhật lần cuối: **2026-11-21** (PR #52 đã merge — quy trình giao hàng GĐ1 đã lên main; main ở `f03037b`).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James luôn qua PR để Paul duyệt, chỉ merge khi Paul nói rõ cho từng PR.
 
@@ -24,6 +24,7 @@
 | #48 | Thẻ **Chốt ca hôm nay** ở Home thành **donut vòng liền mạch** (số liệu `dailyCollection` giữ nguyên) + **dời thẻ lên trên cùng Home**; toán lát ở `src/lib/donut.js` | `cb37b57` |
 | #50 | Thẻ **Tiền tuần này** ở Home thành **donut lát bo tròn + khe hở** theo hình mẫu của Paul (tâm = tổng tuần; vòng: Đã thanh toán / Chưa thanh toán từ `summarize()`) + mở rộng `donut.js` thêm `drawLength`/`drawOffset`. **Đây là bản dựng lại của PR #49** trên main sau #48 (xem mục 2) — nội dung y hệt | `62d51d0` |
 | #51 | Bỏ 2 ô riêng **Đã/Chưa thanh toán** ở mục Tổng tuần này (Home) vì trùng số liệu với chú thích của donut Tiền tuần này (PR #50) — chỉ bỏ hiển thị, không đụng `stats` | `96892da` |
+| #52 | **Quy trình giao hàng GĐ1** (quyết định thiết kế ở mục 3): trạng thái `delivering` "Đang giao" cho đơn giao + nút "Đã mang đi"/"Đã giao xong" + chip cảnh báo thiếu địa chỉ/giờ giao; `RoutePlanner` chỉ hiện đơn đang giao, chỉ đường từng chặng, Apple Maps mặc định / Google Maps phụ; badge Đơn ship đếm cả đơn đang giao | `f03037b` |
 
 ## 2. PR đã đóng KHÔNG merge
 
@@ -83,22 +84,23 @@
   không truyền options thì ra các trường cũ cho Chốt ca; có gap thì thêm `drawLength`/`drawOffset`).
   Định nghĩa tiền tuần lấy từ `summarize()` (`src/lib/stats.js`): đơn chưa huỷ, `createdAt` từ 00:00 thứ Hai;
   đã thanh toán = đơn có `paid = true` (`weekPaid`), chưa thanh toán = `weekRevenue − weekPaid` (`weekUnpaid`).
+- **Quy trình giao hàng** (Paul chốt 21/11; GĐ1 = PR #52, tài liệu đầy đủ `quy-trinh-giao-hang-de-xuat-2026-11-21.md`
+  ở workspace của James): đơn giao có trạng thái **`delivering` "Đang giao"** giữa `done` và `shipped`
+  (nút "Đã mang đi" → `delivering`, "Đã giao xong" → `shipped`); đơn đến lấy KHÔNG có bước này.
+  `PREVIOUS_STATUS` giữ `shipped: 'done'` cho đơn đến lấy; OrdersPage tự phân biệt theo loại đơn
+  (đơn giao: shipped quay về `delivering`). `RoutePlanner` chỉ chạy trên đơn `delivering` có
+  `deliverAt` hôm nay hoặc sớm hơn (đơn tồn hôm trước hiện ở khung "Đã trễ giờ"; thiếu `deliverAt`
+  hiện ở nhóm cuối "Chưa có giờ giao" — không bao giờ giấu đơn đang trên xe). Chỉ đường **từng chặng**,
+  mặc định **Apple Maps**, Google Maps là phụ; nút "Gửi lộ trình cho shipper" giữ nguyên.
+  Hàng chờ nấu gộp chung đơn giao + đến lấy; gom đợt do code tự sắp (giờ giao → địa chỉ tiện) và
+  mục đơn trễ sáng thứ Bảy là việc của **GĐ2 (chưa làm)**. Thu tiền giữ cờ `paid` riêng — đừng gắn
+  câu hỏi thu tiền vào nút "Đã giao xong".
 
 ## 4. PR nháp đang mở — chờ Paul, ĐỪNG merge
 
 - **PR #36** (`glass-dashboard-demo`): demo giao diện kính tối trên dashboard thật. Paul chưa chốt dùng hay không.
 - **PR #41** (`light-glass-demo`): demo kính sáng trắng–xanh trên app thật (đang ở v3, đã bỏ backdrop-filter ở thẻ cho nhẹ máy). Paul chưa chốt.
-- **PR #52** (`delivery-phase1`, base `bbc8d74`): **quy trình giao hàng GĐ1** theo bản Paul đã chốt
-  (tài liệu `quy-trinh-giao-hang-de-xuat-2026-11-21.md` ở workspace của James): trạng thái mới
-  `delivering` "Đang giao" cho đơn giao (Hoàn thành → Đang giao → Đã ship; đơn đến lấy không đổi);
-  thẻ đơn có nút "Đã mang đi"/"Đã giao xong" + chip cảnh báo "Thiếu địa chỉ giao"/"Thiếu giờ giao";
-  `RoutePlanner` chỉ hiện đơn `delivering` của hôm nay (thiếu `deliverAt` vẫn hiện ở nhóm cuối,
-  không giấu đơn đang trên xe); chỉ đường **từng chặng**; **Apple Maps mặc định, Google Maps phụ**
-  (ý Paul); badge tab Đơn ship đếm cả đơn đang giao. Build + mọi suite pass (donut 23, classify 39,
-  insights 35, dishprofit 18, performance 54, sync 7/7, cache 10/10). Chờ Paul bấm thử bản xem trước.
-  Bổ sung cùng ngày theo quyết định của Paul: đơn `delivering` tồn từ hôm trước (mang đi mà chưa
-  giao xong) **vẫn hiện** trong lộ trình hôm nay (rơi vào khung "Đã trễ giờ"); chỉ đơn hẹn giao
-  **sau** hôm nay mới chưa hiện. Head PR sau bổ sung: `ef9ca89`, test vẫn pass toàn bộ.
+
 
 ## 5. Việc còn mở / cảnh báo đã biết (chưa ai làm)
 
@@ -119,9 +121,9 @@
   (`MAX_ROUTE_STOPS`); đơn `pending` (bếp chưa xong) vẫn bấm "Đã ship" được. **Cập nhật 21/11: Paul đã
   chốt quy trình của anh + góp ý của James** (xác nhận & nhắn khách → hàng chờ nấu CHUNG đơn giao +
   đến lấy, code tự sắp đợt theo giờ giao → địa chỉ tiện; đơn trễ sáng thứ Bảy có mục riêng "nhận luôn
-  giao luôn"; thu tiền giữ nút "Đã thu tiền" riêng, không hỏi ép lúc giao xong) và đã duyệt làm
-  **Giai đoạn 1 = PR #52** (mục 4). Còn **Giai đoạn 2 chưa làm**: gợi ý gom đợt 10–15 ở hàng chờ nấu +
-  thanh tiến độ/đối soát đóng đợt + mục đơn trễ riêng — chờ Paul duyệt tiếp sau khi thử GĐ1.
+  giao luôn"; thu tiền giữ nút "Đã thu tiền" riêng, không hỏi ép lúc giao xong). **Giai đoạn 1 =
+  PR #52 đã merge** (mục 1). Còn **Giai đoạn 2 chưa làm**: gợi ý gom đợt 10–15 ở hàng chờ nấu +
+  thanh tiến độ/đối soát đóng đợt + mục đơn trễ riêng — chờ Paul duyệt tiếp.
 
 ## 6. Kiểm chứng quen dùng
 
