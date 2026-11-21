@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: **2026-11-21** (PR #52 đã merge; PR #53 nháp — quy trình giao hàng GĐ2 — đang chờ Paul duyệt; main ở `f92a1ec`).
+> Cập nhật lần cuối: **2026-11-21** (PR #52 + PR #53 đã merge — quy trình giao hàng GĐ1 + GĐ2 đã lên main; main ở `c1223a9`).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James luôn qua PR để Paul duyệt, chỉ merge khi Paul nói rõ cho từng PR.
 
@@ -25,6 +25,7 @@
 | #50 | Thẻ **Tiền tuần này** ở Home thành **donut lát bo tròn + khe hở** theo hình mẫu của Paul (tâm = tổng tuần; vòng: Đã thanh toán / Chưa thanh toán từ `summarize()`) + mở rộng `donut.js` thêm `drawLength`/`drawOffset`. **Đây là bản dựng lại của PR #49** trên main sau #48 (xem mục 2) — nội dung y hệt | `62d51d0` |
 | #51 | Bỏ 2 ô riêng **Đã/Chưa thanh toán** ở mục Tổng tuần này (Home) vì trùng số liệu với chú thích của donut Tiền tuần này (PR #50) — chỉ bỏ hiển thị, không đụng `stats` | `96892da` |
 | #52 | **Quy trình giao hàng GĐ1** (quyết định thiết kế ở mục 3): trạng thái `delivering` "Đang giao" cho đơn giao + nút "Đã mang đi"/"Đã giao xong" + chip cảnh báo thiếu địa chỉ/giờ giao; `RoutePlanner` chỉ hiện đơn đang giao, chỉ đường từng chặng, Apple Maps mặc định / Google Maps phụ; badge Đơn ship đếm cả đơn đang giao | `f03037b` |
+| #53 | **Quy trình giao hàng GĐ2** (mục 3): bộ lọc **"Chờ nấu"** ở Đơn hàng + module `src/lib/batches.js` tự gom đợt giao (tối đa 15 đơn/ngày) + mục **"Đơn trễ"** riêng + tiến độ và thẻ tóm tắt chuyến ở `RoutePlanner`; thêm `test:batches` (29) | `c1223a9` |
 
 ## 2. PR đã đóng KHÔNG merge
 
@@ -92,23 +93,20 @@
   `deliverAt` hôm nay hoặc sớm hơn (đơn tồn hôm trước hiện ở khung "Đã trễ giờ"; thiếu `deliverAt`
   hiện ở nhóm cuối "Chưa có giờ giao" — không bao giờ giấu đơn đang trên xe). Chỉ đường **từng chặng**,
   mặc định **Apple Maps**, Google Maps là phụ; nút "Gửi lộ trình cho shipper" giữ nguyên.
-  Hàng chờ nấu gộp chung đơn giao + đến lấy; gom đợt do code tự sắp (giờ giao → địa chỉ tiện) và
-  mục đơn trễ sáng thứ Bảy là việc của **GĐ2 (chưa làm)**. Thu tiền giữ cờ `paid` riêng — đừng gắn
-  câu hỏi thu tiền vào nút "Đã giao xong".
+  Hàng chờ nấu gộp chung đơn giao + đến lấy (bộ lọc "Chờ nấu": `pending` + đã xác nhận — web có
+  `confirmedAt`, đơn tại quán mặc định xác nhận; riêng view này gộp cả hai loại đơn). Gom đợt và
+  đơn trễ nằm ở `src/lib/batches.js` (GĐ2 = PR #53): đợt tối đa **15 đơn theo ngày giao**, thứ tự
+  `planRoute`; **đơn trễ** = đơn giao tạo SAU 22:00 ngày trước ngày giao (`LATE_CUTOFF_HOUR = 22`),
+  hiện riêng trên cùng hàng chờ nấu và không vào đợt. Thu tiền giữ cờ `paid` riêng — đừng gắn
+  câu hỏi thu tiền vào nút "Đã giao xong". Tiến độ chuyến ở `RoutePlanner` tính từ đơn `shipped`
+  có `deliverAt` hôm nay hoặc sớm hơn (app không có mốc `shippedAt` — đừng coi là số liệu theo
+  từng chuyến tuyệt đối).
 
 ## 4. PR nháp đang mở — chờ Paul, ĐỪNG merge
 
 - **PR #36** (`glass-dashboard-demo`): demo giao diện kính tối trên dashboard thật. Paul chưa chốt dùng hay không.
 - **PR #41** (`light-glass-demo`): demo kính sáng trắng–xanh trên app thật (đang ở v3, đã bỏ backdrop-filter ở thẻ cho nhẹ máy). Paul chưa chốt.
-- **PR #53** (`delivery-phase2`, base `f92a1ec`): **quy trình giao hàng GĐ2** — bộ lọc **"Chờ nấu"**
-  ở Đơn hàng (đơn `pending` đã xác nhận: web có `confirmedAt`, đơn tại quán mặc định xác nhận;
-  riêng view này gộp cả hai loại đơn, xếp theo giờ cần xong); module thuần `src/lib/batches.js`
-  tự gom **đợt giao tối đa 15 đơn theo ngày giao** (thứ tự `planRoute`, địa chỉ chưa có toạ độ đã
-  lưu thì lùi về thứ tự giờ); mục **"Đơn trễ"** riêng trên cùng hàng chờ nấu (đơn giao tạo SAU
-  22:00 ngày trước ngày giao — `LATE_CUTOFF_HOUR = 22` — không trộn vào đợt); `RoutePlanner`
-  thêm tiến độ + thẻ tóm tắt chuyến (đã thu/chưa thu theo cờ `paid`; lưu ý: app không có mốc
-  `shippedAt` nên tiến độ tính từ đơn `shipped` có `deliverAt` hôm nay hoặc sớm hơn — không phân
-  biệt tuyệt đối theo từng chuyến). Test mới `test:batches` 29 đạt; mọi suite pass. Chờ Paul duyệt.
+
 
 
 ## 5. Việc còn mở / cảnh báo đã biết (chưa ai làm)
@@ -131,7 +129,7 @@
   chốt quy trình của anh + góp ý của James** (xác nhận & nhắn khách → hàng chờ nấu CHUNG đơn giao +
   đến lấy, code tự sắp đợt theo giờ giao → địa chỉ tiện; đơn trễ sáng thứ Bảy có mục riêng "nhận luôn
   giao luôn"; thu tiền giữ nút "Đã thu tiền" riêng, không hỏi ép lúc giao xong). **Giai đoạn 1 =
-  PR #52 đã merge** (mục 1). **Giai đoạn 2 = PR #53** (mục 4, nháp chờ duyệt): hàng chờ nấu +
+  PR #52 đã merge** (mục 1). **Giai đoạn 2 = PR #53 đã merge** (mục 1): hàng chờ nấu +
   gom đợt tự động + mục đơn trễ + tiến độ/tóm tắt chuyến. Việc giao hàng còn lại chưa ai chốt:
   nút **"Giao không được"** (khách vắng nhà) — cần Paul quyết đơn giao hỏng sẽ nằm ở đâu trước khi làm.
 
