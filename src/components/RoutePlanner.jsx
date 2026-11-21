@@ -37,6 +37,19 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
   const plannable = useMemo(() => active.filter((o) => o.deliverAt), [active]);
   const noTime = useMemo(() => active.filter((o) => !o.deliverAt), [active]);
 
+  // Đơn đã giao xong thuộc chuyến hôm nay: đã ship, đơn giao hàng, giờ giao hôm nay hoặc
+  // sớm hơn (kể cả đơn tồn từ hôm trước vừa giao xong). App không lưu giờ bấm "Đã giao
+  // xong" nên tiến độ chuyến chỉ tính gần đúng từ dữ liệu này, không có trạng thái chuyến riêng.
+  const shippedRun = useMemo(
+    () =>
+      orders.filter(
+        (o) => o.type === 'delivery' && o.status === 'shipped' && (!o.deliverAt || isTodayOrEarlier(o.deliverAt, now)),
+      ),
+    [orders, now]
+  );
+  const runPaidTotal = shippedRun.filter((o) => o.paid).reduce((s, o) => s + orderTotal(o), 0);
+  const runUnpaidTotal = shippedRun.filter((o) => !o.paid).reduce((s, o) => s + orderTotal(o), 0);
+
   // Toạ độ lấy từ kết quả đã lưu trên máy; địa chỉ chưa tra thì chưa có
   const geo = useMemo(() => {
     const map = new Map();
@@ -124,11 +137,30 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
     setTimeout(() => setShareMsg(null), 4000);
   };
 
+  // Tiến độ + đối soát nhanh của chuyến giao hôm nay (chỉ đọc, không lưu trạng thái chuyến)
+  const runSummary = (active.length > 0 || shippedRun.length > 0) && (
+    <section className="space-y-1.5 rounded-3xl border border-slate-200 bg-card p-4 shadow-sm">
+      <p className="font-bold text-slate-900">
+        Đã giao {shippedRun.length}/{shippedRun.length + active.length} điểm
+        {active.length > 0 && <span className="font-semibold text-slate-500"> · còn {active.length} điểm đang giao</span>}
+      </p>
+      {shippedRun.length > 0 && (
+        <p className="text-sm text-slate-600">
+          Đã giao xong {shippedRun.length} đơn · Đã thu <b className="text-emerald-600">{formatMoney(runPaidTotal)}</b> ·
+          Chưa thu <b className="text-red-600">{formatMoney(runUnpaidTotal)}</b>
+        </p>
+      )}
+    </section>
+  );
+
   if (!active.length) {
     return (
-      <p className="rounded-3xl bg-card px-5 py-12 text-center text-slate-400">
-        Chưa có đơn nào đang giao — khi bắt đầu đi giao, bấm “Đã mang đi” trên thẻ đơn
-      </p>
+      <div className="space-y-4">
+        {runSummary}
+        <p className="rounded-3xl bg-card px-5 py-12 text-center text-slate-400">
+          Chưa có đơn nào đang giao — khi bắt đầu đi giao, bấm “Đã mang đi” trên thẻ đơn
+        </p>
+      </div>
     );
   }
 
@@ -136,6 +168,7 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
 
   return (
     <div className="space-y-4">
+      {runSummary}
       <section className="space-y-3 rounded-3xl border border-slate-200 bg-card p-4 shadow-sm">
         <p className="text-sm text-slate-600">
           Thứ tự giao: <b>giờ sớm trước</b> (theo khung giờ) → <b>giao hết từng vùng</b> → <b>điểm gần trước, xa sau</b>.

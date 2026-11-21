@@ -28,8 +28,10 @@ import RoutePlanner from '../components/RoutePlanner';
 import { normalizeText } from '../hooks/useCustomers';
 import useSwipe from '../hooks/useSwipe';
 import useWide from '../hooks/useWide';
+import { computeBatches, isCookingOrder } from '../lib/batches';
 import { dishThumb } from '../lib/dishPhotos';
 import { dueInfo, formatDue } from '../lib/due';
+import { cachedGeocode } from '../lib/geo';
 import { exportOrderList } from '../lib/orderListExcel';
 import { ORDER_TYPES, PAYMENT_METHODS, paymentLabel, PREVIOUS_STATUS, statusLabel } from '../lib/orderStatus';
 import { sendManyToShopPrinter, sendToShopPrinter } from '../lib/printQueue';
@@ -51,6 +53,8 @@ const PAGE = 30;
 
 const FILTERS = [
   { id: 'pending', label: 'Chờ xử lý', match: (o) => o.status === 'pending' },
+  // Hàng chờ nấu: đơn chờ xử lý đã xác nhận, GỘP cả đơn giao và đơn đến lấy (xem isCookingOrder)
+  { id: 'cooking', label: 'Chờ nấu', match: isCookingOrder },
   { id: 'done', label: 'Hoàn thành', match: (o) => o.status === 'done' },
   { id: 'delivering', label: 'Đang giao', match: (o) => o.status === 'delivering' },
   { id: 'shipped', label: 'Đã ship', match: (o) => o.status === 'shipped' },
@@ -116,8 +120,13 @@ function StatusPill({ order }) {
   );
 }
 
+const hhmm = (iso) => {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
+
 // Dòng gọn trong danh sách bên trái (màn rộng): số đơn + tên, giờ và loại đơn, tiền và trạng thái
-function OrderRow({ order, selected, onSelect }) {
+function OrderRow({ order, selected, onSelect, batchLabel }) {
   const delivery = order.type === 'delivery';
   return (
     <li>
@@ -141,6 +150,9 @@ function OrderRow({ order, selected, onSelect }) {
         <span className="flex shrink-0 flex-col items-end gap-1">
           <span className="font-mono text-sm font-semibold tabular-nums text-slate-900">{formatMoney(orderTotal(order))}</span>
           <StatusPill order={order} />
+          {batchLabel && (
+            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">{batchLabel}</span>
+          )}
         </span>
       </button>
     </li>
@@ -154,7 +166,7 @@ function DishThumb({ name }) {
   return <img src={photo} alt="" width="40" height="40" loading="lazy" className="h-10 w-10 shrink-0 rounded-lg object-cover" />;
 }
 
-function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetStatus, onSetPaid, onMarkStep }) {
+function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetStatus, onSetPaid, onMarkStep, batchLabel }) {
   const status = STATUS[order.status];
   const cancelled = order.status === 'cancelled';
   const due = dueInfo(order, now);
@@ -275,6 +287,9 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
                 ? `Đã thanh toán${order.paymentMethod ? ` · ${paymentLabel(order.paymentMethod)}` : ''}`
                 : 'Chưa thanh toán'}
             </span>
+          )}
+          {batchLabel && (
+            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">{batchLabel}</span>
           )}
         </div>
       </div>
@@ -649,20 +664,61 @@ export default function OrdersPage({
   const searching = query.trim() !== '' || date !== '';
   // Lọc + sắp xếp chỉ chạy lại khi đơn / bộ lọc đổi, không chạy lại mỗi lần đồng hồ nhảy
   const visible = useMemo(() => {
+    // Hàng "Chờ nấu" là hàng chung của bếp: gộp cả đơn giao và đơn đến lấy, không chia theo tab loại đơn
+    const pool = searching ? ofType : filter === 'cooking' ? orders : ofType;
     const list = searching
-      ? ofType.filter((o) => matchesQuery(o, searchQ) && matchesDate(o, date))
-      : ofType.filter(FILTERS.find((f) => f.id === filter).match);
-    // Đơn chưa xong (Chờ xử lý / Hoàn thành): giờ lấy / giờ giao sớm nhất lên trước.
+      ? pool.filter((o) => matchesQuery(o, searchQ) && matchesDate(o, date))
+      : pool.filter(FILTERS.find((f) => f.id === filter).match);
+    // Đơn chưa xong (Chờ xử lý / Chờ nấu / Hoàn thành): giờ lấy / giờ giao sớm nhất lên trước.
     // Đơn đã xong, đã huỷ và kết quả tìm kiếm: mới nhất lên trước.
-    if (!searching && (filter === 'pending' || filter === 'done' || filter === 'delivering'))
+    if (!searching && (filter === 'pending' || filter === 'cooking' || filter === 'done' || filter === 'delivering'))
       list.sort((a, b) => dueTime(a) - dueTime(b));
     else list.sort((a, b) => dueTime(b) - dueTime(a));
     return list;
-  }, [ofType, searching, searchQ, date, filter]);
-  const tabCounts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f.id, ofType.filter(f.match).length])), [ofType]);
+  }, [orders, ofType, searching, searchQ, date, filter]);
+  const tabCounts = useMemo(
+    () =>
+      Object.fromEntries(
+        FILTERS.map((f) => [f.id, (f.id === 'cooking' ? orders : ofType).filter(f.match).length]),
+      ),
+    [orders, ofType],
+  );
   const capped = searching || filter !== 'pending';
   const shown = capped ? visible.slice(0, limit) : visible;
-  const selected = shown.find((o) => o.id === selectedId) ?? shown[0];
+
+  // --- Giai đoạn 2: gom đợt giao tự động + nhóm đơn trễ trong hàng Chờ nấu ---
+  const cookingView = !searching && filter === 'cooking';
+  // Toạ độ đã tra sẵn trên máy (RoutePlanner lưu cache) để đợt xếp theo vùng / điểm gần;
+  // đơn chưa có toạ độ vẫn được xếp theo khung giờ như điểm chưa định vị trong lộ trình.
+  const batchPlan = useMemo(() => {
+    if (!cookingView) return null;
+    const geo = new Map();
+    for (const o of visible) {
+      if (o.type !== 'delivery' || !o.customer?.address) continue;
+      const hit = cachedGeocode(o.customer.address);
+      geo.set(o.id, hit && !hit.notFound ? hit : null);
+    }
+    return computeBatches(visible, geo);
+  }, [cookingView, visible]);
+  const batchLabelOf = (order) => {
+    const b = batchPlan?.byOrder.get(order.id);
+    return b ? `Đợt ${b.batchIndex} · #${b.positionInBatch}` : null;
+  };
+  // Đơn trễ tách nhóm riêng lên đầu hàng chờ nấu; phần còn lại giữ nguyên thứ tự giờ cần xong
+  const lateList = cookingView ? visible.filter((o) => batchPlan.lateIds.has(o.id)) : [];
+  const restList = cookingView ? visible.filter((o) => !batchPlan.lateIds.has(o.id)) : visible;
+  const restShown = capped ? restList.slice(0, limit) : restList;
+  const sections = cookingView
+    ? [
+        ...(lateList.length ? [{ key: 'late', title: 'Đơn trễ — nhận luôn giao luôn', list: lateList }] : []),
+        { key: 'main', title: null, list: restShown },
+      ]
+    : [{ key: 'main', title: null, list: shown }];
+  const displayList = sections.flatMap((s) => s.list);
+  const selected = displayList.find((o) => o.id === selectedId) ?? displayList[0];
+  const hasMore = cookingView ? restShown.length < restList.length : shown.length < visible.length;
+  const moreCount = cookingView ? restList.length - restShown.length : visible.length - shown.length;
+  const multiDay = batchPlan ? new Set(batchPlan.batches.map((b) => b.dayKey)).size > 1 : false;
 
   const filterLabel = (f) => (f.id === 'shipped' ? statusLabel('shipped', type) : f.label);
   const exportExcel = async () => {
@@ -815,9 +871,11 @@ export default function OrdersPage({
               {visible.length > 0 && (
                 <div className="mb-3 px-1">
                   <p className="mb-2 text-sm text-slate-500">
-                    {!searching && (filter === 'pending' || filter === 'done' || filter === 'delivering')
-                      ? `Xếp theo ${ORDER_TYPES[type].timeLabel.toLowerCase()} sớm nhất`
-                      : 'Mới nhất lên trước'}
+                    {cookingView
+                      ? 'Xếp theo giờ cần xong sớm nhất (giờ giao / giờ lấy)'
+                      : !searching && (filter === 'pending' || filter === 'done' || filter === 'delivering')
+                        ? `Xếp theo ${ORDER_TYPES[type].timeLabel.toLowerCase()} sớm nhất`
+                        : 'Mới nhất lên trước'}
                   </p>
                   <div className="flex gap-2">
                   <button
@@ -842,28 +900,65 @@ export default function OrdersPage({
                 </p>
               )}
 
+              {cookingView && batchPlan && (batchPlan.batches.length > 0 || batchPlan.lateCount > 0) && (
+                <section className="mb-3 rounded-3xl border border-slate-200 bg-card p-4 shadow-sm">
+                  <p className="mb-1.5 font-bold text-slate-900">Gom đợt giao tự động</p>
+                  <ul className="space-y-1 text-sm text-slate-600">
+                    {batchPlan.batches.map((b) => (
+                      <li key={`${b.dayKey}-${b.batchIndex}`}>
+                        {multiDay && (
+                          <>
+                            Ngày {b.dayKey.slice(8, 10)}/{b.dayKey.slice(5, 7)} ·{' '}
+                          </>
+                        )}
+                        <b>Đợt {b.batchIndex}</b> · {b.count} đơn · giao {hhmm(b.firstTime)}–{hhmm(b.lastTime)}
+                      </li>
+                    ))}
+                  </ul>
+                  {batchPlan.lateCount > 0 && (
+                    <p className="mt-2 text-sm font-semibold text-amber-700">
+                      Có {batchPlan.lateCount} đơn trễ — nhận luôn giao luôn, xem ở nhóm đầu danh sách
+                    </p>
+                  )}
+                </section>
+              )}
+
               {visible.length === 0 ? (
                 <p className="rounded-3xl bg-card px-5 py-12 text-center text-slate-400">
                   {searching
                     ? 'Không tìm thấy đơn nào'
                     : filter === 'pending'
                       ? 'Không có đơn nào đang chờ'
-                      : 'Chưa có đơn'}
+                      : filter === 'cooking'
+                        ? 'Không có đơn nào đang chờ nấu'
+                        : 'Chưa có đơn'}
                 </p>
               ) : (
                 wide ? (
                   // Màn rất rộng (iPad ngang, máy tính): trái là danh sách gọn, phải là đơn đang chọn
                   <div className="grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-start gap-4">
-                    <ul className="divide-y divide-slate-200 overflow-hidden rounded-3xl border border-slate-200 bg-card">
-                      {shown.map((order) => (
-                        <OrderRow
-                          key={order.id}
-                          order={order}
-                          selected={order.id === selected.id}
-                          onSelect={setSelectedId}
-                        />
+                    <div className="space-y-4">
+                      {sections.map((sec) => (
+                        <div key={sec.key}>
+                          {sec.title && (
+                            <h3 className="mb-2 flex items-center gap-2 rounded-2xl bg-amber-50 px-4 py-2.5 font-bold text-amber-800">
+                              <AlarmClock size={17} /> {sec.title}
+                            </h3>
+                          )}
+                          <ul className="divide-y divide-slate-200 overflow-hidden rounded-3xl border border-slate-200 bg-card">
+                            {sec.list.map((order) => (
+                              <OrderRow
+                                key={order.id}
+                                order={order}
+                                selected={order.id === selected.id}
+                                onSelect={setSelectedId}
+                                batchLabel={cookingView ? batchLabelOf(order) : null}
+                              />
+                            ))}
+                          </ul>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                     <ul className="sticky top-20">
                       <OrderCard
                         key={selected.id}
@@ -876,35 +971,48 @@ export default function OrdersPage({
                       onSetStatus={onSetStatus}
                       onSetPaid={onSetPaid}
                       onMarkStep={onMarkStep}
+                      batchLabel={cookingView ? batchLabelOf(selected) : null}
                       />
                     </ul>
                   </div>
                 ) : (
                   // Màn vừa (iPad dọc): 2 cột đơn để nhìn được nhiều đơn cùng lúc
-                  <ul className="space-y-3 md:grid md:grid-cols-2 md:items-start md:gap-3 md:space-y-0">
-                    {shown.map((order) => (
-                      <OrderCard
-                        key={order.id}
-                        order={order}
-                      now={now}
-                      shopName={settings.shopName}
-                      shopAddress={settings.shopAddress}
-                      mapsApp={settings.mapsApp}
-                      onEdit={setEditing}
-                      onSetStatus={onSetStatus}
-                      onSetPaid={onSetPaid}
-                      onMarkStep={onMarkStep}
-                      />
+                  <div className="space-y-3">
+                    {sections.map((sec) => (
+                      <div key={sec.key}>
+                        {sec.title && (
+                          <h3 className="mb-2 flex items-center gap-2 rounded-2xl bg-amber-50 px-4 py-2.5 font-bold text-amber-800">
+                            <AlarmClock size={17} /> {sec.title}
+                          </h3>
+                        )}
+                        <ul className="space-y-3 md:grid md:grid-cols-2 md:items-start md:gap-3 md:space-y-0">
+                          {sec.list.map((order) => (
+                            <OrderCard
+                              key={order.id}
+                              order={order}
+                            now={now}
+                            shopName={settings.shopName}
+                            shopAddress={settings.shopAddress}
+                            mapsApp={settings.mapsApp}
+                            onEdit={setEditing}
+                            onSetStatus={onSetStatus}
+                            onSetPaid={onSetPaid}
+                            onMarkStep={onMarkStep}
+                            batchLabel={cookingView ? batchLabelOf(order) : null}
+                            />
+                          ))}
+                        </ul>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 )
               )}
-              {shown.length < visible.length && (
+              {hasMore && (
                 <button
                   onClick={() => setLimit((n) => n + PAGE)}
                   className="mt-4 w-full rounded-2xl border border-slate-300 py-3 font-semibold text-slate-700 active:bg-slate-100"
                 >
-                  Xem thêm ({visible.length - shown.length} đơn nữa)
+                  Xem thêm ({moreCount} đơn nữa)
                 </button>
               )}
               {!searching && (
