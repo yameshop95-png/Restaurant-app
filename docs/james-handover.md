@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: **2026-11-21** (thêm DRAFT PR #51; main ở `e5a9a9f`).
+> Cập nhật lần cuối: **2026-11-21** (PR #51 đã merge; main ở `96892da`).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James luôn qua PR để Paul duyệt, chỉ merge khi Paul nói rõ cho từng PR.
 
@@ -23,6 +23,7 @@
 | #47 | **Nới rộng bố cục + sửa tooltip biểu đồ** (xem mục 3): Báo cáo/Customer Active/Kho trải hết bề ngang ở màn ≥1024px; tooltip biểu đồ chuyển sang component chung `ChartTip` — tách theo từng tầng, bỏ tooltip native của trình duyệt | `41460ff` |
 | #48 | Thẻ **Chốt ca hôm nay** ở Home thành **donut vòng liền mạch** (số liệu `dailyCollection` giữ nguyên) + **dời thẻ lên trên cùng Home**; toán lát ở `src/lib/donut.js` | `cb37b57` |
 | #50 | Thẻ **Tiền tuần này** ở Home thành **donut lát bo tròn + khe hở** theo hình mẫu của Paul (tâm = tổng tuần; vòng: Đã thanh toán / Chưa thanh toán từ `summarize()`) + mở rộng `donut.js` thêm `drawLength`/`drawOffset`. **Đây là bản dựng lại của PR #49** trên main sau #48 (xem mục 2) — nội dung y hệt | `62d51d0` |
+| #51 | Bỏ 2 ô riêng **Đã/Chưa thanh toán** ở mục Tổng tuần này (Home) vì trùng số liệu với chú thích của donut Tiền tuần này (PR #50) — chỉ bỏ hiển thị, không đụng `stats` | `96892da` |
 
 ## 2. PR đã đóng KHÔNG merge
 
@@ -87,7 +88,6 @@
 
 - **PR #36** (`glass-dashboard-demo`): demo giao diện kính tối trên dashboard thật. Paul chưa chốt dùng hay không.
 - **PR #41** (`light-glass-demo`): demo kính sáng trắng–xanh trên app thật (đang ở v3, đã bỏ backdrop-filter ở thẻ cho nhẹ máy). Paul chưa chốt.
-- **PR #51** (`week-summary-into-donut`): bỏ 2 ô riêng Đã/Chưa thanh toán ở Home vì trùng số liệu với chú thích của donut Tiền tuần này (PR #50) — theo yêu cầu của Paul 21/11. Chỉ bỏ hiển thị, không đụng `stats`. Chờ Paul duyệt.
 
 ## 5. Việc còn mở / cảnh báo đã biết (chưa ai làm)
 
