@@ -31,7 +31,8 @@ import useWide from '../hooks/useWide';
 import { computeBatches, isCookingOrder, isInboxOrder } from '../lib/batches';
 import { dishThumb } from '../lib/dishPhotos';
 import { dueInfo, formatDue } from '../lib/due';
-import { cachedGeocode } from '../lib/geo';
+import { cachedGeocode, geocode } from '../lib/geo';
+import { geoRecordFor, storedGeoOf } from '../lib/orderGeo';
 import { exportOrderList } from '../lib/orderListExcel';
 import { ORDER_TYPES, PAYMENT_METHODS, paymentLabel, PREVIOUS_STATUS, statusLabel } from '../lib/orderStatus';
 import { sendManyToShopPrinter, sendToShopPrinter } from '../lib/printQueue';
@@ -612,6 +613,7 @@ export default function OrdersPage({
   onSetStatus,
   onSetPaid,
   onMarkStep,
+  onPatchOrder,
   now,
   settings,
 }) {
@@ -698,18 +700,53 @@ export default function OrdersPage({
 
   // --- Giai đoạn 2: gom đợt giao tự động + nhóm đơn trễ trong hàng Chờ nấu ---
   const cookingView = !searching && filter === 'cooking';
-  // Toạ độ đã tra sẵn trên máy (RoutePlanner lưu cache) để đợt xếp theo vùng / điểm gần;
-  // đơn chưa có toạ độ vẫn được xếp theo khung giờ như điểm chưa định vị trong lộ trình.
+  // Toạ độ lấy từ CHÍNH ĐƠN (trường geo đã đồng bộ, xem lib/orderGeo.js) — KHÔNG đọc
+  // cache riêng của máy, để nhãn đợt mọi máy tính ra giống hệt nhau. Đơn chưa có
+  // toạ độ vẫn được xếp theo khung giờ như điểm chưa định vị trong lộ trình; effect
+  // bên dưới tự tra và lưu toạ độ lên các đơn đó.
   const batchPlan = useMemo(() => {
     if (!cookingView) return null;
     const geo = new Map();
     for (const o of visible) {
       if (o.type !== 'delivery' || !o.customer?.address) continue;
-      const hit = cachedGeocode(o.customer.address);
-      geo.set(o.id, hit && !hit.notFound ? hit : null);
+      geo.set(o.id, storedGeoOf(o));
     }
     return computeBatches(visible, geo);
   }, [cookingView, visible]);
+
+  // Tự tra toạ độ cho các đơn giao đang hoạt động (chờ xử lý / chờ nấu / đang giao)
+  // chưa có toạ độ lưu trên đơn, rồi LƯU LÊN ĐƠN để mọi máy dùng chung: máy nào tra
+  // trước thì các máy khác khỏi tra lại, và nhãn đợt hết phụ thuộc cache từng máy.
+  // Cache sẵn trên máy có kết quả thì ghi lên đơn ngay (không gọi mạng); chưa có thì
+  // tra qua geocode() (đã có giãn cách 1,1 giây/địa chỉ). Mỗi cặp đơn+địa chỉ chỉ
+  // thử một lần trong phiên; địa chỉ tra không ra thì bỏ qua, phiên sau thử lại.
+  const geoFillTried = useRef(new Set());
+  useEffect(() => {
+    if (!onPatchOrder) return;
+    let cancelled = false;
+    const fill = async () => {
+      for (const o of orders) {
+        if (cancelled) return;
+        if (o.type !== 'delivery' || (o.status !== 'pending' && o.status !== 'delivering')) continue;
+        const address = o.customer?.address;
+        if (!address || storedGeoOf(o)) continue;
+        const key = `${o.id}|${address}`;
+        if (geoFillTried.current.has(key)) continue;
+        geoFillTried.current.add(key);
+        try {
+          const hit = cachedGeocode(address);
+          const found = hit && !hit.notFound ? hit : await geocode(address);
+          if (!cancelled && found) onPatchOrder(o.id, { geo: geoRecordFor(address, found) });
+        } catch {
+          // Tra lỗi (mạng/bản đồ): bỏ qua đơn này, không chặn các đơn sau
+        }
+      }
+    };
+    fill();
+    return () => {
+      cancelled = true;
+    };
+  }, [orders, onPatchOrder]);
   const batchLabelOf = (order) => {
     const b = batchPlan?.byOrder.get(order.id);
     return b ? `Đợt ${b.batchIndex} · #${b.positionInBatch}` : null;
@@ -812,7 +849,13 @@ export default function OrdersPage({
       )}
 
       {routeAllowed && view === 'route' ? (
-        <RoutePlanner orders={ofType} now={now} settings={settings} onSetStatus={onSetStatus} />
+        <RoutePlanner
+          orders={ofType}
+          now={now}
+          settings={settings}
+          onSetStatus={onSetStatus}
+          onStoreGeo={onPatchOrder ? (id, geo) => onPatchOrder(id, { geo }) : undefined}
+        />
       ) : (
         <>
           <div className="mb-3 flex gap-2">

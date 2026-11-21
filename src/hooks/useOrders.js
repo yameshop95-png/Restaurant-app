@@ -58,7 +58,9 @@ export default function useOrders(account) {
   //          paid: boolean, paymentMethod: 'cash' | 'transfer' | 'payid' | null, paidAt (ISO), createdAt,
   //          createdBy: tên người tạo đơn,
   //          receivedAt (ISO): đã bấm "Đã nhận đơn"; confirmedAt (ISO): đã nhắn xác nhận cho khách (chỉ đơn online),
-  //          shippedAt (ISO | null): đã bấm "Đã giao xong" / "Đã lấy" — setStatus tự ghi khi vào trạng thái shipped }
+  //          shippedAt (ISO | null): đã bấm "Đã giao xong" / "Đã lấy" — setStatus tự ghi khi vào trạng thái shipped,
+  //          geo ({ lat, lng, zone, for } | undefined): toạ độ địa chỉ giao đã tra, lưu trên đơn để mọi máy
+  //          tính đợt/lộ trình giống nhau (xem lib/orderGeo.js); `for` là địa chỉ mà toạ độ thuộc về }
   const addOrder = ({ type, customer, deliverAt, table, note, items, shippingFee, discount }) =>
     setOrders((prev) => [
       {

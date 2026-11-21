@@ -2,6 +2,7 @@ import { Fragment, useMemo, useState } from 'react';
 import { AlarmClock, Check, Loader2, LocateFixed, MapPin, Navigation, Phone, Route, Send, Store } from 'lucide-react';
 import { dueInfo, formatDue } from '../lib/due';
 import { cachedGeocode, currentPosition, directionsUrl, geocode, routeSegments } from '../lib/geo';
+import { geoRecordFor, storedGeoOf } from '../lib/orderGeo';
 import { isShippedToday } from '../lib/orderStatus';
 import { mapsUrl, routeText, shareText } from '../lib/shareOrder';
 import { planRoute, SLOT_OPTIONS } from '../lib/route';
@@ -21,7 +22,7 @@ const isTodayOrEarlier = (iso, now) => {
 };
 
 // Lộ trình giao cho các đơn đang đi giao (trạng thái "Đang giao"): đơn của hôm nay và đơn tồn từ hôm trước
-export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
+export default function RoutePlanner({ orders, now, settings, onSetStatus, onStoreGeo }) {
   const [start, setStart] = useState(null); // { lat, lng, label, kind: 'gps' | 'shop' }
   const [slotMinutes, setSlotMinutes] = useState(30);
   const [state, setState] = useState({ status: 'idle' });
@@ -50,7 +51,8 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
   const runPaidTotal = shippedRun.filter((o) => o.paid).reduce((s, o) => s + orderTotal(o), 0);
   const runUnpaidTotal = shippedRun.filter((o) => !o.paid).reduce((s, o) => s + orderTotal(o), 0);
 
-  // Toạ độ lấy từ kết quả đã lưu trên máy; địa chỉ chưa tra thì chưa có
+  // Toạ độ ưu tiên bản đã LƯU TRÊN ĐƠN (mọi máy dùng chung, xem lib/orderGeo.js);
+  // đơn chưa có thì tạm đọc cache của máy như trước. Địa chỉ chưa tra thì chưa có.
   const geo = useMemo(() => {
     const map = new Map();
     for (const o of active) {
@@ -58,12 +60,19 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
         map.set(o.id, null);
         continue;
       }
+      const stored = storedGeoOf(o);
+      if (stored) {
+        map.set(o.id, stored);
+        continue;
+      }
       const hit = cachedGeocode(o.customer.address);
       map.set(o.id, hit && !hit.notFound ? hit : null);
     }
     return map;
   }, [active, geoVersion]);
-  const unchecked = active.filter((o) => o.customer?.address && cachedGeocode(o.customer.address) === undefined);
+  const unchecked = active.filter(
+    (o) => o.customer?.address && !storedGeoOf(o) && cachedGeocode(o.customer.address) === undefined,
+  );
 
   const plan = useMemo(() => {
     const base = planRoute(plannable, geo, start, now, slotMinutes);
@@ -123,11 +132,15 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
     }
     setStart(origin);
 
-    const todo = active.filter((o) => o.customer?.address && cachedGeocode(o.customer.address) === undefined);
+    const todo = active.filter(
+      (o) => o.customer?.address && !storedGeoOf(o) && cachedGeocode(o.customer.address) === undefined,
+    );
     try {
       for (const [i, o] of todo.entries()) {
         setState({ status: 'working', text: `Đang tìm địa chỉ trên bản đồ ${i + 1}/${todo.length}…` });
-        await geocode(o.customer.address);
+        const found = await geocode(o.customer.address);
+        // Tra được thì lưu luôn lên đơn để các máy khác khỏi tra lại
+        if (found && onStoreGeo) onStoreGeo(o.id, geoRecordFor(o.customer.address, found));
         setGeoVersion((v) => v + 1);
       }
     } catch (err) {

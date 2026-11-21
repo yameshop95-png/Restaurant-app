@@ -341,6 +341,7 @@ function Shop({ account, onLogout }) {
               onImportCustomers={importCustomers}
               onSetStatus={changeStatus}
               onMarkStep={markStep}
+              onPatchOrder={markOrder}
               onSetPaid={changePaid}
               onNavigate={handleTabChange}
             />
