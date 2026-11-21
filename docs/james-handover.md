@@ -121,7 +121,8 @@
 
 - **PR #36** (`glass-dashboard-demo`): demo giao diện kính tối trên dashboard thật. Paul chưa chốt dùng hay không.
 - **PR #41** (`light-glass-demo`): demo kính sáng trắng–xanh trên app thật (đang ở v3, đã bỏ backdrop-filter ở thẻ cho nhẹ máy). Paul chưa chốt.
-- (PR #54 và PR #55 đã merge ngày 21/11 theo lệnh "Gộp lần lượt cả 2" của Paul — xem mục 1.)
+- **PR #57** (`order-geo-store`, 21/11): **lưu toạ độ lên đơn** (trường `geo {lat,lng,zone,for}` trong data JSON — không migration) để nhãn đợt hết phụ thuộc cache từng máy (phát hiện mô phỏng 150 đơn: 70/87 đơn lệch đợt giữa máy cache đầy/lạnh). `computeBatches` ở OrdersPage chỉ đọc `storedGeoOf` (lib/orderGeo.js); effect nền tự tra + ghi toạ độ lên đơn đang hoạt động qua prop mới `onPatchOrder` (= `markOrder` thầm lặng, App.jsx); RoutePlanner ưu tiên toạ độ trên đơn, tra được thì ghi lại. Kiểm chứng: test:ordergeo 13/13 + mọi suite cũ đạt + build đạt; chạy lại mô phỏng 150: lệch đợt **0/87**, Đợt 1 giống hệt giữa hai máy. Chờ Paul OK mới merge.
+- (PR #54, #55, #56 đã merge ngày 21/11 — xem mục 1.)
 
 
 
