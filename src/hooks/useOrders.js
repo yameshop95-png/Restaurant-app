@@ -54,7 +54,7 @@ export default function useOrders(account) {
   //          customer: { name, phone, address }, deliverAt (ISO: giờ giao / giờ đến lấy),
   //          table (đơn tại quán của bản cũ), note,
   //          shippingFee, discount (A$),
-  //          items: [{ name, price, qty, note? }], status: 'pending' | 'done' | 'shipped' | 'cancelled',
+  //          items: [{ name, price, qty, note? }], status: 'pending' | 'done' | 'delivering' | 'shipped' | 'cancelled',
   //          paid: boolean, paymentMethod: 'cash' | 'transfer' | 'payid' | null, paidAt (ISO), createdAt,
   //          createdBy: tên người tạo đơn,
   //          receivedAt (ISO): đã bấm "Đã nhận đơn"; confirmedAt (ISO): đã nhắn xác nhận cho khách (chỉ đơn online) }

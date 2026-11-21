@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlarmClock, Loader2, LocateFixed, MapPin, Navigation, Phone, Route, Send, Store, Truck } from 'lucide-react';
+import { AlarmClock, Check, Loader2, LocateFixed, MapPin, Navigation, Phone, Route, Send, Store } from 'lucide-react';
 import { dueInfo, formatDue } from '../lib/due';
 import { cachedGeocode, currentPosition, directionsUrl, geocode, MAX_ROUTE_STOPS } from '../lib/geo';
 import { mapsUrl, routeText, shareText } from '../lib/shareOrder';
@@ -12,7 +12,14 @@ const hhmm = (iso) => {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-// Lộ trình giao cho các đơn ship chưa giao (Chờ xử lý / Hoàn thành)
+// Đơn thuộc về chuyến giao hôm nay: giờ giao rơi vào hôm nay hoặc sớm hơn — đơn đang giao tồn từ hôm trước vẫn hiện (tránh sót đơn); đơn hẹn giao sau hôm nay thì chưa hiện (giờ máy)
+const isTodayOrEarlier = (iso, now) => {
+  const d = new Date(iso);
+  const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  return day(d) <= day(now);
+};
+
+// Lộ trình giao cho các đơn đang đi giao (trạng thái "Đang giao"): đơn của hôm nay và đơn tồn từ hôm trước
 export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
   const [start, setStart] = useState(null); // { lat, lng, label, kind: 'gps' | 'shop' }
   const [slotMinutes, setSlotMinutes] = useState(30);
@@ -21,25 +28,56 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
   const [geoVersion, setGeoVersion] = useState(0);
   const [shareMsg, setShareMsg] = useState(null);
 
+  // Đơn đang giao có giờ giao hôm nay hoặc sớm hơn (đơn tồn hôm trước rơi vào khung "Đã trễ giờ"); đơn đang giao mà chưa có giờ giao vẫn hiện (không giấu đơn đang trên xe)
   const active = useMemo(
-    () => orders.filter((o) => o.deliverAt && o.customer?.address && (o.status === 'pending' || o.status === 'done')),
-    [orders]
+    () => orders.filter((o) => o.status === 'delivering' && (!o.deliverAt || isTodayOrEarlier(o.deliverAt, now))),
+    [orders, now]
   );
+  // planRoute cần giờ giao để chia khung giờ; đơn chưa có giờ giao xếp vào một nhóm riêng ở cuối
+  const plannable = useMemo(() => active.filter((o) => o.deliverAt), [active]);
+  const noTime = useMemo(() => active.filter((o) => !o.deliverAt), [active]);
 
   // Toạ độ lấy từ kết quả đã lưu trên máy; địa chỉ chưa tra thì chưa có
   const geo = useMemo(() => {
     const map = new Map();
     for (const o of active) {
+      if (!o.customer?.address) {
+        map.set(o.id, null);
+        continue;
+      }
       const hit = cachedGeocode(o.customer.address);
       map.set(o.id, hit && !hit.notFound ? hit : null);
     }
     return map;
   }, [active, geoVersion]);
-  const unchecked = active.filter((o) => cachedGeocode(o.customer.address) === undefined);
+  const unchecked = active.filter((o) => o.customer?.address && cachedGeocode(o.customer.address) === undefined);
 
-  const plan = useMemo(() => planRoute(active, geo, start, now, slotMinutes), [active, geo, start, now, slotMinutes]);
+  const plan = useMemo(() => {
+    const base = planRoute(plannable, geo, start, now, slotMinutes);
+    if (!noTime.length) return base;
+    const firstIndex = base.slots.reduce((n, s) => n + s.stops.length, 0);
+    const extra = {
+      label: 'Chưa có giờ giao',
+      overdue: false,
+      stops: noTime.map((o, i) => ({ order: o, geo: geo.get(o.id) ?? null, distanceKm: null, index: firstIndex + i + 1 })),
+    };
+    return { slots: [...base.slots, extra], totalKm: base.totalKm };
+  }, [plannable, noTime, geo, start, now, slotMinutes]);
   const stops = plan.slots.flatMap((s) => s.stops);
   const located = stops.filter((s) => s.geo);
+
+  // Điểm bắt đầu của từng chặng chỉ đường: điểm có toạ độ ngay trước đó trong lộ trình;
+  // điểm đầu tiên lấy điểm xuất phát (chưa có thì app bản đồ tự dùng vị trí hiện tại)
+  const legOrigin = useMemo(() => {
+    const map = new Map();
+    let prev = start;
+    for (const s of stops) {
+      if (!s.geo) continue;
+      map.set(s.order.id, prev);
+      prev = s.geo;
+    }
+    return map;
+  }, [stops, start]);
 
   const run = async () => {
     const warnings = [];
@@ -62,7 +100,7 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
     }
     setStart(origin);
 
-    const todo = active.filter((o) => cachedGeocode(o.customer.address) === undefined);
+    const todo = active.filter((o) => o.customer?.address && cachedGeocode(o.customer.address) === undefined);
     try {
       for (const [i, o] of todo.entries()) {
         setState({ status: 'working', text: `Đang tìm địa chỉ trên bản đồ ${i + 1}/${todo.length}…` });
@@ -87,7 +125,11 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
   };
 
   if (!active.length) {
-    return <p className="rounded-3xl bg-card px-5 py-12 text-center text-slate-400">Không có đơn ship nào cần giao</p>;
+    return (
+      <p className="rounded-3xl bg-card px-5 py-12 text-center text-slate-400">
+        Chưa có đơn nào đang giao — khi bắt đầu đi giao, bấm “Đã mang đi” trên thẻ đơn
+      </p>
+    );
   }
 
   const working = state.status === 'working';
@@ -134,16 +176,28 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
           </p>
         ))}
         {located.length > 0 && (
-          <a
-            href={directionsUrl(start, located.map((s) => s.geo), settings.mapsApp)}
-            target="_blank"
-            rel="noreferrer"
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-blue-500 py-3 font-semibold text-blue-600 active:bg-blue-50"
-          >
-            <Navigation size={18} />
-            Mở lộ trình trên {settings.mapsApp === 'apple' ? 'Apple Maps' : 'Google Maps'}
-            {located.length > MAX_ROUTE_STOPS ? ` (${MAX_ROUTE_STOPS} điểm đầu)` : ''}
-          </a>
+          <>
+            {/* Mặc định mở Apple Maps; Google Maps là lựa chọn phụ */}
+            <a
+              href={directionsUrl(start, located.map((s) => s.geo), 'apple')}
+              target="_blank"
+              rel="noreferrer"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-blue-500 py-3 font-semibold text-blue-600 active:bg-blue-50"
+            >
+              <Navigation size={18} />
+              Mở lộ trình trên Apple Maps
+              {located.length > MAX_ROUTE_STOPS ? ` (${MAX_ROUTE_STOPS} điểm đầu)` : ''}
+            </a>
+            <a
+              href={directionsUrl(start, located.map((s) => s.geo), 'google')}
+              target="_blank"
+              rel="noreferrer"
+              className="block text-center text-sm font-semibold text-slate-500 underline-offset-2 active:underline"
+            >
+              hoặc mở lộ trình bằng Google Maps
+              {located.length > MAX_ROUTE_STOPS ? ` (${MAX_ROUTE_STOPS} điểm đầu)` : ''}
+            </a>
+          </>
         )}
         <button
           onClick={shareRoute}
@@ -186,7 +240,11 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
                         #{order.number} · {order.customer.name}
                       </p>
                       <p className="flex flex-wrap items-center gap-x-2 text-sm">
-                        <span className="font-semibold text-blue-700">Giao {hhmm(order.deliverAt)}</span>
+                        {order.deliverAt ? (
+                          <span className="font-semibold text-blue-700">Giao {hhmm(order.deliverAt)}</span>
+                        ) : (
+                          <span className="font-semibold text-amber-700">Chưa có giờ giao</span>
+                        )}
                         {due && (
                           <span className={due.level === 'overdue' ? 'font-semibold text-red-600' : 'font-semibold text-slate-900'}>
                             {formatDue(due)}
@@ -194,15 +252,19 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
                         )}
                         {distanceKm != null && <span className="text-slate-500">~{distanceKm.toFixed(1)} km</span>}
                       </p>
-                      <a
-                        href={mapsUrl(order.customer.address, settings.mapsApp)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block text-sm text-blue-700 underline decoration-blue-200 underline-offset-2"
-                      >
-                        {order.customer.address}
-                      </a>
-                      {!g && (
+                      {order.customer.address ? (
+                        <a
+                          href={mapsUrl(order.customer.address, settings.mapsApp)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block text-sm text-blue-700 underline decoration-blue-200 underline-offset-2"
+                        >
+                          {order.customer.address}
+                        </a>
+                      ) : (
+                        <p className="text-sm font-semibold text-amber-700">Thiếu địa chỉ giao</p>
+                      )}
+                      {!g && order.customer.address && (
                         <p className="text-xs font-semibold text-amber-700">
                           {cachedGeocode(order.customer.address)?.notFound
                             ? 'Không tìm thấy địa chỉ trên bản đồ – kiểm tra lại địa chỉ'
@@ -212,11 +274,10 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
                       <p className="text-xs text-slate-500">
                         {order.items.map((it) => `${it.qty}× ${it.name}${it.note ? ` (${it.note})` : ''}`).join(', ')} · {formatMoney(orderTotal(order))}
                         {!order.paid && <b className="text-red-600"> · thu tiền</b>}
-                        {order.status === 'pending' && <span className="text-amber-700"> · chưa nấu xong</span>}
                       </p>
                     </div>
                   </div>
-                  <div className="mt-2 flex gap-2 pl-11">
+                  <div className="mt-2 flex flex-wrap items-center gap-2 pl-11">
                     {order.customer.phone && (
                       <a
                         href={`tel:${order.customer.phone}`}
@@ -225,11 +286,33 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus }) {
                         <Phone size={14} /> Gọi
                       </a>
                     )}
+                    {g && (
+                      <>
+                        {/* Chỉ đường từng chặng (điểm trước → điểm này) để không dính giới hạn 10 điểm của link cả lộ trình.
+                            Mặc định Apple Maps, Google Maps là phụ */}
+                        <a
+                          href={directionsUrl(legOrigin.get(order.id) ?? null, [g], 'apple')}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-700 active:bg-blue-100"
+                        >
+                          <Navigation size={14} /> Chỉ đường (Apple Maps)
+                        </a>
+                        <a
+                          href={directionsUrl(legOrigin.get(order.id) ?? null, [g], 'google')}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm font-semibold text-slate-500 underline-offset-2 active:underline"
+                        >
+                          Google Maps
+                        </a>
+                      </>
+                    )}
                     <button
                       onClick={() => onSetStatus(order.id, 'shipped')}
                       className="flex items-center gap-1 rounded-lg bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white active:bg-blue-600"
                     >
-                      <Truck size={14} /> Đã ship
+                      <Check size={14} /> Đã giao xong
                     </button>
                   </div>
                 </li>
