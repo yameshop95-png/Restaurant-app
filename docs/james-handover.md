@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: **2026-11-21** (PR #52 + PR #53 đã merge; hai PR nháp đang chờ Paul duyệt: #54 — tách trạm Chờ xử lý/Chờ nấu + mục Chờ nấu riêng, và #55 — sửa 2 lỗi nghiêm trọng từ mô phỏng 100 đơn; main ở `ca06c86`).
+> Cập nhật lần cuối: **2026-11-21** (PR #52 + #53 + **#54 + #55 đã merge** — #54 tách trạm Chờ xử lý/Chờ nấu + mục Chờ nấu riêng, #55 sửa 2 lỗi nghiêm trọng từ mô phỏng 100 đơn; main ở `f75b56f`).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James luôn qua PR để Paul duyệt, chỉ merge khi Paul nói rõ cho từng PR.
 
@@ -26,6 +26,8 @@
 | #51 | Bỏ 2 ô riêng **Đã/Chưa thanh toán** ở mục Tổng tuần này (Home) vì trùng số liệu với chú thích của donut Tiền tuần này (PR #50) — chỉ bỏ hiển thị, không đụng `stats` | `96892da` |
 | #52 | **Quy trình giao hàng GĐ1** (quyết định thiết kế ở mục 3): trạng thái `delivering` "Đang giao" cho đơn giao + nút "Đã mang đi"/"Đã giao xong" + chip cảnh báo thiếu địa chỉ/giờ giao; `RoutePlanner` chỉ hiện đơn đang giao, chỉ đường từng chặng, Apple Maps mặc định / Google Maps phụ; badge Đơn ship đếm cả đơn đang giao | `f03037b` |
 | #53 | **Quy trình giao hàng GĐ2** (mục 3): bộ lọc **"Chờ nấu"** ở Đơn hàng + module `src/lib/batches.js` tự gom đợt giao (tối đa 15 đơn/ngày) + mục **"Đơn trễ"** riêng + tiến độ và thẻ tóm tắt chuyến ở `RoutePlanner`; thêm `test:batches` (29) | `c1223a9` |
+| #54 | **Tách trạm Chờ xử lý / Chờ nấu + mục Chờ nấu riêng** (mục 3): `isInboxOrder` trong `batches.js` — mỗi đơn chờ thuộc đúng MỘT trạm; trang `CookingPage` khoá `fixedFilter="cooking"`, mục Chờ nấu ở menu trái + tab ghim thứ 5 + ô trang chủ, badge `cookingCount`; badge/banner hộp thư đến đếm theo trạm inbox; `test:batches` mở rộng lên 45 | `07b8af4` |
+| #55 | **Sửa 2 lỗi nghiêm trọng** (mô phỏng 100 đơn): đóng dấu `shippedAt` ở `setStatus` (`useOrders.js`) + tiến độ/đối soát chuyến chỉ tính đơn giao hôm nay (`isShippedToday`); link lộ trình chia đoạn `routeSegments` (`geo.js`) cho nút mở lộ trình + tin nhắn shipper; thêm `test:routelinks` (33) | `f75b56f` |
 
 ## 2. PR đã đóng KHÔNG merge
 
@@ -104,11 +106,11 @@
   hiện riêng trên cùng hàng chờ nấu và không vào đợt. Thu tiền giữ cờ `paid` riêng — đừng gắn
   câu hỏi thu tiền vào nút "Đã giao xong". Tiến độ chuyến ở `RoutePlanner` trên main hiện tính từ đơn
   `shipped` có `deliverAt` hôm nay hoặc sớm hơn — mô phỏng 100 đơn (21/11) cho thấy công thức này bị
-  đơn lịch sử làm sai nặng (lúc xuất phát đã hiện "Đã giao 12/28"). **PR #55 (nháp) sửa**: `setStatus`
+  đơn lịch sử làm sai nặng (lúc xuất phát đã hiện "Đã giao 12/28"). **Đã sửa ở PR #55 (đã merge)**: `setStatus`
   trong `useOrders.js` đóng dấu `shippedAt` khi đơn vào `shipped` (xoá khi quay lui, cùng mẫu
   `paidAt`), tiến độ/đối soát chỉ đếm đơn giao có `shippedAt` hôm nay (helper `isShippedToday` trong
   `orderStatus.js`); đơn ship trước khi bản sửa này gộp thì không có `shippedAt` nên không được tính
-  (chủ ý — là lịch sử). PR #55 cũng sửa link lộ trình: helper `routeSegments` (`geo.js`) chia link
+  (chủ ý — là lịch sử). PR #55 (đã merge) cũng sửa link lộ trình: helper `routeSegments` (`geo.js`) chia link
   thành đoạn tối đa 10 điểm nối tiếp nhau (điểm cuối đoạn trước = điểm đầu đoạn sau) cho cả nút mở
   lộ trình lẫn tin nhắn shipper — đừng quay lại link đơn cho chuyến dài, `MAX_ROUTE_STOPS = 10` sẽ
   âm thầm cắt điểm cuối.
@@ -117,17 +119,7 @@
 
 - **PR #36** (`glass-dashboard-demo`): demo giao diện kính tối trên dashboard thật. Paul chưa chốt dùng hay không.
 - **PR #41** (`light-glass-demo`): demo kính sáng trắng–xanh trên app thật (đang ở v3, đã bỏ backdrop-filter ở thẻ cho nhẹ máy). Paul chưa chốt.
-- **PR #54** (`cooking-section`, base `d06a194`): **tách trạm Chờ xử lý / Chờ nấu + mục Chờ nấu riêng**
-  theo mô hình Paul chốt (mục 3): `isInboxOrder` trong `batches.js` (mỗi đơn chờ thuộc đúng MỘT trạm);
-  trang `CookingPage` khoá `fixedFilter="cooking"`; mục Chờ nấu ở menu trái (sau Đơn hàng), tab ghim
-  thứ 5 ở thanh dưới, ô riêng ở trang chủ; badge/banner hộp thư đến đếm theo trạm mới. Test:batches
-  mở rộng lên 45 đạt (thêm khẳng định tách trạm); mọi suite pass. Chờ Paul duyệt.
-- **PR #55** (`fix-run-summary-and-route-link`, base main `ca06c86`, head `302f88b`): **sửa 2 lỗi
-  nghiêm trọng** từ mô phỏng 100 đơn (báo cáo `restaurant-app-mo-phong-100-don-2026-11-21.md`):
-  (1) đóng dấu `shippedAt` + tiến độ/đối soát chuyến chỉ tính đơn giao hôm nay; (2) link lộ trình
-  chia đoạn `routeSegments` để không sót điểm ở chuyến dài. Test mới `test:routelinks` 33 đạt; build
-  + mọi suite pass; chạy lại mô phỏng khớp số thật (xuất phát 0/16; sau Đợt 1: 15/16 · $119/$447;
-  link phủ 16/16). Chờ Paul duyệt. Lưu ý PR #55 dựa trên main, không gồm thay đổi của PR #54.
+- (PR #54 và PR #55 đã merge ngày 21/11 theo lệnh "Gộp lần lượt cả 2" của Paul — xem mục 1.)
 
 
 
@@ -155,7 +147,7 @@
   gom đợt tự động + mục đơn trễ + tiến độ/tóm tắt chuyến. Việc giao hàng còn lại chưa ai chốt:
   nút **"Giao không được"** (khách vắng nhà) — cần Paul quyết đơn giao hỏng sẽ nằm ở đâu trước khi làm.
 - **Mô phỏng 100 đơn cuối tuần (21/11, báo cáo `restaurant-app-mo-phong-100-don-2026-11-21.md`)** — ngoài
-  2 lỗi nghiêm trọng đã vào PR #55, còn 3 điểm bất tiện chưa ai sửa: nhãn đợt ở màn hình Chờ nấu phụ
+  2 lỗi nghiêm trọng đã sửa ở PR #55 (đã merge), còn 3 điểm bất tiện chưa ai sửa: nhãn đợt ở màn hình Chờ nấu phụ
   thuộc cache toạ độ của máy (máy lạnh làm 41/58 đơn đổi đợt/vị trí so với máy đã có cache); đơn giao
   thiếu `deliverAt` xếp lên đầu hàng chờ nấu (dự phòng theo `createdAt`) nhưng không vào đợt nào; đơn
   trễ không có kiểm tra độ gấp (đơn hẹn giao sau 30 phút vẫn nhận lặng lẽ) và nhóm trễ phình to thì
@@ -169,10 +161,10 @@
   `npm run test:insights` (35), `npm run test:cache`,
   `npm run test:classify` (39 — phân loại nguồn/thiết bị của tracker web),
   `npm run test:donut` (23 — toán lát vòng tròn, gồm khe hở),
-  `npm run test:batches` (29 trên main — gom đợt giao + phân loại đơn trễ của `src/lib/batches.js`;
-  từ PR #53; nhánh PR #54 mở rộng lên 45 với khẳng định tách trạm),
+  `npm run test:batches` (45 trên main — gom đợt giao + phân loại đơn trễ của `src/lib/batches.js`
+  + khẳng định tách trạm; từ PR #53/#54),
   `npm run test:routelinks` (33 — chia đoạn lộ trình `routeSegments` + biên ngày `isShippedToday` +
-  kịch bản đối soát; từ PR #55, đang nháp).
+  kịch bản đối soát; từ PR #55).
 - Không đụng khi chưa được giao: mã PIN, luồng đặt đơn, in bill, chuông báo, sync, cache.
 
 ---
