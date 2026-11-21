@@ -14,12 +14,8 @@ const hhmm = (iso) => {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-// Đơn thuộc về chuyến giao hôm nay: giờ giao rơi vào hôm nay hoặc sớm hơn — đơn đang giao tồn từ hôm trước vẫn hiện (tránh sót đơn); đơn hẹn giao sau hôm nay thì chưa hiện (giờ máy)
-const isTodayOrEarlier = (iso, now) => {
-  const d = new Date(iso);
-  const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  return day(d) <= day(now);
-};
+// (Đã bỏ bộ lọc theo ngày: đơn đang giao thì hiện hết, bất kể giờ giao thuộc ngày nào —
+// xem ghi chú ở `active` bên dưới.)
 
 // Lộ trình giao cho các đơn đang đi giao (trạng thái "Đang giao"): đơn của hôm nay và đơn tồn từ hôm trước
 export default function RoutePlanner({ orders, now, settings, onSetStatus, onStoreGeo }) {
@@ -30,11 +26,12 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus, onSto
   const [geoVersion, setGeoVersion] = useState(0);
   const [shareMsg, setShareMsg] = useState(null);
 
-  // Đơn đang giao có giờ giao hôm nay hoặc sớm hơn (đơn tồn hôm trước rơi vào khung "Đã trễ giờ"); đơn đang giao mà chưa có giờ giao vẫn hiện (không giấu đơn đang trên xe)
-  const active = useMemo(
-    () => orders.filter((o) => o.status === 'delivering' && (!o.deliverAt || isTodayOrEarlier(o.deliverAt, now))),
-    [orders, now]
-  );
+  // Mọi đơn đang giao đều hiện, bất kể giờ giao thuộc ngày nào: đã bấm "Đã mang đi"
+  // là đơn đã lên xe, phải thấy trong lộ trình để đi giao (ý Paul 21/11 — trước đây
+  // đơn hẹn ngày mai bị lọc mất, danh sách trống mà không có lời giải thích).
+  // Đơn tồn hôm trước rơi vào khung "Đã trễ giờ"; đơn ngày mai nằm ở khung giờ có
+  // ghi thêm ngày (xem slotOf trong lib/route) để khỏi lẫn với khung của hôm nay.
+  const active = useMemo(() => orders.filter((o) => o.status === 'delivering'), [orders]);
   // planRoute cần giờ giao để chia khung giờ; đơn chưa có giờ giao xếp vào một nhóm riêng ở cuối
   const plannable = useMemo(() => active.filter((o) => o.deliverAt), [active]);
   const noTime = useMemo(() => active.filter((o) => !o.deliverAt), [active]);
@@ -192,6 +189,12 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus, onSto
   return (
     <div className="space-y-4">
       {runSummary}
+      {active.length === 0 && (
+        <section className="rounded-3xl border border-slate-200 bg-card p-4 text-sm leading-relaxed text-slate-600 shadow-sm">
+          Chưa có đơn nào đang giao. Đơn nấu xong bấm <b className="text-slate-800">“Đã mang đi”</b> là đơn lên xe và
+          hiện danh sách ở đây, xếp sẵn thứ tự để đi giao.
+        </section>
+      )}
       <section className="space-y-3 rounded-3xl border border-slate-200 bg-card p-4 shadow-sm">
         <p className="text-sm text-slate-600">
           Thứ tự giao: <b>giờ sớm trước</b> (theo khung giờ) → <b>giao hết từng vùng</b> → <b>điểm gần trước, xa sau</b>.
