@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: **2026-11-21** (PR #51 đã merge; thêm kết quả audit lộ trình giao; main ở `2aa6a1e`).
+> Cập nhật lần cuối: **2026-11-21** (PR #51 đã merge; PR #52 nháp — quy trình giao hàng GĐ1 — đang chờ Paul duyệt; main ở `bbc8d74`).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James luôn qua PR để Paul duyệt, chỉ merge khi Paul nói rõ cho từng PR.
 
@@ -88,6 +88,16 @@
 
 - **PR #36** (`glass-dashboard-demo`): demo giao diện kính tối trên dashboard thật. Paul chưa chốt dùng hay không.
 - **PR #41** (`light-glass-demo`): demo kính sáng trắng–xanh trên app thật (đang ở v3, đã bỏ backdrop-filter ở thẻ cho nhẹ máy). Paul chưa chốt.
+- **PR #52** (`delivery-phase1`, base `bbc8d74`): **quy trình giao hàng GĐ1** theo bản Paul đã chốt
+  (tài liệu `quy-trinh-giao-hang-de-xuat-2026-11-21.md` ở workspace của James): trạng thái mới
+  `delivering` "Đang giao" cho đơn giao (Hoàn thành → Đang giao → Đã ship; đơn đến lấy không đổi);
+  thẻ đơn có nút "Đã mang đi"/"Đã giao xong" + chip cảnh báo "Thiếu địa chỉ giao"/"Thiếu giờ giao";
+  `RoutePlanner` chỉ hiện đơn `delivering` của hôm nay (thiếu `deliverAt` vẫn hiện ở nhóm cuối,
+  không giấu đơn đang trên xe); chỉ đường **từng chặng**; **Apple Maps mặc định, Google Maps phụ**
+  (ý Paul); badge tab Đơn ship đếm cả đơn đang giao. Build + mọi suite pass (donut 23, classify 39,
+  insights 35, dishprofit 18, performance 54, sync 7/7, cache 10/10). Chờ Paul bấm thử bản xem trước.
+  Lưu ý: đơn `delivering` có `deliverAt` thuộc **ngày hôm qua** (mang đi mà chưa giao xong) hiện
+  KHÔNG hiện trong lộ trình hôm nay — đúng quy tắc Paul đã duyệt, chờ anh quyết có nới hay không.
 
 ## 5. Việc còn mở / cảnh báo đã biết (chưa ai làm)
 
@@ -105,8 +115,12 @@
   và mục Giao hàng của tab Đơn hàng là **cùng một `OrdersPage` + `RoutePlanner`** (Đơn ship = `fixedType="delivery"`)
   — đừng xây tính năng lộ trình ở hai nơi. Lỗ hổng đã biết: lộ trình **không lọc theo ngày** (đơn tuần trước lẫn vào
   khung "Đã trễ giờ"); đơn thiếu địa chỉ/giờ giao **bị loại âm thầm** khỏi lộ trình; link Maps tối đa 10 điểm
-  (`MAX_ROUTE_STOPS`); đơn `pending` (bếp chưa xong) vẫn bấm "Đã ship" được. Paul đang cân nhắc đề xuất
-  quy trình chuyến 5 bước (chỉ ở tab Đơn ship) + lộ trình làm 3 giai đoạn — **chưa duyệt, đừng tự làm trước**.
+  (`MAX_ROUTE_STOPS`); đơn `pending` (bếp chưa xong) vẫn bấm "Đã ship" được. **Cập nhật 21/11: Paul đã
+  chốt quy trình của anh + góp ý của James** (xác nhận & nhắn khách → hàng chờ nấu CHUNG đơn giao +
+  đến lấy, code tự sắp đợt theo giờ giao → địa chỉ tiện; đơn trễ sáng thứ Bảy có mục riêng "nhận luôn
+  giao luôn"; thu tiền giữ nút "Đã thu tiền" riêng, không hỏi ép lúc giao xong) và đã duyệt làm
+  **Giai đoạn 1 = PR #52** (mục 4). Còn **Giai đoạn 2 chưa làm**: gợi ý gom đợt 10–15 ở hàng chờ nấu +
+  thanh tiến độ/đối soát đóng đợt + mục đơn trễ riêng — chờ Paul duyệt tiếp sau khi thử GĐ1.
 
 ## 6. Kiểm chứng quen dùng
 
