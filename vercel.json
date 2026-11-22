@@ -1,6 +1,30 @@
 {
   "buildCommand": "npm run build",
   "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.wodovn.xyz"
+        }
+      ],
+      "destination": "/order",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "wodovn.xyz"
+        }
+      ],
+      "destination": "/order",
+      "permanent": false
+    }
+  ],
   "functions": {
     "api/analyze.js": {
       "maxDuration": 120
