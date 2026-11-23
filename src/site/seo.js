@@ -20,22 +20,30 @@ function pageMetaInner(route, data, dishes) {
   const logo = url('/pwa-512x512.png');
   const phone = formatPhoneTel(shop.shopPhone);
   const business = {
-    '@type': 'Restaurant',
+    '@type': 'FoodEstablishment',
     name,
+    slogan: TAGLINE,
     url: url(path()),
-    image: logo,
+    logo: url('/logo-round.svg'),
+    image: url('/site/photos/banh-cuon.webp'),
+    ...(phone && { telephone: phone }),
     servesCuisine: 'Vietnamese',
     priceRange: '$',
-    areaServed: ['Albury', 'Wodonga', 'Lavington', 'Thurgoona'],
+    currenciesAccepted: 'AUD',
+    paymentAccepted: 'Cash, Bank Transfer',
     hasMenu: url(path('/menu')),
+    areaServed: ['Wodonga', 'West Wodonga', 'Leneva', 'Albury', 'Baranduda', 'Lavington', 'Thurgoona'].map(
+      (cityName) => ({ '@type': 'City', name: cityName }),
+    ),
+    openingHoursSpecification: [
+      {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: 'Saturday',
+        opens: PICKUP_OPEN,
+        closes: PICKUP_CLOSE,
+      },
+    ],
     sameAs: Object.values(SOCIAL),
-    ...(phone && { telephone: phone }),
-    openingHoursSpecification: {
-      '@type': 'OpeningHoursSpecification',
-      dayOfWeek: 'Saturday',
-      opens: PICKUP_OPEN,
-      closes: PICKUP_CLOSE,
-    },
   };
 
   switch (route.name) {
