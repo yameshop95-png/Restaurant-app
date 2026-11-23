@@ -6,6 +6,13 @@ import { SITE_TEXT } from './text';
 
 // Thẻ <head> cho từng trang (tiếng Anh, để Google đọc): tiêu đề, mô tả, link chuẩn, ảnh chia sẻ, dữ liệu có cấu trúc
 export function pageMeta(route, data, dishes) {
+  const meta = pageMetaInner(route, data, dishes);
+  const shop = data?.shop ?? {};
+  meta.siteName = shop.shopName || SITE_TEXT.en.defaultName;
+  return meta;
+}
+
+function pageMetaInner(route, data, dishes) {
   const t = SITE_TEXT.en;
   const shop = data?.shop ?? {};
   const name = shop.shopName || t.defaultName;
@@ -104,8 +111,14 @@ export function pageMeta(route, data, dishes) {
       return notFound(name);
     default:
       return {
-        title: `Bánh cuốn & giò chả in Albury–Wodonga | ${name}`,
-        description: `${TAGLINE}. ${t.homeDescription}`,
+        title: `Bánh Cuốn & Giò Chả Albury–Wodonga | ${name}`,
+        description: 'Homemade bánh cuốn, giò lụa, chả chiên & bánh giò made fresh weekly in Albury–Wodonga. Pre-order by Friday 10 pm for Saturday pickup or local delivery.',
+        ogDescription: `${TAGLINE}. Freshly made weekly in a food-safe kitchen. Order by 10 pm Friday for Saturday pickup or delivery across Wodonga & Albury.`,
+        twitterDescription: 'Homemade bánh cuốn, giò lụa, chả chiên & bánh giò made fresh every week. Pre-order for Saturday pickup or delivery.',
+        keywords: 'Wodonga Vietnamese food, Albury Vietnamese food, bánh cuốn Albury Wodonga, giò lụa Wodonga, chả chiên, Vietnamese takeaway Wodonga, homemade Vietnamese food',
+        geo: true,
+        image: url('/site/photos/banh-cuon.webp'),
+        imageAlt: 'Fresh bánh cuốn topped with fried shallots, herbs and sliced giò lụa',
         path: path(),
         jsonLd: { '@context': 'https://schema.org', ...business },
       };
@@ -194,14 +207,10 @@ export function applyMeta(meta) {
   document.title = meta.title || '';
   setNamedMeta('description', meta.description || '');
   setNamedMeta('og:title', meta.title || '', 'property');
-  setNamedMeta('og:description', meta.description || '', 'property');
+  setNamedMeta('og:description', meta.ogDescription || meta.description || '', 'property');
   const canon = document.querySelector('link[rel="canonical"]');
   if (canon && meta.path) canon.setAttribute('href', `${SITE_URL}${meta.path}`);
-  const robots = document.querySelector('meta[name="robots"]');
-  if (meta.noindex) {
-    if (robots) robots.setAttribute('content', 'noindex');
-    else setNamedMeta('robots', 'noindex');
-  } else if (robots) robots.remove();
+  setNamedMeta('robots', meta.noindex ? 'noindex' : 'index, follow');
   let ld = document.querySelector('script[type="application/ld+json"]');
   if (meta.jsonLd) {
     if (!ld) {
@@ -231,14 +240,23 @@ export function headHtml(meta) {
   return [
     `<title>${esc(meta.title)}</title>`,
     meta.description && `<meta name="description" content="${esc(meta.description)}" />`,
+    meta.keywords && `<meta name="keywords" content="${esc(meta.keywords)}" />`,
+    `<meta name="robots" content="${meta.noindex ? 'noindex' : 'index, follow'}" />`,
     `<link rel="canonical" href="${esc(full)}" />`,
-    meta.noindex && `<meta name="robots" content="noindex" />`,
+    meta.geo && `<meta name="geo.region" content="AU-VIC" />`,
+    meta.geo && `<meta name="geo.placename" content="Wodonga, Albury-Wodonga" />`,
     `<meta property="og:type" content="${meta.type ?? 'website'}" />`,
+    `<meta property="og:locale" content="en_AU" />`,
+    meta.siteName && `<meta property="og:site_name" content="${esc(meta.siteName)}" />`,
     `<meta property="og:title" content="${esc(meta.title)}" />`,
-    meta.description && `<meta property="og:description" content="${esc(meta.description)}" />`,
+    (meta.ogDescription || meta.description) && `<meta property="og:description" content="${esc(meta.ogDescription || meta.description)}" />`,
     `<meta property="og:url" content="${esc(full)}" />`,
     `<meta property="og:image" content="${esc(image)}" />`,
+    meta.imageAlt && `<meta property="og:image:alt" content="${esc(meta.imageAlt)}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
+    `<meta name="twitter:title" content="${esc(meta.title)}" />`,
+    (meta.twitterDescription || meta.ogDescription || meta.description) && `<meta name="twitter:description" content="${esc(meta.twitterDescription || meta.ogDescription || meta.description)}" />`,
+    `<meta name="twitter:image" content="${esc(image)}" />`,
     meta.jsonLd && `<script type="application/ld+json">${JSON.stringify(meta.jsonLd).replace(/</g, '\\u003c')}</script>`,
   ]
     .filter(Boolean)
