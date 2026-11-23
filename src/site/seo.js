@@ -49,8 +49,8 @@ function pageMetaInner(route, data, dishes) {
   switch (route.name) {
     case 'menu':
       return {
-        title: `Menu: bánh cuốn, giò chả & more | ${name}`,
-        description: t.menuDescription,
+        title: `Menu & Prices | ${name}`,
+        description: 'Explore our weekly menu of fresh bánh cuốn, giò lụa, chả chiên, bánh giò and Vietnamese favourites in Albury–Wodonga. Pre-order online for Saturday.',
         path: path('/menu'),
         jsonLd: {
           '@context': 'https://schema.org',
@@ -78,7 +78,7 @@ function pageMetaInner(route, data, dishes) {
         title: dishTitle(dish, txt, name),
         description: dishDescription(dish, txt),
         path: path(`/menu/${dish.slug}`),
-        image: dish.content?.photo ? url(dish.content.photo) : logo,
+        image: dish.content?.photo ? url(dish.content.photo) : url('/site/photos/banh-cuon.webp'),
         jsonLd: {
           '@context': 'https://schema.org',
           '@type': 'MenuItem',
@@ -91,8 +91,8 @@ function pageMetaInner(route, data, dishes) {
     }
     case 'blog':
       return {
-        title: `Vietnamese food guides | ${name}`,
-        description: t.blogIntro,
+        title: `Vietnamese Recipes & Food Tips | ${name}`,
+        description: 'Learn how to make authentic nước chấm, crispy hành phi and đồ chua at home with easy ingredients from Australian supermarkets.',
         path: path('/blog'),
         jsonLd: {
           '@context': 'https://schema.org',
@@ -114,7 +114,12 @@ function pageMetaInner(route, data, dishes) {
       };
     }
     case 'checkout':
-      return { title: `Order online | ${name}`, description: t.orderCtaText, path: path('/checkout'), noindex: true };
+      return {
+        title: `Pre-Order Online | ${name}`,
+        description: 'Place your order for Saturday pickup (6 am–9 pm) or morning delivery in Albury–Wodonga. Pay by cash or bank transfer on arrival.',
+        path: path('/checkout'),
+        noindex: true,
+      };
     case 'notfound':
       return notFound(name);
     default:
@@ -147,38 +152,37 @@ const offer = (dish) => ({
   priceCurrency: 'AUD',
 });
 
-function dishTitle(dish, txt, shopName) {
-  const override = dish.content?.en?.title;
-  if (override) {
-    const titled = `${override} | ${shopName}`;
-    if ([...titled].length <= 60) return titled;
-  }
-  const [short, gloss] = txt.name.split(' – ');
-  const bare = `${short} | ${shopName}`;
-  if (!gloss) return trimTitle(bare);
-  const words = gloss.split(' ');
-  while (words.length) {
-    const titled = `${short} (${words.join(' ')}) | ${shopName}`;
-    if ([...titled].length <= 60) return titled;
-    words.pop();
-  }
-  return trimTitle(bare);
+const TITLE_SMALL_WORDS = new Set(['a', 'an', 'the', 'and', 'or', 'of', 'in', 'on', 'with', 'for', 'to', 'per']);
+
+function titleCaseName(name) {
+  return name
+    .split(' – ')
+    .map((segment) =>
+      segment
+        .split(' ')
+        .map((w, i) => {
+          if (!w) return w;
+          if (i > 0 && TITLE_SMALL_WORDS.has(w.toLowerCase())) return w.toLowerCase();
+          return w[0].toUpperCase() + w.slice(1);
+        })
+        .join(' '),
+    )
+    .join(' – ');
 }
 
-function trimTitle(title) {
-  return [...title].length <= 60 ? title : `${[...title].slice(0, 59).join('').replace(/\s+\S*$/, '')}…`;
+function dishTitle(dish, txt, shopName) {
+  const titled = titleCaseName(txt.name);
+  const portion = txt.portion ? txt.portion.replace(/\s*\([^)]*\)\s*$/, '') : '';
+  return portion ? `${titled} (${portion}) | ${shopName}` : `${titled} | ${shopName}`;
 }
 
 function dishDescription(dish, txt) {
   const price = audPrice(dish.price);
-  const tail = [price && txt.portion ? `$${price} for ${txt.portion}.` : price ? `$${price}.` : '', 'Pre-order online.']
-    .filter(Boolean)
-    .join(' ');
-  const full = `${txt.short} ${tail}`.replace(/\s+/g, ' ').trim();
-  if ([...full].length <= 155) return full;
-  const room = 155 - [...tail].length - 1;
-  const short = [...txt.short].slice(0, Math.max(0, room - 1)).join('').replace(/\s+\S*$/, '');
-  return `${short}… ${tail}`.replace(/\s+/g, ' ').trim();
+  const viName = dishText(dish, 'vi').name.split(' – ')[0] || txt.name.split(' – ')[0];
+  const lead = `Freshly made ${viName ? viName[0].toLowerCase() + viName.slice(1) : viName}`;
+  const short = (txt.short || '').replace(/\.+$/, '');
+  const pricePart = price && txt.portion ? ` ($${price} / ${txt.portion})` : price ? ` ($${price})` : '';
+  return `${lead}${short ? ` – ${short}` : ''}${pricePart}. Pre-order online for Saturday pickup or delivery in Albury–Wodonga.`;
 }
 
 function postJsonLd(post, name, url, logo) {
