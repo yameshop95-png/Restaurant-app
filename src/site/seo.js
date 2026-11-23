@@ -130,7 +130,7 @@ function pageMetaInner(route, data, dishes) {
         twitterDescription: 'Homemade bánh cuốn, giò lụa, chả chiên & bánh giò made fresh every week. Pre-order for Saturday pickup or delivery.',
         keywords: 'Wodonga Vietnamese food, Albury Vietnamese food, bánh cuốn Albury Wodonga, giò lụa Wodonga, chả chiên, Vietnamese takeaway Wodonga, homemade Vietnamese food',
         geo: true,
-        image: url('/site/photos/banh-cuon.webp'),
+        image: url('/site/photos/og-cover.jpg'),
         imageAlt: 'Fresh bánh cuốn topped with fried shallots, herbs and sliced giò lụa',
         path: path(),
         jsonLd: { '@context': 'https://schema.org', ...business },
