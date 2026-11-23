@@ -1,7 +1,6 @@
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import Markdown from '../Markdown';
 import { findPost, formatPostDate, path } from '../lib';
-import { SITE_TEXT } from '../text';
 import { DishCard, Link, Photo, useSite } from '../ui';
 import NotFound from './NotFound';
 
@@ -18,6 +17,7 @@ export default function Post({ slug }) {
           <ArrowLeft size={16} /> {t.blogTitle}
         </Link>
         <p className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-500">{formatPostDate(post.date, lang)}</p>
+        <p className="mt-1 text-sm text-slate-500">{t.postAuthor}</p>
         <h1 className="mt-2 font-serif text-4xl font-bold leading-tight text-ink text-balance sm:text-5xl">{post.title}</h1>
         <p className="mt-4 text-xl leading-relaxed text-slate-600">{post.description}</p>
         {post.cover && (
@@ -28,9 +28,6 @@ export default function Post({ slug }) {
         <div className="mt-8">
           <Markdown source={post.body} onNavigate={navigate} />
         </div>
-        {!post.body.includes(SITE_TEXT.en.storage) && (
-          <p className="mt-8 text-[17px] leading-relaxed text-slate-700">{SITE_TEXT.en.storage}</p>
-        )}
       </article>
 
       {related.length > 0 && (

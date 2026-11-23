@@ -82,6 +82,7 @@ export const SITE_TEXT = {
     readMore: 'Read article',
     englishOnly: '',
     inThisPost: 'Dishes in this article',
+    postAuthor: 'By the Wodonga Vietnamese Food kitchen — we make these dishes fresh every week in Albury–Wodonga.',
     orderCta: 'Ready to try it?',
     orderCtaText:
       'Made every week. Pre-order online. Pick up on Saturday, 6 am to 9 pm, or another day by request, or get Saturday morning delivery.',
@@ -172,6 +173,7 @@ export const SITE_TEXT = {
     readMore: 'Đọc bài',
     englishOnly: 'Bài viết bằng tiếng Anh',
     inThisPost: 'Món trong bài',
+    postAuthor: 'Bếp Wodonga Vietnamese Food — quán tự làm các món này tươi mới mỗi tuần tại Albury–Wodonga.',
     orderCta: 'Muốn ăn thử?',
     orderCtaText: 'Làm mới mỗi tuần. Đặt trước online, nhận hàng thứ 7, 6 giờ sáng đến 9 giờ tối, ngày khác theo yêu cầu, hoặc giao sáng thứ 7.',
     cart: (n, total) => `${n} món · ${total}`,
