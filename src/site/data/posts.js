@@ -87,7 +87,7 @@ Spoon the sauce into small bowls and put it on the table with:
 
 Short on time? Pre-order [ours](/order/menu/banh-cuon) for Saturday pickup. Our bánh cuốn already comes with nước mắm dipping sauce and fried shallots. Order by 10 pm Friday, then pick up on Saturday between 6 am and 9 pm, or choose Saturday delivery (7 am–2 pm) in Wodonga, West Wodonga, Leneva, Baranduda, Albury, Lavington and Thurgoona. You pay when you collect or when the order arrives.
 
-Keeps for up to 7 days in the fridge or 6 months in the freezer. That line is for our ready-made dishes, such as bánh cuốn and giò lụa. Homemade nước chấm is different: keep it in a clean jar in the fridge and use it within a week, or keep the water, sugar and fish sauce base for up to 2 weeks and finish it when you eat.
+Storing it: keep homemade nước chấm in a clean jar in the fridge and use it within a week, or keep the water, sugar and fish sauce base for up to 2 weeks and add the lime, garlic and chilli when you serve it.
 
 ## Frequently asked questions
 
@@ -198,7 +198,7 @@ Short on time? Pre-order [ours](/order/menu/banh-cuon) for Saturday pickup. Our 
 
 If you also want a dipping sauce to go with the shallots, see our [nước chấm recipe](/order/blog/how-to-make-nuoc-cham).
 
-Keeps for up to 7 days in the fridge or 6 months in the freezer. That line is for our ready-made dishes, such as bánh cuốn and xôi khúc. Homemade hành phi is different: keep it in an airtight jar at room temperature and use it while it is still crisp, usually within 1 to 2 weeks. The strained shallot oil keeps in the fridge for several weeks.
+Storing it: keep homemade hành phi in an airtight jar at room temperature and use it while it is still crisp, usually within 1 to 2 weeks. The strained shallot oil keeps in the fridge for several weeks.
 
 ## Frequently asked questions
 
@@ -298,7 +298,7 @@ Drain a small handful and add it to:
 
 Short on time? Pre-order [our giò lụa](/order/menu/gio-lua) for Saturday pickup and make the pickle the day before. Order by 10 pm Friday, then pick up on Saturday between 6 am and 9 pm, or choose Saturday delivery (7 am–2 pm) in Wodonga, West Wodonga, Leneva, Baranduda, Albury, Lavington and Thurgoona. You pay when you collect or when the order arrives. Browse the full [menu](/order/menu) if you want a few kinds of roll on the same plate.
 
-Keeps for up to 7 days in the fridge or 6 months in the freezer. That line is for our ready-made dishes, such as giò lụa and chả. Homemade đồ chua is different: keep it in a clean jar in the fridge, covered by its brine, and use it within about 2 weeks. It is not a freezer pickle.
+Storing it: keep homemade đồ chua in a clean jar in the fridge, covered by its brine, and use it within about 2 weeks. It is not a freezer pickle.
 
 ## Frequently asked questions
 
