@@ -91,6 +91,8 @@ export default defineConfig(({ isSsrBuild }) => ({
         globIgnores: ['order.html', 'order/**', 'site/**', 'assets/order-*'],
         // Máy chủ AI luôn phải gọi qua mạng, không trả trang app thay thế
         navigateFallbackDenylist: [/^\/api\//, /^\/order/],
+        // wodovn.xyz/ → website bán hàng: chạy trước bộ đệm trang app (xem public/sw-redirect.js)
+        importScripts: ['sw-redirect.js'],
         // Font chữ (Google Fonts): lưu lại để lần sau mở không cần mạng vẫn đúng font
         runtimeCaching: [
           // Ảnh nhỏ món trong danh sách đơn (36 KB tất cả): lưu lại để mở lại không cần mạng

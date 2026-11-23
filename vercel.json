@@ -11,7 +11,7 @@
         }
       ],
       "destination": "/order",
-      "statusCode": 301
+      "statusCode": 307
     },
     {
       "source": "/",
@@ -22,7 +22,7 @@
         }
       ],
       "destination": "/order",
-      "statusCode": 301
+      "statusCode": 307
     }
   ],
   "functions": {
