@@ -177,3 +177,22 @@
 
 ---
 *Claude khi làm xong việc gì lớn: cứ ghi tiếp vào file này (mục 1/5) hoặc nhắn Paul — James sẽ đồng bộ lại.*
+
+---
+
+## 7. Rà soát của Claude (23/11/2026, theo yêu cầu Paul)
+
+**Đã kiểm lại trên main (ccf439b):** build PASS; test:sync, performance, dishprofit, insights, cache, classify, donut (23), batches (45), routelinks (45), ordergeo (13) đều PASS; công thức `autoTarget.js` khớp mô tả; `LATE_CUTOFF_HOUR = 22`, `MAX_ROUTE_STOPS = 10`, `SITE_URL` = wodovn.xyz đúng như ghi; luồng xác nhận đơn (#58) đặt cả `receivedAt` lẫn `confirmedAt`, khớp với chuông đơn web.
+
+**Sai lệch với tài liệu:**
+- Chuyển hướng wodovn.xyz/ hiện là **301** (từ commit 7622a0b), không phải 307 như mục 1 (#60) ghi. 301 bị trình duyệt nhớ cứng; nếu sau này muốn `/` hiện app khác thì người dùng cũ vẫn bị chuyển. Đề xuất đổi về 307 — chưa đổi, cần Paul/James chốt.
+
+**Đã sửa (Claude):**
+- Tuần Tết bị tính hai lần: `holidayOf` coi Tết là dịp lễ, cộng thêm hệ số `tetPeak`. Nay `holidayOf` bỏ Tết; Tết chỉ có `tetPeak`.
+- Hệ số `tetPeak` cho món gần như chỉ bán dịp Tết (bánh chưng, bánh tét) không còn nhân một tỉ lệ rất lớn trên mức nền gần bằng 0; lấy đúng số đã bán tuần Tết năm trước. Món bán đều vẫn nhân hệ số, kẹp tối đa 5 lần.
+- Dự báo tuần Tết 2027 (sheet 28 tuần): tổng từ 293 xuống còn 172 phần.
+
+**Còn mở (đã nằm trong mục 5, Claude xác nhận đúng):**
+- `matchZone` (JS) và `match_zone` (SQL) vẫn khác nhau cách bỏ dấu. Địa chỉ úc ít dấu nên ảnh hưởng nhỏ, nhưng nên hợp nhất.
+- `esbuild` vẫn chưa khai báo trong `package.json` (chỉ chạy được nhờ Vite kéo theo).
+- Giao không được (khách vắng nhà) — chờ Paul quyết.

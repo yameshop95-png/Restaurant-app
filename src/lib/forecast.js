@@ -146,7 +146,8 @@ export function publicHolidayWeek(start) {
 export function holidayOf(start) {
   const end = addDays(start, 14);
   for (const y of [start.getFullYear(), start.getFullYear() + 1]) {
-    for (const e of eventsOfYear(y)) if (e.date >= start && e.date < end) return e;
+    // Tết không tính ở đây: đã có hệ số riêng tetPeak (tuần sát Tết), tránh nhân đôi
+    for (const e of eventsOfYear(y)) if (e.id !== 'tet' && e.date >= start && e.date < end) return e;
   }
   return null;
 }
@@ -383,11 +384,17 @@ export function weeklyForecast({ orders, now, weatherLog = {} }) {
       const normal = done.filter((w) => w.cond.tetPeak !== 'yes');
       const avg = normal.reduce((a, w) => a + (w.qty.get(k) ?? 0), 0) / Math.max(1, normal.length);
       const tet = tetWeeks.reduce((a, w) => a + (w.qty.get(k) ?? 0), 0) / tetWeeks.length;
+      // Kẹp hệ số tối đa 5 lần: món ít bán quanh năm không được phóng đại vì vài đơn Tết
       const f = avg > 0 ? (tetWeeks.length * (tet / avg) + 1) / (tetWeeks.length + 1) : 1;
       before += r.expected;
-      if (avg > 0 || tet > 0) {
-        r.expected = avg > 0 ? r.expected * f : (r.expected + tet) / 2;
-        r.parts.push({ family: 'tetPeak', value: 'yes', f, n: tetWeeks.length });
+      if (avg >= 0.5) {
+        // Món bán đều quanh năm: nhân hệ số Tết (kẹp tối đa 5 lần cho chắc)
+        r.expected *= Math.min(5, f);
+        r.parts.push({ family: 'tetPeak', value: 'yes', f: Math.min(5, f), n: tetWeeks.length });
+      } else if (tet > 0) {
+        // Món gần như chỉ bán dịp Tết (bánh chưng, bánh tét...): lấy đúng số đã bán tuần Tết năm trước
+        r.expected = tet;
+        r.parts.push({ family: 'tetOnly', value: 'yes', f: 1, n: 0 });
       }
       after += r.expected;
     }
