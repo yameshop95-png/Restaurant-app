@@ -4,9 +4,9 @@ import { CATEGORIES, DISHES } from './data/dishes';
 import { POSTS } from './data/posts';
 import { formatPortion } from './format';
 
-// Website nằm dưới /order (cùng tên miền với app nhận order). Có tên miền riêng thì đổi SITE_URL.
+// Website nằm dưới /order (cùng deployment với app nhận order). Tên miền chính thức: wodovn.xyz.
 export const BASE = '/order';
-export const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://restaurant-app-seven-lime.vercel.app';
+export const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://www.wodovn.xyz';
 export const path = (p = '') => `${BASE}${p}`;
 // Blog bật: trang /order/blog và từng bài được dựng sẵn, có trong sitemap.
 export const BLOG_ENABLED = true;
