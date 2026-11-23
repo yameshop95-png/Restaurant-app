@@ -173,6 +173,52 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus, onSto
     </section>
   );
 
+  // Đơn giao không được (khách vắng nhà, sai địa chỉ…): nằm ngay dưới lộ trình, gọi khách hẹn lại rồi Giao lại, hoặc Huỷ
+  const failed = orders.filter((o) => o.status === 'failed');
+  const failedSection = failed.length > 0 && (
+    <section className="overflow-hidden rounded-3xl border border-red-200 bg-card shadow-sm">
+      <h3 className="flex items-center gap-2 bg-red-50 px-4 py-3 font-bold text-red-700">
+        <X size={17} /> Giao không được ({failed.length})
+      </h3>
+      <ul className="divide-y divide-red-100">
+        {failed.map((order) => (
+          <li key={order.id} className="space-y-2 px-4 py-3">
+            <p className="font-bold text-slate-900">
+              #{order.number} · {order.customer?.name || 'Khách'}
+            </p>
+            {order.customer?.address && <p className="text-sm text-slate-600">{order.customer.address}</p>}
+            <p className="text-sm text-slate-500">
+              {formatMoney(orderTotal(order))}
+              {!order.paid && <span className="font-semibold text-red-600"> · chưa thu tiền</span>}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {order.customer?.phone && (
+                <a
+                  href={`tel:${order.customer.phone}`}
+                  className="flex items-center gap-1 rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700 active:bg-slate-200"
+                >
+                  <Phone size={14} /> Gọi
+                </a>
+              )}
+              <button
+                onClick={() => onSetStatus(order.id, 'delivering')}
+                className="flex items-center gap-1 rounded-lg bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white active:bg-blue-600"
+              >
+                <Navigation size={14} /> Giao lại
+              </button>
+              <button
+                onClick={() => window.confirm(`Huỷ đơn #${order.number}?`) && onSetStatus(order.id, 'cancelled')}
+                className="flex items-center gap-1 rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-600 active:bg-slate-200"
+              >
+                <X size={14} /> Huỷ
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+
   if (!active.length) {
     return (
       <div className="space-y-4">
@@ -180,6 +226,7 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus, onSto
         <p className="rounded-3xl bg-card px-5 py-12 text-center text-slate-400">
           Chưa có đơn nào đang giao — khi bắt đầu đi giao, bấm “Đã mang đi” trên thẻ đơn
         </p>
+        {failedSection}
       </div>
     );
   }
@@ -409,6 +456,8 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus, onSto
           </ol>
         </section>
       ))}
+
+      {failedSection}
 
       <p className="flex items-center justify-center gap-1 text-xs text-slate-400">
         <Route size={12} /> Bản đồ: © OpenStreetMap

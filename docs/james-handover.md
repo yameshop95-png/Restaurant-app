@@ -232,3 +232,4 @@ Cách chạy: đơn web qua bản sao `place_web_order` (dedupe) trên Postgres 
 - **Giờ đến lấy:** giữ nguyên (Paul: không cần khắt khe).
 - **In lại bill khi sửa món:** `App.editOrder` so món/phí/giảm giá cũ–mới, đổi thì hỏi "In lại bill?" → `sendToShopPrinter`.
 - **Cảnh báo đơn trùng:** `src/lib/duplicates.js`. Tạo đơn tay mà cùng khách (SĐT ≥ 8 số, không có thì tên bỏ dấu) đã có đơn chưa huỷ cùng ngày → hỏi lại trước khi tạo. Thẻ đơn có chip đỏ "Có thể trùng đơn #N" khi cùng khách, cùng ngày, món giống hệt.
+- **Cập nhật (Paul chốt lại):** bỏ tab đỏ "Giao không được" khỏi thanh trạng thái danh sách. Đơn `failed` giờ hiện trong khung đỏ "Giao không được (N)" ngay **dưới Lộ trình giao** ở `RoutePlanner` (cả khi đã giao hết các điểm), mỗi đơn có Gọi / Giao lại / Huỷ.

@@ -62,8 +62,6 @@ const FILTERS = [
   { id: 'cooking', label: 'Chờ nấu', match: isCookingOrder },
   { id: 'done', label: 'Hoàn thành', match: (o) => o.status === 'done' },
   { id: 'delivering', label: 'Đang giao', match: (o) => o.status === 'delivering' },
-  // Đơn giao không được (khách vắng nhà…): tab đỏ riêng ở Đơn ship, chờ giao lại hoặc huỷ
-  { id: 'failed', label: 'Giao không được', match: (o) => o.status === 'failed' },
   { id: 'shipped', label: 'Đã ship', match: (o) => o.status === 'shipped' },
   { id: 'paid', label: 'Đã thanh toán', match: (o) => o.paid && o.status !== 'cancelled' },
   { id: 'cancelled', label: 'Đã huỷ', match: (o) => o.status === 'cancelled' },
@@ -987,26 +985,19 @@ export default function OrdersPage({
 
           {!fixedFilter && (
           <div ref={tabsRef} data-no-swipe className={`mb-4 flex gap-2 overflow-x-auto ${searching ? 'hidden' : ''}`}>
-            {FILTERS.filter((f) => f.id !== 'failed' || fixedType === 'delivery' || tabCounts.failed > 0).map((f) => {
+            {FILTERS.map((f) => {
               const n = tabCounts[f.id];
               const active = filter === f.id;
-              const red = f.id === 'failed';
               return (
                 <button
                   key={f.id}
                   onClick={() => setFilter(f.id)}
                   aria-pressed={active}
                   className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    red
-                      ? active
-                        ? 'bg-red-600 text-white'
-                        : 'border border-red-200 bg-red-50 text-red-700'
-                      : active
-                        ? 'bg-slate-900 text-slate-50'
-                        : 'bg-card text-slate-600'
+                    active ? 'bg-slate-900 text-slate-50' : 'bg-card text-slate-600'
                   }`}
                 >
-                  {filterLabel(f)} <span className={red ? (active ? 'text-red-100' : 'text-red-400') : active ? 'text-slate-300' : 'text-slate-400'}>{n}</span>
+                  {filterLabel(f)} <span className={active ? 'text-slate-300' : 'text-slate-400'}>{n}</span>
                 </button>
               );
             })}
