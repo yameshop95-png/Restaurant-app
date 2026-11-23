@@ -6,6 +6,7 @@ export const STATUS_LABEL = {
   delivering: 'Đang giao',
   shipped: 'Đã ship',
   cancelled: 'Đã huỷ',
+  failed: 'Giao không được',
 };
 
 // Đơn đến lấy: bước cuối là "Đã lấy" thay vì "Đã ship"
@@ -34,12 +35,12 @@ export function isShippedToday(o, now = new Date()) {
 // "Chưa nhắn khách" để máy khác (điện thoại có SIM) nhắn bù; gửi/copy tin xác
 // nhận ở bất cứ máy nào cũng ghi messagedAt và chip tự mất trên mọi máy.
 export const needsCustomerMessage = (o) =>
-  o?.source === 'web' && o?.status === 'pending' && !!o?.confirmedAt && !o?.messagedAt;
+  o?.source === 'web' && o?.status === 'pending' && !!o?.confirmedAt && !o?.messagedAt && !o?.messageSkippedAt;
 
 // Bước trước của từng trạng thái, dùng cho nút "quay lại" trên thẻ đơn.
 // Riêng "shipped": đơn giao hàng quay về "delivering", đơn đến lấy quay về "done" —
 // OrdersPage tự phân biệt theo loại đơn (xem previousStatus ở đó), ở đây giữ giá trị của đơn đến lấy.
-export const PREVIOUS_STATUS = { done: 'pending', delivering: 'done', shipped: 'done', cancelled: 'pending' };
+export const PREVIOUS_STATUS = { done: 'pending', delivering: 'done', shipped: 'done', cancelled: 'pending', failed: 'delivering' };
 
 export const PAYMENT_METHODS = [
   { id: 'cash', label: 'Tiền mặt' },

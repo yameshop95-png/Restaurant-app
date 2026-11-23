@@ -77,3 +77,14 @@ export function planRoute(orders, geo, start, now = new Date(), slotMinutes = 30
   }
   return { slots: result, totalKm };
 }
+
+// Ước tính thời gian giao xong cả chuyến: đường thật ≈ 1,4 × đường chim bay, chạy trung bình 40 km/h
+// trong khu Albury–Wodonga, cộng ~4 phút mỗi điểm (đỗ xe, gọi khách, đưa hàng, thu tiền).
+export const ROAD_FACTOR = 1.4;
+export const AVG_SPEED_KMH = 40;
+export const MINUTES_PER_STOP = 4;
+export function estimateRunMinutes(totalKm, stops) {
+  const drive = ((totalKm * ROAD_FACTOR) / AVG_SPEED_KMH) * 60;
+  return { drive: Math.round(drive), stopsTime: stops * MINUTES_PER_STOP, total: Math.round(drive + stops * MINUTES_PER_STOP) };
+}
+export const formatMinutes = (m) => (m >= 60 ? `${Math.floor(m / 60)} giờ ${String(m % 60).padStart(2, '0')} phút` : `${m} phút`);

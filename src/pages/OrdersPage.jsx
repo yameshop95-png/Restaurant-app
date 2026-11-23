@@ -39,6 +39,7 @@ import { sendManyToShopPrinter, sendToShopPrinter } from '../lib/printQueue';
 import { DEFAULT_ZONES } from '../lib/shippingZones';
 import { mapsUrl, shareOrder } from '../lib/shareOrder';
 import { formatMoney, itemsTotal, orderTotal } from '../lib/stats';
+import { duplicateNumbers } from '../lib/duplicates';
 
 // Trạng thái xử lý đơn: Chờ xử lý → Hoàn thành (nấu xong) → Đang giao (chỉ đơn giao hàng) → Đã ship / Đã lấy. Thanh toán là cờ riêng (`paid`).
 const STATUS = {
@@ -48,6 +49,7 @@ const STATUS = {
   delivering: { label: 'Đang giao', badge: 'bg-slate-100 text-slate-800' },
   shipped: { label: 'Đã ship', badge: 'bg-slate-100 text-slate-800' },
   cancelled: { label: 'Đã huỷ', badge: 'bg-slate-50 text-slate-500' },
+  failed: { label: 'Giao không được', badge: 'bg-red-100 text-red-700' },
 };
 
 const PAGE = 30;
@@ -60,6 +62,8 @@ const FILTERS = [
   { id: 'cooking', label: 'Chờ nấu', match: isCookingOrder },
   { id: 'done', label: 'Hoàn thành', match: (o) => o.status === 'done' },
   { id: 'delivering', label: 'Đang giao', match: (o) => o.status === 'delivering' },
+  // Đơn giao không được (khách vắng nhà…): tab đỏ riêng ở Đơn ship, chờ giao lại hoặc huỷ
+  { id: 'failed', label: 'Giao không được', match: (o) => o.status === 'failed' },
   { id: 'shipped', label: 'Đã ship', match: (o) => o.status === 'shipped' },
   { id: 'paid', label: 'Đã thanh toán', match: (o) => o.paid && o.status !== 'cancelled' },
   { id: 'cancelled', label: 'Đã huỷ', match: (o) => o.status === 'cancelled' },
@@ -169,7 +173,7 @@ function DishThumb({ name }) {
   return <img src={photo} alt="" width="40" height="40" loading="lazy" className="h-10 w-10 shrink-0 rounded-lg object-cover" />;
 }
 
-function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetStatus, onSetPaid, onMarkStep, batchLabel }) {
+function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetStatus, onSetPaid, onMarkStep, batchLabel, duplicateOf }) {
   const status = STATUS[order.status];
   const cancelled = order.status === 'cancelled';
   const due = dueInfo(order, now);
@@ -177,6 +181,8 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
   // Bấm "Đã thanh toán" thì hỏi khách trả bằng gì
   const [choosingPay, setChoosingPay] = useState(false);
   const [messaging, setMessaging] = useState(false);
+  // Tick "Không cần nhắn tin" khi xác nhận đơn web (khách đã gọi / đã biết đơn được nhận)
+  const [skipMessage, setSkipMessage] = useState(false);
   // Đơn online chờ xử lý đi qua 3 bước: nhận đơn → nhắn xác nhận cho khách → hoàn thành
   const stage = stageOf(order);
   const [more, setMore] = useState(false);
@@ -353,9 +359,16 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
 
       {/* Đã xác nhận trên máy không có SMS (vd PC) mà chưa máy nào nhắn cho khách:
           nhắc để điện thoại nhắn bù, tránh xác nhận xong rồi quên nhắn */}
-      {needsCustomerMessage(order) && (
+      {(needsCustomerMessage(order) || duplicateOf?.length > 0) && (
         <div className="mt-3 flex flex-wrap gap-1.5">
-          <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">Chưa nhắn khách</span>
+          {needsCustomerMessage(order) && (
+            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">Chưa nhắn khách</span>
+          )}
+          {duplicateOf?.length > 0 && (
+            <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-700">
+              Có thể trùng đơn {duplicateOf.map((n) => `#${n}`).join(', ')}
+            </span>
+          )}
         </div>
       )}
 
@@ -406,6 +419,37 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
         <span className="font-semibold text-slate-500">Tổng</span>
         <span className="text-xl font-bold text-slate-900">{formatMoney(orderTotal(order))}</span>
       </div>
+
+      {order.status === 'delivering' && (
+        <button
+          onClick={() => window.confirm(`Đơn #${order.number} giao không được (khách vắng, sai địa chỉ…)?`) && onSetStatus(order.id, 'failed')}
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-300 bg-red-50 py-2 text-sm font-semibold text-red-700 active:bg-red-100"
+        >
+          <X size={16} /> Giao không được
+        </button>
+      )}
+
+      {order.status === 'failed' && (
+        <div className="mt-3 space-y-2">
+          <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+            Giao không được. Gọi khách hẹn lại rồi bấm Giao lại, hoặc huỷ đơn.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => window.confirm(`Huỷ đơn #${order.number}?`) && onSetStatus(order.id, 'cancelled')}
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-4 py-3 font-semibold text-slate-600 active:bg-slate-200"
+            >
+              <X size={18} /> Huỷ
+            </button>
+            <button
+              onClick={() => onSetStatus(order.id, 'delivering')}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600"
+            >
+              <Truck size={18} /> Giao lại
+            </button>
+          </div>
+        </div>
+      )}
 
       {(order.status === 'done' || order.status === 'delivering') && (
         <div className="mt-3 flex gap-2">
@@ -494,6 +538,17 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
               Kiểm tra làm được và đủ món rồi bấm Xác nhận đơn. Nhắn khách làm lúc nào cũng được, máy nào cũng được.
             </p>
           )}
+          {stage === 'received' && (
+            <label className="flex items-center gap-2 px-1 text-sm font-semibold text-slate-700">
+              <input
+                type="checkbox"
+                checked={skipMessage}
+                onChange={(e) => setSkipMessage(e.target.checked)}
+                className="h-5 w-5 accent-blue-500"
+              />
+              Nhận đơn, không cần nhắn tin cho khách
+            </label>
+          )}
           <div className="flex gap-2">
             <button
               onClick={() => window.confirm(`Huỷ đơn #${order.number}?`) && onSetStatus(order.id, 'cancelled')}
@@ -520,7 +575,11 @@ function OrderCard({ order, now, shopName, shopAddress, mapsApp, onEdit, onSetSt
                 <button
                   onClick={() => {
                     const at = new Date().toISOString();
-                    onMarkStep(order.id, { receivedAt: order.receivedAt ?? at, confirmedAt: at }, 'đã xác nhận đơn');
+                    onMarkStep(
+                      order.id,
+                      { receivedAt: order.receivedAt ?? at, confirmedAt: at, ...(skipMessage ? { messageSkippedAt: at } : {}) },
+                      skipMessage ? 'đã xác nhận đơn, không cần nhắn tin' : 'đã xác nhận đơn',
+                    );
                   }}
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-500 py-3 font-semibold text-white active:bg-blue-600"
                 >
@@ -716,6 +775,8 @@ export default function OrdersPage({
     else list.sort((a, b) => dueTime(b) - dueTime(a));
     return list;
   }, [orders, ofType, searching, searchQ, date, filter, fixedFilter]);
+  // Đơn có thể trùng (cùng khách, cùng ngày, món giống hệt): gắn chip đỏ trên thẻ
+  const dups = useMemo(() => duplicateNumbers(orders), [orders]);
   const tabCounts = useMemo(
     () =>
       Object.fromEntries(
@@ -926,19 +987,26 @@ export default function OrdersPage({
 
           {!fixedFilter && (
           <div ref={tabsRef} data-no-swipe className={`mb-4 flex gap-2 overflow-x-auto ${searching ? 'hidden' : ''}`}>
-            {FILTERS.map((f) => {
+            {FILTERS.filter((f) => f.id !== 'failed' || fixedType === 'delivery' || tabCounts.failed > 0).map((f) => {
               const n = tabCounts[f.id];
               const active = filter === f.id;
+              const red = f.id === 'failed';
               return (
                 <button
                   key={f.id}
                   onClick={() => setFilter(f.id)}
                   aria-pressed={active}
                   className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    active ? 'bg-slate-900 text-slate-50' : 'bg-card text-slate-600'
+                    red
+                      ? active
+                        ? 'bg-red-600 text-white'
+                        : 'border border-red-200 bg-red-50 text-red-700'
+                      : active
+                        ? 'bg-slate-900 text-slate-50'
+                        : 'bg-card text-slate-600'
                   }`}
                 >
-                  {filterLabel(f)} <span className={active ? 'text-slate-300' : 'text-slate-400'}>{n}</span>
+                  {filterLabel(f)} <span className={red ? (active ? 'text-red-100' : 'text-red-400') : active ? 'text-slate-300' : 'text-slate-400'}>{n}</span>
                 </button>
               );
             })}
@@ -1055,6 +1123,7 @@ export default function OrdersPage({
                       onSetPaid={onSetPaid}
                       onMarkStep={onMarkStep}
                       batchLabel={cookingView ? batchLabelOf(selected) : null}
+                      duplicateOf={dups.get(selected.id)}
                       />
                     </ul>
                   </div>
@@ -1082,6 +1151,7 @@ export default function OrdersPage({
                             onSetPaid={onSetPaid}
                             onMarkStep={onMarkStep}
                             batchLabel={cookingView ? batchLabelOf(order) : null}
+                            duplicateOf={dups.get(order.id)}
                             />
                           ))}
                         </ul>

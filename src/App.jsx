@@ -241,15 +241,24 @@ function Shop({ account, onLogout }) {
     rememberCustomer(order.customer);
   };
   const editOrder = (id, order) => {
+    const prev = orders.find((o) => o.id === id);
     updateOrder(id, order);
     rememberCustomer(order.customer);
+    // Sửa món / số lượng / phí: hỏi in lại bill để bếp và khách có bill đúng
+    const sig = (o) => JSON.stringify([o?.items, o?.shippingFee ?? 0, o?.discount ?? 0]);
+    if (prev && sig(prev) !== sig(order) && window.confirm(`Đơn #${prev.number} đã đổi món. In lại bill?`)) {
+      sendToShopPrinter({ ...prev, ...order, id, number: prev.number }, settings.shopName).catch(() =>
+        window.alert('Chưa gửi được lệnh in. Kiểm tra mạng rồi bấm In bill trên thẻ đơn.'),
+      );
+    }
   };
 
   const counts = useMemo(() => {
     const pending = orders.filter((o) => o.status === 'pending');
     const pendingDelivery = pending.filter((o) => o.type === 'delivery').length;
     // Badge tab Đơn ship: cả đơn giao đang chờ lẫn đơn đang đi giao đều cần để mắt tới
-    const deliveringDelivery = orders.filter((o) => o.status === 'delivering' && o.type === 'delivery').length;
+    // Đơn giao không được cũng cần xử lý (giao lại / huỷ) nên tính vào badge Đơn ship
+    const deliveringDelivery = orders.filter((o) => (o.status === 'delivering' || o.status === 'failed') && o.type === 'delivery').length;
     // Hai trạm tách nhau: hộp thư đến (Chờ xử lý) chỉ đếm đơn web chưa xác nhận;
     // đơn đã xác nhận đếm ở badge mục Chờ nấu. pending* giữ nguyên nghĩa tổng đơn đang chờ cho các ô tổng quan.
     const cooking = pending.filter(isCookingOrder);

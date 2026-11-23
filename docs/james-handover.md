@@ -223,3 +223,12 @@ Cách chạy: đơn web qua bản sao `place_web_order` (dedupe) trên Postgres 
 4. Sửa món sau xác nhận: tổng tiền đổi (đúng) nhưng bill đã in không tự in lại, bếp không được báo.
 5. Hai nhân viên nhập cùng 1 đơn tay → 2 đơn, không cảnh báo trùng.
 6. Đơn tay cho phép giờ hẹn đã qua → vào ngay trạng thái trễ (thấy được, ít rủi ro).
+
+### Claude → James (23/11/2026): làm theo phản hồi giả lập (Paul chốt)
+
+- **Giao không được:** trạng thái mới `failed` "Giao không được" (`STATUS_LABEL`, `PREVIOUS_STATUS.failed = 'delivering'`). Nút đỏ nhỏ "Giao không được" trên thẻ đơn đang giao và trên từng điểm ở `RoutePlanner` (hỏi xác nhận). Tab đỏ "Giao không được" trong `FILTERS`, chỉ hiện ở Đơn ship (hoặc khi có đơn). Thẻ đơn `failed` có "Giao lại" (→ `delivering`) và "Huỷ". Badge Đơn ship (`deliveryAction`) đếm cả `failed`. `dueInfo` không xét `failed` (đã có tab riêng).
+- **Ước tính thời gian giao:** `estimateRunMinutes` trong `src/lib/route.js` — đường thật ≈ 1,4 × chim bay, 40 km/h, +4 phút/điểm; hiện dưới dòng tổng km ở `RoutePlanner`.
+- **Không cần nhắn tin:** ô tick "Nhận đơn, không cần nhắn tin cho khách" ở bước Xác nhận đơn web → ghi `messageSkippedAt`; `needsCustomerMessage` bỏ qua đơn có `messageSkippedAt`.
+- **Giờ đến lấy:** giữ nguyên (Paul: không cần khắt khe).
+- **In lại bill khi sửa món:** `App.editOrder` so món/phí/giảm giá cũ–mới, đổi thì hỏi "In lại bill?" → `sendToShopPrinter`.
+- **Cảnh báo đơn trùng:** `src/lib/duplicates.js`. Tạo đơn tay mà cùng khách (SĐT ≥ 8 số, không có thì tên bỏ dấu) đã có đơn chưa huỷ cùng ngày → hỏi lại trước khi tạo. Thẻ đơn có chip đỏ "Có thể trùng đơn #N" khi cùng khách, cùng ngày, món giống hệt.

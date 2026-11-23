@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { History, MapPin, Minus, Phone, Plus, UserRound, X } from 'lucide-react';
 import { sameCustomer, searchCustomers } from '../hooks/useCustomers';
 import { ORDER_TYPES } from '../lib/orderStatus';
+import { findDuplicate } from '../lib/duplicates';
 import { DEFAULT_ZONES, matchZone } from '../lib/shippingZones';
 import { formatMoney } from '../lib/stats';
 
@@ -194,6 +195,23 @@ export default function NewOrderSheet({ type, order, menu, customers = [], order
       return;
     }
     const round = (n) => Math.round(n * 100) / 100;
+    // Đơn mới: cùng khách đã có đơn (chưa huỷ) cùng ngày → hỏi lại, tránh 2 người nhập cùng 1 đơn
+    if (!order) {
+      const draft = {
+        customer: { name: form.name.trim(), phone: form.phone.trim() },
+        deliverAt: new Date(`${form.date}T${form.time}`).toISOString(),
+        items,
+      };
+      const dup = findDuplicate(draft, orders);
+      if (dup) {
+        const same = findDuplicate(draft, orders, { sameItems: true });
+        const at = new Date(dup.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        const msg = same
+          ? `Đơn #${same.number} của ${same.customer?.name || 'khách này'} đã có y hệt món này cùng ngày (tạo lúc ${at}). Vẫn tạo thêm đơn mới?`
+          : `Khách ${dup.customer?.name || ''} đã có đơn #${dup.number} cùng ngày (tạo lúc ${at}). Vẫn tạo thêm đơn mới?`;
+        if (!window.confirm(msg)) return;
+      }
+    }
     onSubmit({
       type,
       customer: {

@@ -1,11 +1,11 @@
 import { Fragment, useMemo, useState } from 'react';
-import { AlarmClock, Check, Loader2, LocateFixed, MapPin, Navigation, Phone, Route, Send, Store } from 'lucide-react';
+import { AlarmClock, Check, Clock, Loader2, LocateFixed, MapPin, Navigation, Phone, Route, Send, Store, X } from 'lucide-react';
 import { dueInfo, formatDue } from '../lib/due';
 import { cachedGeocode, currentPosition, directionsUrl, geocode, routeSegments } from '../lib/geo';
 import { geoRecordFor, storedGeoOf } from '../lib/orderGeo';
 import { isShippedToday } from '../lib/orderStatus';
 import { mapsUrl, routeText, shareText } from '../lib/shareOrder';
-import { planRoute, SLOT_OPTIONS } from '../lib/route';
+import { estimateRunMinutes, formatMinutes, planRoute, SLOT_OPTIONS } from '../lib/route';
 import { formatMoney, orderTotal } from '../lib/stats';
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -277,6 +277,19 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus, onSto
             Tổng ~{plan.totalKm.toFixed(1)} km đường chim bay · đường thật thường dài hơn
           </p>
         )}
+        {plan.totalKm > 0 && stops.length > 0 && (() => {
+          const est = estimateRunMinutes(plan.totalKm, stops.length);
+          return (
+            <div className="text-center">
+              <p className="flex items-center justify-center gap-1.5 text-sm font-semibold text-slate-700">
+                <Clock size={15} /> Ước tính giao xong ~{formatMinutes(est.total)}
+              </p>
+              <p className="text-xs text-slate-400">
+                lái xe ~{formatMinutes(est.drive)} + {stops.length} điểm × 4 phút
+              </p>
+            </div>
+          );
+        })()}
       </section>
 
       {plan.slots.map((slot) => (
@@ -379,6 +392,15 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus, onSto
                       className="flex items-center gap-1 rounded-lg bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white active:bg-blue-600"
                     >
                       <Check size={14} /> Đã giao xong
+                    </button>
+                    <button
+                      onClick={() =>
+                        window.confirm(`Đơn #${order.number} giao không được (khách vắng, sai địa chỉ…)?`) &&
+                        onSetStatus(order.id, 'failed')
+                      }
+                      className="flex items-center gap-1 rounded-lg border border-red-300 bg-red-50 px-2.5 py-1.5 text-sm font-semibold text-red-700 active:bg-red-100"
+                    >
+                      <X size={14} /> Giao không được
                     </button>
                   </div>
                 </li>
