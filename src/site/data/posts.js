@@ -85,7 +85,7 @@ Spoon the sauce into small bowls and put it on the table with:
 - thin slices of [giò lụa](/order/menu/gio-lua) or other giò chả
 - herbs, cucumber and bean sprouts on the side
 
-Short on time? Pre-order [ours](/order/menu/banh-cuon) for Saturday pickup. Our bánh cuốn already comes with nước mắm dipping sauce and fried shallots. Order by 8 pm Friday, then pick up on Saturday between 6 am and 9 pm, or choose Saturday morning delivery in Wodonga, Albury, Lavington and Thurgoona. You pay when you collect or when the order arrives.
+Short on time? Pre-order [ours](/order/menu/banh-cuon) for Saturday pickup. Our bánh cuốn already comes with nước mắm dipping sauce and fried shallots. Order by 10 pm Friday, then pick up on Saturday between 6 am and 9 pm, or choose Saturday delivery (7 am–2 pm) in Wodonga, West Wodonga, Leneva, Baranduda, Albury, Lavington and Thurgoona. You pay when you collect or when the order arrives.
 
 Keeps for up to 7 days in the fridge or 6 months in the freezer. That line is for our ready-made dishes, such as bánh cuốn and giò lụa. Homemade nước chấm is different: keep it in a clean jar in the fridge and use it within a week, or keep the water, sugar and fish sauce base for up to 2 weeks and finish it when you eat.
 
@@ -194,7 +194,7 @@ Scatter it over:
 - [xôi khúc](/order/menu/xoi-khuc) or a bowl of sticky rice
 - noodle salads, eggs, or sliced giò
 
-Short on time? Pre-order [ours](/order/menu/banh-cuon) for Saturday pickup. Our bánh cuốn already comes with fried shallots and nước mắm dipping sauce. Order by 8 pm Friday, then pick up on Saturday between 6 am and 9 pm, or choose Saturday morning delivery in Wodonga, Albury, Lavington and Thurgoona. You pay when you collect or when the order arrives.
+Short on time? Pre-order [ours](/order/menu/banh-cuon) for Saturday pickup. Our bánh cuốn already comes with fried shallots and nước mắm dipping sauce. Order by 10 pm Friday, then pick up on Saturday between 6 am and 9 pm, or choose Saturday delivery (7 am–2 pm) in Wodonga, West Wodonga, Leneva, Baranduda, Albury, Lavington and Thurgoona. You pay when you collect or when the order arrives.
 
 If you also want a dipping sauce to go with the shallots, see our [nước chấm recipe](/order/blog/how-to-make-nuoc-cham).
 
@@ -296,7 +296,7 @@ Drain a small handful and add it to:
 - a plate of sliced giò chả with herbs and cucumber
 - leftover rice or noodles, for crunch and a sour lift
 
-Short on time? Pre-order [our giò lụa](/order/menu/gio-lua) for Saturday pickup and make the pickle the day before. Order by 8 pm Friday, then pick up on Saturday between 6 am and 9 pm, or choose Saturday morning delivery in Wodonga, Albury, Lavington and Thurgoona. You pay when you collect or when the order arrives. Browse the full [menu](/order/menu) if you want a few kinds of roll on the same plate.
+Short on time? Pre-order [our giò lụa](/order/menu/gio-lua) for Saturday pickup and make the pickle the day before. Order by 10 pm Friday, then pick up on Saturday between 6 am and 9 pm, or choose Saturday delivery (7 am–2 pm) in Wodonga, West Wodonga, Leneva, Baranduda, Albury, Lavington and Thurgoona. You pay when you collect or when the order arrives. Browse the full [menu](/order/menu) if you want a few kinds of roll on the same plate.
 
 Keeps for up to 7 days in the fridge or 6 months in the freezer. That line is for our ready-made dishes, such as giò lụa and chả. Homemade đồ chua is different: keep it in a clean jar in the fridge, covered by its brine, and use it within about 2 weeks. It is not a freezer pickle.
 
@@ -413,9 +413,9 @@ Browse the [menu](/order/menu) and add what you like. Popular picks are [bánh c
 ## 2. Pickup or delivery
 
 - **Pickup:** Saturday, 6 am to 9 pm. Other days by request – add a note when you order. Order at least 3 hours ahead.
-- **Delivery:** we deliver on **Saturday mornings**, 8 am–12 pm. Order by 8 pm Friday.
+- **Delivery:** we deliver on **Saturday**, 7 am–2 pm. Order by 10 pm Friday.
 
-We deliver to Wodonga and West Wodonga, Albury, Lavington and Thurgoona. The delivery fee depends on your suburb and is shown at checkout before you place the order.
+We deliver to Wodonga, West Wodonga, Leneva, Baranduda, Albury, Lavington and Thurgoona. The delivery fee depends on your suburb and is shown at checkout before you place the order.
 
 ## 3. Pay when you receive it
 
