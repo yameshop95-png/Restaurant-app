@@ -328,6 +328,24 @@ Raw daikon can smell sharp or sulphurous. Tossing the cut daikon with a little s
     cover: '/site/photos/banh-cuon.webp',
     coverAlt: 'Bánh cuốn rice rolls topped with fried shallots and herbs, with slices of pork roll',
     dishes: ['banh-cuon', 'gio-lua', 'cha-chien'],
+    faq: [
+      {
+        q: 'Is bánh cuốn eaten hot or cold?',
+        a: 'It is served warm. The rolls are steamed to order in Vietnam, and at home a gentle reheat is enough — steam briefly or microwave covered until warm through.',
+      },
+      {
+        q: 'Is bánh cuốn gluten free?',
+        a: 'The rolls themselves are made from rice flour and water, and the classic filling is pork and wood ear mushroom. The dipping sauce is made with fish sauce. If you have an allergy or coeliac disease, contact us before ordering so we can talk through ingredients.',
+      },
+      {
+        q: 'How much bánh cuốn should I order?',
+        a: 'Our bánh cuốn comes in a 1 kg pack with dipping sauce and fried shallots included. Add slices of giò lụa or chả chiên on the side and it makes a full breakfast or light lunch spread to share.',
+      },
+      {
+        q: 'Can I freeze bánh cuốn?',
+        a: 'Yes. It keeps for up to 7 days in the fridge or 6 months in the freezer. Warm it gently after thawing so the rice sheets stay soft.',
+      },
+    ],
     body: `If you have ever walked past a Vietnamese breakfast stall and seen a cook ladling batter onto a cloth stretched over a steaming pot, you have seen **bánh cuốn** being made. These soft, silky rice rolls are one of Vietnam's best-loved breakfasts, and they are surprisingly light for how satisfying they are.
 
 ## What is bánh cuốn made of?
@@ -352,7 +370,33 @@ Bánh cuốn is lighter than many fried breakfasts. The filling adds protein, an
 
 ## Where to get bánh cuốn in Albury–Wodonga
 
-You can pre-order [bánh cuốn](/order/menu/banh-cuon) from us online. It comes with nước mắm dipping sauce and fried shallots. Pick up on Saturday, 6 am to 9 pm, or another day by request, or choose Saturday morning delivery around Wodonga, Albury, Lavington and Thurgoona. You pay when you collect or when your order arrives, so there is no card needed online.`,
+You can pre-order [bánh cuốn](/order/menu/banh-cuon) from us online. It comes with nước mắm dipping sauce and fried shallots. Order by 10 pm Friday, then pick up on Saturday, 6 am to 9 pm, or another day by request, or choose Saturday delivery (7 am–2 pm) across Wodonga, West Wodonga, Leneva, Baranduda, Albury, Lavington and Thurgoona. You pay when you collect or when your order arrives, so there is no card needed online.
+
+## How to warm it up and store it
+
+Bánh cuốn is best eaten fresh on the day. If you are keeping it for later, warm the rolls gently — a short steam, or a covered plate in the microwave — until just heated through, so the rice sheets stay soft. Add the fried shallots after warming so they stay crisp.
+
+Keep leftovers covered in the fridge for up to 7 days, or freeze them for up to 6 months. The dipping sauce keeps in a clean jar in the fridge for about a week.
+
+Want to make the extras yourself? Here is our [nước chấm recipe](/order/blog/how-to-make-nuoc-cham) and our method for [crispy fried shallots](/order/blog/how-to-make-fried-shallots).
+
+## Frequently asked questions
+
+### Is bánh cuốn eaten hot or cold?
+
+It is served warm. The rolls are steamed to order in Vietnam, and at home a gentle reheat is enough — steam briefly or microwave covered until warm through.
+
+### Is bánh cuốn gluten free?
+
+The rolls themselves are made from rice flour and water, and the classic filling is pork and wood ear mushroom. The dipping sauce is made with fish sauce. If you have an allergy or coeliac disease, contact us before ordering so we can talk through ingredients.
+
+### How much bánh cuốn should I order?
+
+Our bánh cuốn comes in a 1 kg pack with dipping sauce and fried shallots included. Add slices of giò lụa or chả chiên on the side and it makes a full breakfast or light lunch spread to share.
+
+### Can I freeze bánh cuốn?
+
+Yes. It keeps for up to 7 days in the fridge or 6 months in the freezer. Warm it gently after thawing so the rice sheets stay soft.`,
   },
   {
     slug: 'gio-cha-guide',
@@ -363,6 +407,24 @@ You can pre-order [bánh cuốn](/order/menu/banh-cuon) from us online. It comes
     cover: '/site/photos/gio-lua.webp',
     coverAlt: 'Sliced giò lụa pork roll beside whole rolls wrapped in banana leaf',
     dishes: ['gio-lua', 'cha-chien', 'cha-bo', 'cha-bi', 'gio-thu'],
+    faq: [
+      {
+        q: 'What is the difference between giò lụa and chả chiên?',
+        a: 'Both start with the same seasoned pork paste. Giò lụa is wrapped in banana leaves and boiled, so it stays pale, smooth and springy. Chả chiên is fried, so the outside turns golden and fragrant while the inside stays soft.',
+      },
+      {
+        q: 'Is giò chả ready to eat, or do I need to cook it?',
+        a: 'Giò lụa, chả chiên, chả bì, chả bò and giò thủ are fully cooked and ready to slice and eat. The one exception is giò sống, the raw pork paste — that one must be cooked all the way through before eating.',
+      },
+      {
+        q: 'How long does giò chả keep?',
+        a: 'Keep it wrapped in the fridge for up to 7 days, or freeze it for up to 6 months. Slice what you need and keep the rest wrapped so it does not dry out.',
+      },
+      {
+        q: 'What do you serve with giò chả?',
+        a: 'Slice it over bánh cuốn or sticky rice, layer it into a bánh mì with pickled carrot and daikon, or arrange a few kinds on a platter with herbs and nước chấm.',
+      },
+    ],
     body: `Walk into any Vietnamese deli and you will see rows of rolls wrapped in banana leaves. Together they are called **giò chả**, and they are a staple of Vietnamese home cooking, breakfasts and celebrations. Here is how to tell them apart.
 
 ## Giò lụa: the classic
@@ -393,7 +455,25 @@ Keep giò chả refrigerated and wrapped. It is ready to eat as it is, or you ca
 
 ## Order giò chả in Albury–Wodonga
 
-All of these rolls are on our [menu](/order/menu). Pre-order online, pick up on Saturday, 6 am to 9 pm, or another day by request, or get Saturday morning delivery and pay when it arrives.`,
+All of these rolls are on our [menu](/order/menu). Pre-order online by 10 pm Friday, pick up on Saturday, 6 am to 9 pm, or another day by request, or get Saturday delivery (7 am–2 pm) across Wodonga, West Wodonga, Leneva, Baranduda, Albury, Lavington and Thurgoona, and pay when it arrives.
+
+## Frequently asked questions
+
+### What is the difference between giò lụa and chả chiên?
+
+Both start with the same seasoned pork paste. Giò lụa is wrapped in banana leaves and boiled, so it stays pale, smooth and springy. Chả chiên is fried, so the outside turns golden and fragrant while the inside stays soft.
+
+### Is giò chả ready to eat, or do I need to cook it?
+
+Giò lụa, chả chiên, chả bì, chả bò and giò thủ are fully cooked and ready to slice and eat. The one exception is giò sống, the raw pork paste — that one must be cooked all the way through before eating.
+
+### How long does giò chả keep?
+
+Keep it wrapped in the fridge for up to 7 days, or freeze it for up to 6 months. Slice what you need and keep the rest wrapped so it does not dry out.
+
+### What do you serve with giò chả?
+
+Slice it over bánh cuốn or sticky rice, layer it into a bánh mì with [pickled carrot and daikon](/order/blog/vietnamese-pickled-carrot-and-daikon), or arrange a few kinds on a platter with herbs and nước chấm.`,
   },
   {
     slug: 'order-vietnamese-food-albury-wodonga',
