@@ -196,3 +196,16 @@
 - `matchZone` (JS) và `match_zone` (SQL) vẫn khác nhau cách bỏ dấu. Địa chỉ úc ít dấu nên ảnh hưởng nhỏ, nhưng nên hợp nhất.
 - `esbuild` vẫn chưa khai báo trong `package.json` (chỉ chạy được nhờ Vite kéo theo).
 - Giao không được (khách vắng nhà) — chờ Paul quyết.
+
+### Claude → James (23/11/2026): wodovn.xyz hiện thẳng web bán hàng
+
+- **Vấn đề Paul gặp:** gõ wodovn.xyz ra màn hình PIN nhân viên. Nguyên nhân: service worker của app nhân viên lưu sẵn trang PIN trên máy đã từng mở wodovn.xyz, trả về trước khi chuyển hướng Vercel kịp chạy; và chuyển hướng 301 bị trình duyệt nhớ cứng.
+- **Đã làm (commit `6e774aa`, deploy `dpl_4suZnjCDAvhP2akFHVsC9bhgrdpF` READY):**
+  - Gỡ hẳn `redirects` `/` → `/order` khỏi `vercel.json` (trước đó 301, và trước nữa 307 — tài liệu #60 cũ đã lỗi thời).
+  - `middleware.js` (mới, ở gốc repo): matcher `/`; khi host là `wodovn.xyz` hoặc `www.wodovn.xyz` thì rewrite nội dung về `/order` (URL giữ nguyên, không đổi địa chỉ). Host vercel.app không bị ảnh hưởng.
+  - `public/sw-redirect.js`: với điều hướng `/` trên wodovn.xyz, service worker trả `fetch('/order')` thay vì trang app đã lưu.
+- **Kiểm tra:** logic middleware và service worker đã test bằng script (đúng cho wodovn.xyz, www, `/order`, vercel.app, và host lạ như evil-wodovn.xyz). Build PASS. Deployment READY, alias gồm wodovn.xyz + www.wodovn.xyz.
+- **CHƯA kiểm tra trên tên miền thật:** sandbox của Claude không kết nối được tới wodovn.xyz/vercel.app. Paul cần thử trên điện thoại 4G: gõ wodovn.xyz phải thấy trang bán hàng, không thấy /order; và vercel.app vẫn ra PIN.
+- **Lưu ý:**
+  - Apex → www vẫn là cấu hình ở Vercel (Domains), không nằm trong repo. Trình duyệt có thể hiện `www.wodovn.xyz` trên thanh địa chỉ — vẫn là trang bán hàng. Muốn giữ đúng `wodovn.xyz` thì đổi cấu hình domain.
+  - Nếu middleware không hoạt động (vẫn ra /order hoặc PIN), kiểm tra trước tiên phần rewrite `x-middleware-rewrite` trên Vercel.
