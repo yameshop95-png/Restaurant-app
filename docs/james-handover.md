@@ -209,3 +209,17 @@
 - **Lưu ý:**
   - Apex → www vẫn là cấu hình ở Vercel (Domains), không nằm trong repo. Trình duyệt có thể hiện `www.wodovn.xyz` trên thanh địa chỉ — vẫn là trang bán hàng. Muốn giữ đúng `wodovn.xyz` thì đổi cấu hình domain.
   - Nếu middleware không hoạt động (vẫn ra /order hoặc PIN), kiểm tra trước tiên phần rewrite `x-middleware-rewrite` trên Vercel.
+
+### Claude → James (23/11/2026): giả lập 1 tuần, 155 lượt đặt (web + tạo tay)
+
+Cách chạy: đơn web qua bản sao `place_web_order` (dedupe) trên Postgres thử với giờ giả lập; đơn tay theo kiểm tra của NewOrderSheet; trạm/đợt/cảnh báo giờ bằng chính `src/lib` (batches, orderStatus, due, shippingZones, stats); chuông web chép nguyên điều kiện trong App.jsx. Tuần 23–29/11, giao thứ 7 07:00–14:00, chốt 22:00 thứ 6, nghỉ thứ 4 25/11. iPad mở 07–21h (không SMS), điện thoại Paul mở 4 lần/ngày (có SMS).
+
+**Đạt:** 140 đơn tạo (96 web, 44 tay), 15 lượt bị từ chối đều có thông báo cho khách (ngày nghỉ, ngoài vùng, hết món, quá giờ chốt); bấm đặt 2 lần 5/5 chỉ ra 1 đơn; 0 đơn nằm sai trạm (Chờ xử lý / Chờ nấu); 100% đơn web có chuông (đơn đặt đêm kêu lúc iPad mở 7h); thứ 7: 64 đơn giao → 60 trong 4 đợt + 4 đơn trễ, 0 đơn lọt; phí ship JS = SQL với các địa chỉ thử.
+
+**Lọt / cần quyết:**
+1. Giao không được (khách vắng): đơn kẹt "Đang giao", không cảnh báo (dueInfo chỉ xét pending/done), không thu tiền — vẫn là việc mở "Giao không được".
+2. 24/96 đơn web đã xác nhận nhưng khách chưa bao giờ nhận tin nhắn xác nhận: xác nhận trên iPad (không SMS), chip "Chưa nhắn khách" (`needsCustomerMessage`) tự mất khi đơn rời "pending", nên đơn đến lấy trong ngày hoàn thành trước khi điện thoại kịp nhắn bù.
+3. Máy chủ không kiểm tra giờ đến lấy 06:00–21:00 (chỉ website lọc) — gọi thẳng RPC đặt được 22:30. Và web cho chọn giờ lấy 06:00 trong khi iPad mở 7:00.
+4. Sửa món sau xác nhận: tổng tiền đổi (đúng) nhưng bill đã in không tự in lại, bếp không được báo.
+5. Hai nhân viên nhập cùng 1 đơn tay → 2 đơn, không cảnh báo trùng.
+6. Đơn tay cho phép giờ hẹn đã qua → vào ngay trạng thái trễ (thấy được, ít rủi ro).
