@@ -63,5 +63,5 @@ await fs.writeFile(
     .join('\n')}\n</urlset>\n`
 );
 // App nhận order (/) không cho Google lập chỉ mục; chỉ website /order
-await fs.writeFile(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /order\nDisallow: /\n\nSitemap: ${SITE}/sitemap.xml\n`);
+await fs.writeFile(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /order\nAllow: /order/menu\nAllow: /order/blog\nDisallow: /order/checkout\nDisallow: /\n\nSitemap: ${SITE}/sitemap.xml\n`);
 console.log(`[prerender] ${indexable.length} trang + sitemap.xml${data ? '' : ' (không có giá)'}`);
