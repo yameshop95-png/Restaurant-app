@@ -11,10 +11,10 @@ import AnalyticsExportCard from '../components/AnalyticsExportCard';
 import CustomerStatsCard from '../components/CustomerStatsCard';
 import LanguageCard from '../components/LanguageCard';
 import PairsCard from '../components/PairsCard';
-import WeekRhythmCard from '../components/WeekRhythmCard';
+import WeekRhythmCard, { WeekRhythmBars } from '../components/WeekRhythmCard';
 import WeeklyPerformanceCard from '../components/WeeklyPerformanceCard';
 import { buildReport, PERIODS, reportForAI, shiftPeriod } from '../lib/report';
-import { periodInsights } from '../lib/reportInsights';
+import { periodInsights, weekOfMonthRhythm } from '../lib/reportInsights';
 import CountUp, { formatCount } from '../components/CountUp';
 import { formatMoney } from '../lib/stats';
 
@@ -120,19 +120,23 @@ function WeeklyDishChart({ orders, menu, anchor, topNames }) {
   );
 }
 
-// DEMO v2: card món có 2 chế độ — "Cơ cấu" (Pareto như v1) và "Theo tuần" (xếp chồng).
-function DishSection({ report, orders, menu, anchor }) {
-  const [mode, setMode] = useState('co-cau');
+// DEMO v3 (Paul gợi ý 24/11): gộp mọi thứ về tuần vào MỘT thẻ "Nhịp tuần" với 2 chế độ
+// xem — "Theo tuần": 8 tuần gần nhất xếp chồng theo món; "Trong tháng": nhịp tuần 1–5
+// trong tháng (chart của WeekRhythmCard cũ). Gộp kiểu chuyển chế độ thì không rối vì
+// mỗi chế độ chỉ hiện một ý; card món trở về Pareto thuần như v1.
+function WeekSection({ report, orders, menu, anchor }) {
+  const [mode, setMode] = useState('theo-tuan');
+  const rhythm = useMemo(() => weekOfMonthRhythm(orders, new Date()), [orders]);
   const topNames = useMemo(
     () => [...report.dishes].sort((a, b) => b.revenue - a.revenue).slice(0, 5).map((d) => d.name),
     [report.dishes],
   );
   return (
     <div className="px-5 pb-4">
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex items-center gap-2">
         {[
-          ['co-cau', 'Cơ cấu'],
           ['theo-tuan', 'Theo tuần'],
+          ['trong-thang', 'Trong tháng'],
         ].map(([key, label]) => (
           <button
             key={key}
@@ -143,16 +147,18 @@ function DishSection({ report, orders, menu, anchor }) {
             {label}
           </button>
         ))}
+        {mode === 'trong-thang' && rhythm.enough && (
+          <span className="ml-auto text-sm text-slate-500">{rhythm.weeksConsidered} tuần đã qua</span>
+        )}
       </div>
-      {mode === 'co-cau' ? (
-        <DishComboChart dishes={report.dishes} />
-      ) : (
+      {mode === 'theo-tuan' ? (
         <WeeklyDishChart orders={orders} menu={menu} anchor={anchor} topNames={topNames} />
+      ) : (
+        <WeekRhythmBars rhythm={rhythm} />
       )}
     </div>
   );
 }
-
 
 // DEMO v2: card "Thời điểm" thành chart cột — cột = doanh thu từng đoạn (đầu/giữa/cuối
 // tháng, hoặc ngày trong tuần, hoặc quý), nhãn trên cột là tiền + số đơn, dưới cột giữ
@@ -226,7 +232,7 @@ function DishComboChart({ dishes }) {
   const linePts = bars.map((b) => `${b.cx},${M.top + plotH - b.cumShare * plotH}`).join(' ');
 
   return (
-    <div>
+    <div className="px-5 pb-4">
       <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" role="img" aria-label="Biểu đồ doanh thu top 10 món">
         {[0, 0.25, 0.5, 0.75, 1].map((f) => (
           <g key={f}>
@@ -620,15 +626,17 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
         {report.dishes.length === 0 ? (
           <p className="px-5 py-8 text-center text-slate-400">Chưa có đơn trong kỳ này</p>
         ) : (
-          <DishSection report={report} orders={orders} menu={menu} anchor={anchor} />
+          <DishComboChart dishes={report.dishes} />
         )}
       </Card>
 
       {/* Khách mới / khách quay lại trong đúng kỳ đang chọn */}
       <CustomerStatsCard orders={orders} range={report.range} />
 
-      {/* Nhịp tuần trong tháng trên các tuần đã kết thúc của 6 tháng gần nhất */}
-      <WeekRhythmCard orders={orders} />
+      {/* DEMO v3: thẻ gộp "Nhịp tuần" — theo tuần (xếp chồng theo món) + nhịp trong tháng */}
+      <Card title="Nhịp tuần">
+        <WeekSection report={report} orders={orders} menu={menu} anchor={anchor} />
+      </Card>
 
       {/* Thời điểm */}
       <Card title={kind === 'week' ? 'Theo ngày trong tuần' : kind === 'month' ? 'Thời điểm trong tháng' : 'Theo quý'}>
