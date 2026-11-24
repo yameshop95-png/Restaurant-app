@@ -1066,7 +1066,7 @@ export default function OrdersPage({
                 </p>
               ) : (
                 wide ? (
-                  // Màn rất rộng (iPad ngang, máy tính): trái là danh sách gọn, phải là đơn đang chọn
+                  // Màn rộng từ 1024px (iPad ngang, máy tính): trái là danh sách gọn, phải là đơn đang chọn
                   <div className="grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-start gap-4">
                     <div className="space-y-4">
                       {sections.map((sec) => (
