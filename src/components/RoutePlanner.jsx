@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState } from 'react';
-import { AlarmClock, Check, Clock, Loader2, LocateFixed, MapPin, Navigation, Phone, Route, Send, Store, X } from 'lucide-react';
+import { AlarmClock, Check, Clock, Loader2, LocateFixed, MapPin, Navigation, Phone, Route, Send, Store, Truck, X } from 'lucide-react';
 import { dueInfo, formatDue } from '../lib/due';
 import { cachedGeocode, currentPosition, directionsUrl, geocode, routeSegments } from '../lib/geo';
 import { geoRecordFor, storedGeoOf } from '../lib/orderGeo';
@@ -9,6 +9,14 @@ import { CROSS_HOUR, estimateRunMinutes, formatMinutes, planRoute, planRouteByAr
 import { formatMoney, orderTotal } from '../lib/stats';
 
 const pad = (n) => String(n).padStart(2, '0');
+// Địa chỉ rút gọn còn suburb: lấy đoạn cuối sau dấu phẩy, bỏ bang + postcode
+// ("12 Smith St, Wodonga VIC 3690" -> "Wodonga"); không tách được thì giữ nguyên địa chỉ.
+const shortAddress = (address) => {
+  if (!address) return '';
+  const last = address.split(',').map((x) => x.trim()).filter(Boolean).pop() ?? '';
+  const cleaned = last.replace(/\b(VIC|NSW|QLD|SA|WA|TAS|NT|ACT)\b/gi, '').replace(/\b\d{4}\b/g, '').trim();
+  return cleaned || address;
+};
 const hhmm = (iso) => {
   const d = new Date(iso);
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -240,12 +248,66 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus, onSto
     </section>
   );
 
+  // Đơn giao đã nấu xong (status done) chờ mang đi: trước đây phải qua Đơn hàng → Giao hàng
+  // mới bấm được "Đã mang đi" (lý do duy nhất còn giữ chế độ Danh sách ở Đơn ship); nay khối
+  // này nằm ngay đầu trang Đơn ship (issue #69), bấm là đơn tự vào lộ trình bên dưới.
+  const ready = orders
+    .filter((o) => o.type === 'delivery' && o.status === 'done')
+    .sort((a, b) => (a.deliverAt || '9999') < (b.deliverAt || '9999') ? -1 : (a.deliverAt || '9999') > (b.deliverAt || '9999') ? 1 : 0);
+  const takeAllReady = () => {
+    if (!window.confirm(`Mang đi tất cả ${ready.length} đơn?`)) return;
+    for (const o of ready) onSetStatus(o.id, 'delivering');
+  };
+  const readySection = ready.length > 0 && (
+    <section className="overflow-hidden rounded-3xl border border-emerald-200 bg-card shadow-sm">
+      <h3 className="flex items-center gap-2 bg-emerald-50 px-4 py-3 font-bold text-emerald-700">
+        <Truck size={17} /> Nấu xong, chờ mang đi ({ready.length})
+      </h3>
+      <ul className="divide-y divide-emerald-100">
+        {ready.map((order) => (
+          <li key={order.id} className="flex items-center gap-3 px-4 py-3">
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-slate-900">
+                #{order.number} · {order.customer?.name || 'Khách'}
+              </p>
+              <p className="truncate text-sm text-slate-600">
+                {shortAddress(order.customer?.address)}
+                {order.deliverAt ? (
+                  <span className="font-semibold text-blue-700"> · Giao {hhmm(order.deliverAt)}</span>
+                ) : (
+                  <span> · Chưa có giờ giao</span>
+                )}
+              </p>
+            </div>
+            <button
+              onClick={() => onSetStatus(order.id, 'delivering')}
+              className="flex shrink-0 items-center gap-1 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-white active:bg-emerald-600"
+            >
+              <Truck size={14} /> Đã mang đi
+            </button>
+          </li>
+        ))}
+      </ul>
+      {ready.length >= 2 && (
+        <button
+          onClick={takeAllReady}
+          className="w-full border-t border-emerald-100 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 active:bg-emerald-100"
+        >
+          Mang đi tất cả ({ready.length})
+        </button>
+      )}
+    </section>
+  );
+
   if (!active.length) {
     return (
       <div className="space-y-4">
+        {readySection}
         {runSummary}
         <p className="rounded-3xl bg-card px-5 py-12 text-center text-slate-400">
-          Chưa có đơn nào đang giao — khi bắt đầu đi giao, bấm “Đã mang đi” trên thẻ đơn
+          {ready.length > 0
+            ? 'Chưa có đơn nào đang giao — bấm “Đã mang đi” ở khối phía trên là đơn lên lộ trình'
+            : 'Chưa có đơn nào đang giao — đơn nấu xong sẽ hiện ở đây để bấm “Đã mang đi”'}
         </p>
         {failedSection}
       </div>
@@ -256,11 +318,13 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus, onSto
 
   return (
     <div className="space-y-4">
+      {readySection}
       {runSummary}
       {active.length === 0 && (
         <section className="rounded-3xl border border-slate-200 bg-card p-4 text-sm leading-relaxed text-slate-600 shadow-sm">
-          Chưa có đơn nào đang giao. Đơn nấu xong bấm <b className="text-slate-800">“Đã mang đi”</b> là đơn lên xe và
-          hiện danh sách ở đây, xếp sẵn thứ tự để đi giao.
+          Chưa có đơn nào đang giao. Đơn nấu xong hiện ở khối <b className="text-slate-800">“Nấu xong, chờ mang đi”</b>{' '}
+          phía trên — bấm <b className="text-slate-800">“Đã mang đi”</b> là đơn lên xe và vào lộ trình ở đây, xếp sẵn
+          thứ tự để đi giao.
         </section>
       )}
       <section className="space-y-3 rounded-3xl border border-slate-200 bg-card p-4 shadow-sm">

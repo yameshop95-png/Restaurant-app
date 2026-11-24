@@ -705,8 +705,9 @@ export default function OrdersPage({
   const [chosenType, setChosenType] = useState('pickup');
   const zones = settings.shippingZones ?? DEFAULT_ZONES;
   const type = fixedType ?? chosenType;
-  // Chỉ trang "Đơn ship" (fixedType = 'delivery') mới có chế độ xem lộ trình; các trang dùng chung
-  // OrdersPage khác (Đơn hàng, Chờ nấu) luôn ở chế độ danh sách dù đơn đang xem là đơn giao hàng.
+  // Trang "Đơn ship" (fixedType = 'delivery') vào thẳng lộ trình giao (RoutePlanner), không còn
+  // chế độ danh sách (issue #69: danh sách trùng Đơn hàng → Giao hàng); các trang dùng chung
+  // OrdersPage khác (Đơn hàng, Chờ nấu) luôn ở chế độ danh sách.
   const routeAllowed = fixedType === 'delivery';
   const [filter, setFilterState] = useState(fixedFilter ?? 'pending');
   const [slide, setSlide] = useState(null); // hướng chuyển trang để chạy hiệu ứng trượt
@@ -736,7 +737,6 @@ export default function OrdersPage({
   const [exportMsg, setExportMsg] = useState(null);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [view, setView] = useState('list'); // tab Đơn ship: 'list' | 'route'
   const [query, setQuery] = useState('');
   const [date, setDate] = useState('');
   const wide = useWide();
@@ -886,6 +886,7 @@ export default function OrdersPage({
 
   return (
     <div className="staff-stagger mx-auto max-w-2xl pb-24 md:max-w-5xl xl:max-w-7xl">
+      {!routeAllowed && (
       <div className="sticky top-16 z-10 bg-page pb-2 pt-2">
       {!fixedType && !fixedFilter && (
         <div className="mb-3 grid grid-cols-2 gap-2">
@@ -897,10 +898,7 @@ export default function OrdersPage({
             return (
               <button
                 key={id}
-                onClick={() => {
-                  setChosenType(id);
-                  setView('list');
-                }}
+                onClick={() => setChosenType(id)}
                 className={`flex items-center justify-center gap-2 rounded-2xl py-3 font-bold shadow-sm ${
                   active ? 'bg-orange-500 text-white' : 'bg-card text-slate-700'
                 }`}
@@ -919,24 +917,8 @@ export default function OrdersPage({
         </div>
       )}
 
-      {routeAllowed && type === 'delivery' && (
-        <div className="mb-3 flex rounded-2xl bg-card p-1 shadow-sm">
-          {[
-            ['list', 'Danh sách'],
-            ['route', 'Lộ trình giao'],
-          ].map(([id, label]) => (
-            <button
-              key={id}
-              onClick={() => setView(id)}
-              className={`flex-1 rounded-xl py-2 text-sm font-semibold ${view === id ? 'bg-slate-900 text-slate-50' : 'text-slate-600'}`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
 
-      {!(routeAllowed && view === 'route') && (
+      {!routeAllowed && (
         <>
           <div className="mb-3 flex gap-2">
             <div className="relative min-w-0 flex-1">
@@ -1000,8 +982,9 @@ export default function OrdersPage({
         </>
       )}
       </div>
+      )}
 
-      {routeAllowed && view === 'route' ? (
+      {routeAllowed ? (
         <RoutePlanner
           orders={ofType}
           now={now}

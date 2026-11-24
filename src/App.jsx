@@ -259,6 +259,8 @@ function Shop({ account, onLogout }) {
     // Badge tab Đơn ship: cả đơn giao đang chờ lẫn đơn đang đi giao đều cần để mắt tới
     // Đơn giao không được cũng cần xử lý (giao lại / huỷ) nên tính vào badge Đơn ship
     const deliveringDelivery = orders.filter((o) => (o.status === 'delivering' || o.status === 'failed') && o.type === 'delivery').length;
+    // Đơn giao đã nấu xong (done) cũng cần để mắt: chờ bấm "Đã mang đi" ngay trong trang Đơn ship (issue #69)
+    const doneDelivery = orders.filter((o) => o.status === 'done' && o.type === 'delivery').length;
     // Hai trạm tách nhau: hộp thư đến (Chờ xử lý) chỉ đếm đơn web chưa xác nhận;
     // đơn đã xác nhận đếm ở badge mục Chờ nấu. pending* giữ nguyên nghĩa tổng đơn đang chờ cho các ô tổng quan.
     const cooking = pending.filter(isCookingOrder);
@@ -267,7 +269,7 @@ function Shop({ account, onLogout }) {
       pendingPickup: pending.filter((o) => o.type !== 'delivery').length,
       pendingDelivery,
       pendingAll: pending.length,
-      deliveryAction: pendingDelivery + deliveringDelivery,
+      deliveryAction: pendingDelivery + deliveringDelivery + doneDelivery,
       inboxPickup: inbox.filter((o) => o.type !== 'delivery').length,
       inboxDelivery: inbox.filter((o) => o.type === 'delivery').length,
       inboxAll: inbox.length,
