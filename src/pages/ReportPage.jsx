@@ -79,7 +79,7 @@ function DishHeatmap({ orders, menu, anchor }) {
     <div className="mt-3">
       <div className="overflow-x-auto">
         <div className="grid min-w-[560px] gap-1" style={{ gridTemplateColumns: 'minmax(92px,1.15fr) repeat(8, minmax(0,1fr))' }}>
-          <div />
+          <div className="sticky left-0 z-10 bg-card" />
           {data.weeks.map((w, i) => (
             <div key={i} className={`pb-0.5 text-center text-[11px] font-semibold ${i === data.hottest ? 'text-orange-600' : 'text-slate-500'}`}>
               {fmtDay(w.start)}
@@ -87,7 +87,7 @@ function DishHeatmap({ orders, menu, anchor }) {
           ))}
           {data.dishNames.map((name, r) => (
             <Fragment key={name}>
-              <div className="flex items-center truncate pr-1 text-xs font-medium text-slate-700" title={name}>{name}</div>
+              <div className="sticky left-0 z-10 flex items-center truncate bg-card pr-2 text-xs font-medium text-slate-700 shadow-[6px_0_8px_-6px_rgba(15,23,42,0.35)]" title={name}>{name}</div>
               {data.matrix[r].map((v, c) => (
                 <div key={`${name}-${c}`} className="flex h-9 items-center justify-center rounded-md text-[11px] font-semibold" style={cellStyle(v)}>
                   {v ? fmtShortMoney(v) : '—'}
@@ -95,7 +95,7 @@ function DishHeatmap({ orders, menu, anchor }) {
               ))}
             </Fragment>
           ))}
-          <div className="pt-1 text-xs font-semibold text-slate-500">Tổng tuần</div>
+          <div className="sticky left-0 z-10 bg-card pt-1 text-xs font-semibold text-slate-500">Tổng tuần</div>
           {data.weeks.map((w, i) => (
             <div key={i} className={`pt-1 text-center text-[11px] font-bold ${i === data.hottest ? 'text-orange-600' : 'text-slate-700'}`}>
               {fmtShortMoney(w.total)}
