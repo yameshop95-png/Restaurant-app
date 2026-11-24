@@ -145,7 +145,7 @@ function DishSection({ report, orders, menu, anchor }) {
         ))}
       </div>
       {mode === 'co-cau' ? (
-        <DishSection report={report} orders={orders} menu={menu} anchor={anchor} />
+        <DishComboChart dishes={report.dishes} />
       ) : (
         <WeeklyDishChart orders={orders} menu={menu} anchor={anchor} topNames={topNames} />
       )}
