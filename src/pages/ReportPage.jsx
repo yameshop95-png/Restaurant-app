@@ -196,8 +196,7 @@ function SegmentBars({ segments }) {
 // chú thích 1 dòng/món cho đúng 10 món đó. Món ngoài top 10 chỉ tính vào dòng tổng kết.
 function DishComboChart({ dishes }) {
   const top = [...dishes].sort((a, b) => b.revenue - a.revenue).slice(0, 10);
-  const totalRevenue = dishes.reduce((sum, d) => sum + d.revenue, 0);
-  const topRevenue = top.reduce((sum, d) => sum + d.revenue, 0);
+  const topShare = top.reduce((sum, d) => sum + d.revenueShare, 0);
   const restCount = dishes.length - top.length;
 
   const W = 760;
@@ -210,7 +209,7 @@ function DishComboChart({ dishes }) {
   const barW = Math.min(slot * 0.62, 52);
   let running = 0;
   const bars = top.map((d, i) => {
-    running += d.revenue;
+    running += d.revenueShare;
     const h = maxRevenue ? (d.revenue / maxRevenue) * plotH : 0;
     return {
       ...d,
@@ -218,7 +217,7 @@ function DishComboChart({ dishes }) {
       cx: M.left + slot * i + slot / 2,
       y: M.top + plotH - h,
       h,
-      cumShare: totalRevenue ? running / totalRevenue : 0,
+      cumShare: running,
     };
   });
   const linePts = bars.map((b) => `${b.cx},${M.top + plotH - b.cumShare * plotH}`).join(' ');
@@ -271,7 +270,7 @@ function DishComboChart({ dishes }) {
         })}
       </ul>
       <p className="mt-3 text-xs text-slate-400">
-        Top {top.length} món chiếm {totalRevenue ? Math.round((topRevenue / totalRevenue) * 100) : 0}% doanh thu{restCount > 0 ? ` — còn ${restCount} món khác ngoài top 10` : ''}.
+        Top {top.length} món chiếm {Math.round(topShare * 100)}% doanh thu{restCount > 0 ? ` — còn ${restCount} món khác ngoài top 10` : ''}.
       </p>
     </div>
   );
