@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -11,10 +11,10 @@ import AnalyticsExportCard from '../components/AnalyticsExportCard';
 import CustomerStatsCard from '../components/CustomerStatsCard';
 import LanguageCard from '../components/LanguageCard';
 import PairsCard from '../components/PairsCard';
-import WeekRhythmCard from '../components/WeekRhythmCard';
+import WeekRhythmCard, { WeekRhythmBars } from '../components/WeekRhythmCard';
 import WeeklyPerformanceCard from '../components/WeeklyPerformanceCard';
 import { buildReport, PERIODS, reportForAI, shiftPeriod } from '../lib/report';
-import { periodInsights } from '../lib/reportInsights';
+import { periodInsights, weekOfMonthRhythm } from '../lib/reportInsights';
 import CountUp, { formatCount } from '../components/CountUp';
 import { formatMoney } from '../lib/stats';
 
@@ -34,6 +34,245 @@ function Card({ title, right, children }) {
       )}
       {children}
     </section>
+  );
+}
+
+
+// Tiền rút gọn cho nhãn trên đầu cột (VD $5,7k) — nhãn đầy đủ vẫn ở bảng chú thích dưới chart.
+const fmtShortMoney = (v) => (v >= 1000 ? `$${(v / 1000).toFixed(1).replace('.', ',')}k` : formatMoney(v));
+
+
+// DEMO v4 (Paul chọn 24/11): BẢN ĐỒ NHIỆT món × tuần — hàng là top 8 món của kỳ đang
+// xem, cột là 8 tuần gần nhất, ô càng đậm thì món đó tuần đó bán càng mạnh (doanh thu).
+// Một hình trả lời cả hai câu "tuần nào như nào" và "món nào đang lên/xuống": hàng đậm
+// đều = món gánh quán, hàng nhạt dần = món đang đuối, cột đậm = tuần nóng.
+// Thay cho chart xếp chồng ở v2/v3 (Paul nhận xét chỉ "tạm được").
+const HEAT_STEPS = ['#f8fafc', '#ffedd5', '#fed7aa', '#fdba74', '#fb923c', '#f97316', '#ea580c'];
+function DishHeatmap({ orders, menu, anchor }) {
+  const data = useMemo(() => {
+    const weeks = [];
+    for (let i = 7; i >= 0; i--) {
+      const r = buildReport(orders, 'week', shiftPeriod('week', anchor, -i), menu);
+      const byName = new Map(r.dishes.map((d) => [d.name, d.revenue]));
+      weeks.push({ start: r.range.start, total: r.dishes.reduce((sum, d) => sum + d.revenue, 0), byName });
+    }
+    // Hàng của bản đồ nhiệt = top 8 theo TỔNG doanh thu của đúng 8 tuần đang hiện,
+    // tự xếp lại mỗi khi có dữ liệu mới: món ngoài top tăng mạnh sẽ tự vào, món trong
+    // top đuối dần sẽ tự rớt — không phải danh sách cố định (Paul hỏi 24/11).
+    const totals = new Map();
+    for (const w of weeks) for (const [name, rev] of w.byName) totals.set(name, (totals.get(name) ?? 0) + rev);
+    const dishNames = [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name]) => name);
+    const matrix = dishNames.map((name) => weeks.map((w) => w.byName.get(name) ?? 0));
+    const max = Math.max(...matrix.flat(), 0);
+    const hottest = weeks.reduce((best, w, i) => (w.total > (weeks[best]?.total ?? -1) ? i : best), 0);
+    return { weeks, matrix, max, hottest, dishNames };
+  }, [orders, menu, anchor]);
+
+  const fmtDay = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const cellStyle = (v) => {
+    if (!v || !data.max) return { background: HEAT_STEPS[0], color: '#cbd5e1' };
+    const idx = Math.min(1 + Math.floor((v / data.max) * (HEAT_STEPS.length - 1)), HEAT_STEPS.length - 1);
+    return { background: HEAT_STEPS[idx], color: idx >= 5 ? '#fff' : '#334155' };
+  };
+
+  return (
+    <div className="mt-3">
+      <div className="overflow-x-auto">
+        <div className="grid min-w-[560px] gap-1" style={{ gridTemplateColumns: 'minmax(92px,1.15fr) repeat(8, minmax(0,1fr))' }}>
+          <div />
+          {data.weeks.map((w, i) => (
+            <div key={i} className={`pb-0.5 text-center text-[11px] font-semibold ${i === data.hottest ? 'text-orange-600' : 'text-slate-500'}`}>
+              {fmtDay(w.start)}
+            </div>
+          ))}
+          {data.dishNames.map((name, r) => (
+            <Fragment key={name}>
+              <div className="flex items-center truncate pr-1 text-xs font-medium text-slate-700" title={name}>{name}</div>
+              {data.matrix[r].map((v, c) => (
+                <div key={`${name}-${c}`} className="flex h-9 items-center justify-center rounded-md text-[11px] font-semibold" style={cellStyle(v)}>
+                  {v ? fmtShortMoney(v) : '—'}
+                </div>
+              ))}
+            </Fragment>
+          ))}
+          <div className="pt-1 text-xs font-semibold text-slate-500">Tổng tuần</div>
+          {data.weeks.map((w, i) => (
+            <div key={i} className={`pt-1 text-center text-[11px] font-bold ${i === data.hottest ? 'text-orange-600' : 'text-slate-700'}`}>
+              {fmtShortMoney(w.total)}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+        <span>Ít</span>
+        <span className="h-2.5 flex-1 rounded-full" style={{ background: `linear-gradient(to right, ${HEAT_STEPS.join(',')})` }} />
+        <span>Nhiều</span>
+      </div>
+      <p className="mt-2 text-xs text-slate-400">
+        Ô càng đậm = món đó tuần đó doanh thu càng cao. Tuần bán mạnh nhất trong 8 tuần: bắt đầu {fmtDay(data.weeks[data.hottest].start)} ({formatMoney(data.weeks[data.hottest].total)}). 8 hàng là 8 món doanh thu cao nhất của đúng 8 tuần này — tự cập nhật khi có đơn mới, món tăng mạnh tự vào, món đuối tự rớt.
+      </p>
+    </div>
+  );
+}
+
+
+// DEMO v3 (Paul gợi ý 24/11): gộp mọi thứ về tuần vào MỘT thẻ "Nhịp tuần" với 2 chế độ
+// xem — "Theo tuần": 8 tuần gần nhất xếp chồng theo món; "Trong tháng": nhịp tuần 1–5
+// trong tháng (chart của WeekRhythmCard cũ). Gộp kiểu chuyển chế độ thì không rối vì
+// mỗi chế độ chỉ hiện một ý; card món trở về Pareto thuần như v1.
+function WeekSection({ report, orders, menu, anchor }) {
+  const [mode, setMode] = useState('mon-tuan');
+  const rhythm = useMemo(() => weekOfMonthRhythm(orders, new Date()), [orders]);
+  return (
+    <div className="px-5 pb-4">
+      <div className="mt-3 flex items-center gap-2">
+        {[
+          ['mon-tuan', 'Món × tuần'],
+          ['trong-thang', 'Trong tháng'],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setMode(key)}
+            className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${mode === key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}
+          >
+            {label}
+          </button>
+        ))}
+        {mode === 'trong-thang' && rhythm.enough && (
+          <span className="ml-auto text-sm text-slate-500">{rhythm.weeksConsidered} tuần đã qua</span>
+        )}
+      </div>
+      {mode === 'mon-tuan' ? (
+        <DishHeatmap orders={orders} menu={menu} anchor={anchor} />
+      ) : (
+        <WeekRhythmBars rhythm={rhythm} />
+      )}
+    </div>
+  );
+}
+
+// DEMO v2: card "Thời điểm" thành chart cột — cột = doanh thu từng đoạn (đầu/giữa/cuối
+// tháng, hoặc ngày trong tuần, hoặc quý), nhãn trên cột là tiền + số đơn, dưới cột giữ
+// dòng món bán chạy của đoạn đó như bản chữ cũ.
+function SegmentBars({ segments }) {
+  const maxRevenue = Math.max(...segments.map((s) => s.revenue), 0);
+  return (
+    <div className="px-5 pb-4">
+      <div className="mt-4 flex items-end gap-3">
+        {segments.map((s) => (
+          <div key={s.label} className="flex h-40 min-w-0 flex-1 flex-col items-center justify-end gap-1.5">
+            <div className="text-center leading-tight">
+              <div className="text-sm font-bold text-slate-900">{formatMoney(s.revenue)}</div>
+              <div className="text-xs text-slate-500">{s.orders} đơn</div>
+            </div>
+            <div
+              className="w-full max-w-16 rounded-t-lg"
+              style={{
+                height: `${maxRevenue ? Math.max((s.revenue / maxRevenue) * 100, s.revenue > 0 ? 3 : 0) : 0}%`,
+                background: 'var(--chart-series)',
+                opacity: s.revenue === maxRevenue && maxRevenue > 0 ? 1 : 0.5,
+              }}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="mt-2 flex gap-3 border-t border-slate-100 pt-2">
+        {segments.map((s) => (
+          <div key={s.label} className="min-w-0 flex-1 text-center">
+            <div className="text-sm font-semibold leading-snug text-slate-900">{s.label}</div>
+            <div className="mt-0.5 text-xs leading-snug text-slate-500">
+              {s.top.length ? s.top.map((t) => `${t.name} (${t.qty})`).join(' · ') : '—'}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// DEMO (Paul xem thử 24/11): combo chart Pareto cho top 10 món theo doanh thu —
+// cột = doanh thu từng món, đường = % doanh thu cộng dồn (trục phải). Dưới chart là
+// chú thích 1 dòng/món cho đúng 10 món đó. Món ngoài top 10 chỉ tính vào dòng tổng kết.
+function DishComboChart({ dishes }) {
+  const top = [...dishes].sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+  const topShare = top.reduce((sum, d) => sum + d.revenueShare, 0);
+  const restCount = dishes.length - top.length;
+
+  const W = 760;
+  const H = 350;
+  const M = { top: 26, right: 46, bottom: 96, left: 10 };
+  const plotW = W - M.left - M.right;
+  const plotH = H - M.top - M.bottom;
+  const maxRevenue = Math.max(...top.map((d) => d.revenue), 0);
+  const slot = plotW / Math.max(top.length, 1);
+  const barW = Math.min(slot * 0.62, 52);
+  let running = 0;
+  const bars = top.map((d, i) => {
+    running += d.revenueShare;
+    const h = maxRevenue ? (d.revenue / maxRevenue) * plotH : 0;
+    return {
+      ...d,
+      x: M.left + slot * i + (slot - barW) / 2,
+      cx: M.left + slot * i + slot / 2,
+      y: M.top + plotH - h,
+      h,
+      cumShare: running,
+    };
+  });
+  const linePts = bars.map((b) => `${b.cx},${M.top + plotH - b.cumShare * plotH}`).join(' ');
+
+  return (
+    <div className="px-5 pb-4">
+      <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" role="img" aria-label="Biểu đồ doanh thu top 10 món">
+        {[0, 0.25, 0.5, 0.75, 1].map((f) => (
+          <g key={f}>
+            <line x1={M.left} x2={W - M.right} y1={M.top + plotH - f * plotH} y2={M.top + plotH - f * plotH} stroke="#e2e8f0" strokeDasharray={f === 0 ? '' : '3 4'} />
+            <text x={W - M.right + 8} y={M.top + plotH - f * plotH + 4} fontSize="11" fill="#64748b">{Math.round(f * 100)}%</text>
+          </g>
+        ))}
+        {bars.map((b) => (
+          <g key={b.name}>
+            <rect x={b.x} y={b.y} width={barW} height={b.h} rx="5" style={{ fill: 'var(--chart-series)' }} />
+            <text x={b.cx} y={b.y - 7} textAnchor="middle" fontSize="11.5" fontWeight="600" fill="#334155">{fmtShortMoney(b.revenue)}</text>
+            <text x={b.cx} y={M.top + plotH + 14} fontSize="11.5" fill="#334155" textAnchor="end" transform={`rotate(-28 ${b.cx} ${M.top + plotH + 14})`}>{b.name}</text>
+          </g>
+        ))}
+        <polyline points={linePts} fill="none" stroke="#0f766e" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+        {bars.map((b) => (
+          <circle key={b.name} cx={b.cx} cy={M.top + plotH - b.cumShare * plotH} r="3.5" fill="#0f766e" stroke="#fff" strokeWidth="1.5" />
+        ))}
+        {bars.length > 0 && (
+          <text x={bars[bars.length - 1].cx} y={M.top + plotH - bars[bars.length - 1].cumShare * plotH - 10} textAnchor="middle" fontSize="12" fontWeight="700" fill="#0f766e">
+            {Math.round(bars[bars.length - 1].cumShare * 100)}%
+          </text>
+        )}
+      </svg>
+      <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-500">
+        <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: 'var(--chart-series)' }} /> Cột: doanh thu</span>
+        <span className="flex items-center gap-1.5"><span className="inline-block h-0.5 w-5 bg-teal-700" /> Đường: % doanh thu cộng dồn</span>
+      </div>
+      <ul className="mt-3 divide-y divide-slate-100 border-t border-slate-100">
+        {top.map((d, i) => {
+          const change = d.prevQty ? (d.qty - d.prevQty) / d.prevQty : null;
+          return (
+            <li key={d.name} className="flex items-baseline gap-3 py-1.5 text-sm">
+              <span className="w-5 shrink-0 text-right font-semibold text-slate-400">{i + 1}</span>
+              <span className="min-w-0 flex-1 truncate font-medium text-slate-800">{d.name}</span>
+              <span className="shrink-0 text-slate-500">{d.qty} phần</span>
+              <span className="w-20 shrink-0 text-right font-semibold text-slate-900">{formatMoney(d.revenue)}</span>
+              <span className="w-11 shrink-0 text-right text-slate-500">{Math.round(d.revenueShare * 100)}%</span>
+              <span className={`w-14 shrink-0 text-right text-xs font-semibold ${change == null ? 'text-slate-300' : change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                {change == null ? '—' : `${change >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(change * 100))}%`}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-3 text-xs text-slate-400">
+        Top {top.length} món chiếm {Math.round(topShare * 100)}% doanh thu{restCount > 0 ? ` — còn ${restCount} món khác ngoài top 10` : ''}.
+      </p>
+    </div>
   );
 }
 
@@ -258,7 +497,6 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
   const cancel = useMemo(() => periodInsights(orders, report.range).cancellation, [orders, report.range]);
   const atCurrent = report.range.end > new Date();
   const { forecast } = report;
-  const maxQty = report.dishes[0]?.qty ?? 0;
   const nextLabel = { week: 'tuần sau', month: 'tháng sau', year: 'năm sau' }[kind];
 
   return (
@@ -379,61 +617,21 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
         {report.dishes.length === 0 ? (
           <p className="px-5 py-8 text-center text-slate-400">Chưa có đơn trong kỳ này</p>
         ) : (
-          <ul className="mt-3 divide-y divide-slate-100 border-t border-slate-100">
-            {report.dishes.map((d) => {
-              const change = d.prevQty ? (d.qty - d.prevQty) / d.prevQty : null;
-              return (
-                <li key={d.name} className="px-5 py-3">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className="font-semibold text-slate-900">{d.name}</span>
-                    <span className="shrink-0 font-semibold text-slate-900">{formatMoney(d.revenue)}</span>
-                  </div>
-                  <div className="mt-1.5 flex items-center gap-3">
-                    <div className="h-1.5 flex-1 rounded-full bg-slate-200">
-                      <div className="h-full rounded-full" style={{ width: `${(d.qty / maxQty) * 100}%`, background: SERIES }} />
-                    </div>
-                    <span className="w-16 shrink-0 text-right text-sm font-semibold text-slate-700">{d.qty} phần</span>
-                  </div>
-                  <p className="mt-1 flex flex-wrap gap-x-3 text-xs text-slate-500">
-                    <span>{Math.round(d.revenueShare * 100)}% doanh thu</span>
-                    <span>giá TB {formatMoney(d.avgPrice)}</span>
-                    {change != null && (
-                      <span className={change >= 0 ? 'text-emerald-600' : 'text-red-600'}>
-                        {change >= 0 ? '▲' : '▼'} {Math.abs(Math.round(change * 100))}% (kỳ trước {d.prevQty})
-                      </span>
-                    )}
-                    {false}
-                  </p>
-                </li>
-              );
-            })}
-          </ul>
+          <DishComboChart dishes={report.dishes} />
         )}
       </Card>
 
       {/* Khách mới / khách quay lại trong đúng kỳ đang chọn */}
       <CustomerStatsCard orders={orders} range={report.range} />
 
-      {/* Nhịp tuần trong tháng trên các tuần đã kết thúc của 6 tháng gần nhất */}
-      <WeekRhythmCard orders={orders} />
+      {/* DEMO v3: thẻ gộp "Nhịp tuần" — theo tuần (xếp chồng theo món) + nhịp trong tháng */}
+      <Card title="Nhịp tuần">
+        <WeekSection report={report} orders={orders} menu={menu} anchor={anchor} />
+      </Card>
 
       {/* Thời điểm */}
       <Card title={kind === 'week' ? 'Theo ngày trong tuần' : kind === 'month' ? 'Thời điểm trong tháng' : 'Theo quý'}>
-        <ul className="mt-3 divide-y divide-slate-100 border-t border-slate-100">
-          {report.segments.map((s) => (
-            <li key={s.label} className="px-5 py-3">
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="font-semibold text-slate-900">{s.label}</span>
-                <span className="shrink-0 text-sm text-slate-500">
-                  {s.orders} đơn · <b className="text-slate-900">{formatMoney(s.revenue)}</b>
-                </span>
-              </div>
-              <p className="mt-0.5 text-sm text-slate-600">
-                {s.top.length ? s.top.map((t) => `${t.name} (${t.qty})`).join(' · ') : <span className="text-slate-400">—</span>}
-              </p>
-            </li>
-          ))}
-        </ul>
+        <SegmentBars segments={report.segments} />
       </Card>
 
       {/* Nhận xét tự động */}
