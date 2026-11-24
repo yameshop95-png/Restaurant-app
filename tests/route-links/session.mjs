@@ -6,7 +6,7 @@
 // Chạy qua run.mjs (npm run test:routelinks).
 import { directionsUrl, routeSegments, MAX_ROUTE_STOPS } from '../../src/lib/geo.js';
 import { isShippedToday, needsCustomerMessage } from '../../src/lib/orderStatus.js';
-import { planRoute } from '../../src/lib/route.js';
+import { planRoute, planRouteByArea, sideOf } from '../../src/lib/route.js';
 import { routeText } from '../../src/lib/shareOrder.js';
 import { orderTotal } from '../../src/lib/stats.js';
 
@@ -213,6 +213,67 @@ for (const app of ['google', 'apple']) {
     'lộ trình: khung trễ xếp đầu, khung ngày mai xếp cuối',
     plan.slots[0].label === 'Đã trễ giờ' && plan.slots[plan.slots.length - 1].label.includes('22/11')
   );
+}
+
+// ───── Lộ trình theo khu vực (24/11): Wodonga trước, ~10:00 mới qua Albury – Lavington
+{
+  console.log('\nLộ trình theo khu vực');
+  const P = {
+    w1: { lat: -36.13, lng: 146.87, zone: 'West Wodonga 3690', a: '1 A St, West Wodonga VIC 3690' },
+    w2: { lat: -36.145, lng: 146.9, zone: 'Wodonga 3690', a: '2 B St, Wodonga VIC 3690' },
+    w3: { lat: -36.115, lng: 146.915, zone: 'Wodonga 3690', a: '3 C St, Wodonga VIC 3690' },
+    a1: { lat: -36.08, lng: 146.915, zone: 'Albury 2640', a: '4 D St, Albury NSW 2640' },
+    a2: { lat: -36.065, lng: 146.935, zone: 'North Albury 2640', a: '5 E St, North Albury NSW 2640' },
+    l1: { lat: -36.04, lng: 146.93, zone: 'Lavington 2641', a: '6 F St, Lavington NSW 2641' },
+    t1: { lat: -36.05, lng: 146.99, zone: 'Thurgoona 2640', a: '7 G St, Thurgoona NSW 2640' },
+    w4: { lat: -36.16, lng: 146.88, zone: 'Wodonga 3690', a: '8 H St, Wodonga VIC 3690' },
+    w5: { lat: -36.1, lng: 146.86, zone: 'Wodonga 3690', a: '9 I St, Wodonga 3690' },
+    w6: { lat: -36.14, lng: 146.84, zone: 'West Wodonga 3690', a: '10 J St, West Wodonga 3690' },
+  };
+  const SHOP = { lat: -36.1205, lng: 146.888 };
+  const mk = (id, h, m = 0) => ({ id, number: id, deliverAt: at(2026, 10, 28, h, m), customer: { address: P[id].a } });
+  const geoOf = (orders) => new Map(orders.map((o) => [o.id, P[o.id]]));
+  const ids = (plan) => plan.slots.flatMap((s) => s.stops.map((x) => x.order.id));
+  const sideSeq = (plan) => ids(plan).map((id) => id[0] === 'w' ? 'V' : 'N').join('');
+  const crossings = (plan) => sideSeq(plan).split('').filter((c, i, arr) => i && c !== arr[i - 1]).length;
+
+  check('sideOf: Wodonga → vic', sideOf('12 High St, Wodonga VIC 3690') === 'vic');
+  check('sideOf: Lavington → nsw', sideOf('6 F St, Lavington') === 'nsw');
+  check('sideOf: "Wodonga Pl, Albury" là Albury (tên đường)', sideOf('3 Wodonga Pl, Albury NSW') === 'nsw');
+  check('sideOf: chỉ có postcode 3691 → vic', sideOf('5 Smith St 3691') === 'vic');
+  check('sideOf: không chữ nào, đoán theo toạ độ', sideOf('5 Smith St', { lat: -36.13, lng: 146.88 }) === 'vic');
+
+  // Giờ hẹn xen kẽ hai bên sông, không đơn gấp: chỉ qua sông 1 lần, ngắn hơn hẳn kiểu cũ
+  const mixed = [mk('a1', 10, 0), mk('w1', 9, 15), mk('l1', 10, 45), mk('w2', 10, 0), mk('t1', 10, 30), mk('w3', 11, 0), mk('a2', 11, 30)];
+  const now8 = new Date(2026, 10, 28, 8, 0);
+  const byArea = planRouteByArea(mixed, geoOf(mixed), SHOP, now8);
+  const byTime = planRoute(mixed, geoOf(mixed), SHOP, now8, 30);
+  check('khu vực: giao hết Wodonga rồi mới qua sông (1 lần qua sông)', sideSeq(byArea) === 'VVVNNNN');
+  check('khu vực: tổng km ít hơn kiểu theo giờ ít nhất 30%', byArea.totalKm < byTime.totalKm * 0.7);
+  check('khu vực: hai phần "Bên Wodonga" và "Albury – Lavington · từ ~10:00"',
+    byArea.slots.map((s) => s.label).join('|') === 'Bên Wodonga|Albury – Lavington · từ ~10:00');
+  check('khu vực: số thứ tự 1..7 liên tục', byArea.slots.flatMap((s) => s.stops.map((x) => x.index)).join() === '1,2,3,4,5,6,7');
+
+  // Đơn Albury hẹn 9:30 (trước 10:00) mà giao hết Wodonga vẫn kịp: đứng đầu phần bên kia sông
+  const early = [mk('a1', 9, 30), mk('w1', 10, 0), mk('w2', 10, 0), mk('w3', 11, 0), mk('l1', 11, 0)];
+  const pe = planRouteByArea(early, geoOf(early), SHOP, now8);
+  check('đơn gấp kịp giờ: vẫn Wodonga trước, đơn gấp đi đầu bên kia', ids(pe).join() === 'w3,w1,w2,a1,l1' || (sideSeq(pe) === 'VVVNN' && ids(pe)[3] === 'a1'));
+
+  // Nhiều điểm Wodonga + đơn Albury hẹn 8:25, xuất phát 8:00: đơn gấp phải kịp giờ
+  const urgent = [mk('a1', 8, 25), mk('w1', 9), mk('w2', 9), mk('w3', 9), mk('w4', 9, 30), mk('w5', 9, 30), mk('w6', 9, 30), mk('l1', 11)];
+  const pu = planRouteByArea(urgent, geoOf(urgent), SHOP, now8);
+  const posA1 = ids(pu).indexOf('a1');
+  check('đơn gấp 8:25: nằm trong phần đỏ "đơn gấp"', pu.slots.some((s) => s.overdue && s.stops.some((x) => x.order.id === 'a1')));
+  check('đơn gấp 8:25: giao trước mọi đơn Wodonga đủ để kịp (vị trí ≤ 2)', posA1 <= 1);
+  check('đơn gấp 8:25: Lavington 11:00 vẫn để cuối', ids(pu).at(-1) === 'l1');
+  check('đơn gấp 8:25: đủ 8 điểm', ids(pu).length === 8);
+
+  // Đơn chưa có toạ độ vẫn hiện, ở cuối phần của bên sông theo địa chỉ
+  const unl = [mk('w1', 9), mk('a1', 10, 30), { id: 'x', number: 'x', deliverAt: at(2026, 10, 28, 9, 30), customer: { address: '9 Z St, Lavington NSW 2641' } }];
+  const g2 = geoOf(unl.slice(0, 2));
+  g2.set('x', null);
+  const pn = planRouteByArea(unl, g2, SHOP, now8);
+  check('chưa có toạ độ: vẫn hiện, xếp vào bên Albury', pn.slots.at(-1).stops.some((x) => x.order.id === 'x' && x.geo === null));
 }
 
 console.log(`\nKẾT QUẢ: ${passed} đạt, ${failed} trượt`);

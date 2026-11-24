@@ -233,3 +233,18 @@ Cách chạy: đơn web qua bản sao `place_web_order` (dedupe) trên Postgres 
 - **In lại bill khi sửa món:** `App.editOrder` so món/phí/giảm giá cũ–mới, đổi thì hỏi "In lại bill?" → `sendToShopPrinter`.
 - **Cảnh báo đơn trùng:** `src/lib/duplicates.js`. Tạo đơn tay mà cùng khách (SĐT ≥ 8 số, không có thì tên bỏ dấu) đã có đơn chưa huỷ cùng ngày → hỏi lại trước khi tạo. Thẻ đơn có chip đỏ "Có thể trùng đơn #N" khi cùng khách, cùng ngày, món giống hệt.
 - **Cập nhật (Paul chốt lại):** bỏ tab đỏ "Giao không được" khỏi thanh trạng thái danh sách. Đơn `failed` giờ hiện trong khung đỏ "Giao không được (N)" ngay **dưới Lộ trình giao** ở `RoutePlanner` (cả khi đã giao hết các điểm), mỗi đơn có Gọi / Giao lại / Huỷ.
+
+## 24/11 — Lộ trình giao xếp THEO KHU VỰC (Claude)
+
+Paul báo: 7 điểm mà chạy 48 km / gần 2 tiếng, vì lộ trình cũ xếp theo khung giờ 30 phút trước nên cứ qua sông Murray rồi quay về.
+
+- `src/lib/route.js`: thêm `planRouteByArea(orders, geo, start, now, { homeSide })` và `sideOf(address, geo)`.
+  - Giao hết **bên quán (Wodonga, VIC)** trước. Khoảng **10:00** (`CROSS_HOUR`) mới qua sông giao **Albury – Lavington – Thurgoona (NSW)**.
+  - Đơn bên kia sông hẹn trước 10:00 là **đơn gấp**. Nếu giao hết bên quán mà vẫn kịp giờ thì đơn gấp đứng đầu phần bên kia. Nếu không kịp thì app thử mọi chỗ chèn một chuyến qua sông riêng (phần đỏ "đơn gấp") và lấy phương án kịp giờ (cho phép trễ 10 phút) mà ít km nhất.
+  - Ước tính giờ đến dùng cùng công thức với `estimateRunMinutes`: đường thật = 1,4 × đường chim bay, 40 km/h, 4 phút mỗi điểm.
+  - Trong mỗi bên sông, điểm gần nhất đi trước. Không gom theo suburb nữa, vì trên mẫu gom theo suburb dài hơn khoảng 15%.
+  - Xác định bên sông theo thứ tự: tên khu ở `shippingZones` → postcode 3xxx/2xxx → chữ VIC/NSW → vĩ độ (khoảng -36.095).
+  - Bên quán lấy từ `settings.shopAddress`; không đọc được thì mặc định Wodonga.
+- `RoutePlanner.jsx`: thêm nút chọn **Theo khu vực** (mặc định) / **Theo giờ hẹn** (kiểu cũ, còn chọn khung giờ 15/30/60). Lựa chọn lưu trong `localStorage.routeMode`. Đầu mỗi phần dùng icon MapPin.
+- `planRoute` cũ không đổi. **Đợt nấu (`batches.js`) vẫn xếp theo giờ**, cố ý giữ như vậy để bếp nấu theo giờ hẹn.
+- Test: `npm run test:routelinks` có thêm 15 ca (tổng 60). Trên mẫu 7 điểm xen kẽ hai bên: 54,5 km theo kiểu cũ, 25,3 km theo khu vực (đều là km đường chim bay).

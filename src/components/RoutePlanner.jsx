@@ -5,7 +5,7 @@ import { cachedGeocode, currentPosition, directionsUrl, geocode, routeSegments }
 import { geoRecordFor, storedGeoOf } from '../lib/orderGeo';
 import { isShippedToday } from '../lib/orderStatus';
 import { mapsUrl, routeText, shareText } from '../lib/shareOrder';
-import { estimateRunMinutes, formatMinutes, planRoute, SLOT_OPTIONS } from '../lib/route';
+import { CROSS_HOUR, estimateRunMinutes, formatMinutes, planRoute, planRouteByArea, sideOf, SLOT_OPTIONS } from '../lib/route';
 import { formatMoney, orderTotal } from '../lib/stats';
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -21,6 +21,24 @@ const hhmm = (iso) => {
 export default function RoutePlanner({ orders, now, settings, onSetStatus, onStoreGeo }) {
   const [start, setStart] = useState(null); // { lat, lng, label, kind: 'gps' | 'shop' }
   const [slotMinutes, setSlotMinutes] = useState(30);
+  // 'area': bên Wodonga trước, ~10:00 mới qua Albury – Lavington (mặc định, ý Paul 24/11);
+  // 'time': kiểu cũ, theo khung giờ. Nhớ lựa chọn trên máy.
+  const [mode, setMode] = useState(() => {
+    try {
+      return localStorage.getItem('routeMode') === 'time' ? 'time' : 'area';
+    } catch {
+      return 'area';
+    }
+  });
+  const chooseMode = (m) => {
+    setMode(m);
+    try {
+      localStorage.setItem('routeMode', m);
+    } catch {
+      /* không lưu được thì thôi */
+    }
+  };
+  const homeSide = sideOf(settings?.shopAddress) ?? 'vic';
   const [state, setState] = useState({ status: 'idle' });
   // Tăng sau mỗi lần tra địa chỉ để đọc lại kết quả đã lưu
   const [geoVersion, setGeoVersion] = useState(0);
@@ -72,7 +90,10 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus, onSto
   );
 
   const plan = useMemo(() => {
-    const base = planRoute(plannable, geo, start, now, slotMinutes);
+    const base =
+      mode === 'area'
+        ? planRouteByArea(plannable, geo, start, now, { homeSide })
+        : planRoute(plannable, geo, start, now, slotMinutes);
     if (!noTime.length) return base;
     const firstIndex = base.slots.reduce((n, s) => n + s.stops.length, 0);
     const extra = {
@@ -81,7 +102,7 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus, onSto
       stops: noTime.map((o, i) => ({ order: o, geo: geo.get(o.id) ?? null, distanceKm: null, index: firstIndex + i + 1 })),
     };
     return { slots: [...base.slots, extra], totalKm: base.totalKm };
-  }, [plannable, noTime, geo, start, now, slotMinutes]);
+  }, [plannable, noTime, geo, start, now, slotMinutes, mode, homeSide]);
   const stops = plan.slots.flatMap((s) => s.stops);
   const located = stops.filter((s) => s.geo);
 
@@ -243,21 +264,46 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus, onSto
         </section>
       )}
       <section className="space-y-3 rounded-3xl border border-slate-200 bg-card p-4 shadow-sm">
-        <p className="text-sm text-slate-600">
-          Thứ tự giao: <b>giờ sớm trước</b> (theo khung giờ) → <b>giao hết từng vùng</b> → <b>điểm gần trước, xa sau</b>.
-        </p>
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-slate-500">Khung giờ:</span>
-          {SLOT_OPTIONS.map((m) => (
+        <div className="flex rounded-2xl bg-slate-100 p-1 text-sm font-semibold">
+          {[
+            ['area', 'Theo khu vực'],
+            ['time', 'Theo giờ hẹn'],
+          ].map(([m, label]) => (
             <button
               key={m}
-              onClick={() => setSlotMinutes(m)}
-              className={`rounded-full px-3 py-1 font-semibold ${slotMinutes === m ? 'bg-slate-900 text-slate-50' : 'bg-slate-100 text-slate-600'}`}
+              onClick={() => chooseMode(m)}
+              className={`flex-1 rounded-xl py-2 ${mode === m ? 'bg-card text-slate-900 shadow-sm' : 'text-slate-500'}`}
             >
-              {m} phút
+              {label}
             </button>
           ))}
         </div>
+        {mode === 'area' ? (
+          <p className="text-sm text-slate-600">
+            Giao hết <b>bên {homeSide === 'vic' ? 'Wodonga' : 'Albury'}</b> trước → khoảng{' '}
+            <b>{String(CROSS_HOUR).padStart(2, '0')}:00</b> mới qua sông giao{' '}
+            <b>{homeSide === 'vic' ? 'Albury – Lavington' : 'Wodonga'}</b>. Đơn bên kia sông hẹn trước{' '}
+            {String(CROSS_HOUR).padStart(2, '0')}:00 được chèn vào lúc vẫn kịp giờ. Trong mỗi bên: gần trước, xa sau.
+          </p>
+        ) : (
+          <>
+            <p className="text-sm text-slate-600">
+              Thứ tự giao: <b>giờ sớm trước</b> (theo khung giờ) → <b>giao hết từng vùng</b> → <b>điểm gần trước, xa sau</b>.
+            </p>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-slate-500">Khung giờ:</span>
+              {SLOT_OPTIONS.map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setSlotMinutes(m)}
+                  className={`rounded-full px-3 py-1 font-semibold ${slotMinutes === m ? 'bg-slate-900 text-slate-50' : 'bg-slate-100 text-slate-600'}`}
+                >
+                  {m} phút
+                </button>
+              ))}
+            </div>
+          </>
+        )}
         <button
           onClick={run}
           disabled={working}
@@ -344,7 +390,7 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus, onSto
           <h2
             className={`flex items-center gap-2 px-5 py-3 font-bold ${slot.overdue ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-800'}`}
           >
-            <AlarmClock size={17} /> {slot.label}
+            {mode === 'area' ? <MapPin size={17} /> : <AlarmClock size={17} />} {slot.label}
           </h2>
           <ol className="divide-y divide-slate-100">
             {slot.stops.map(({ order, geo: g, distanceKm, index }, i) => {
