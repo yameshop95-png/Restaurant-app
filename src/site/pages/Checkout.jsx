@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Banknote, Check, Loader2, Minus, Phone, Plus, ShoppingBag, Truck } from 'lucide-react';
+import { Banknote, Check, Clock, Loader2, MessageCircle, Minus, Phone, Plus, ShoppingBag, Truck } from 'lucide-react';
 import { DEFAULT_ZONES } from '../../lib/shippingZones';
 import { formatMoney } from '../format';
 import { TEXT } from '../../order/i18n';
@@ -18,7 +18,7 @@ import {
   slotsForDay,
   timeKey,
 } from '../format';
-import { checkoutLine, checkoutName } from '../lib';
+import { checkoutLine, checkoutName, SOCIAL } from '../lib';
 import { useSite } from '../ui';
 import { joinAddress, suburbOptions } from '../suburbs';
 
@@ -509,6 +509,7 @@ export default function Checkout() {
               </div>
 
               {isDelivery ? (
+                <>
                 <Field
                   label={t.deliveryDay}
                   error={shown.time}
@@ -527,6 +528,22 @@ export default function Checkout() {
                     ))}
                   </select>
                 </Field>
+                {/* Nhắc khách giờ giao chỉ là dự kiến (ý Paul 24/11): lộ trình xếp theo khu vực nên không đúng từng phút */}
+                <div className="flex gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-relaxed text-amber-900">
+                  <Clock size={17} className="mt-0.5 shrink-0" />
+                  <p>
+                    {t.deliveryTimeNote}{' '}
+                    <a
+                      href={SOCIAL.messenger || SOCIAL.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 font-semibold underline underline-offset-2"
+                    >
+                      <MessageCircle size={14} /> {t.deliveryTimeMsg}
+                    </a>
+                  </p>
+                </div>
+                </>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   <Field label={t.date}>

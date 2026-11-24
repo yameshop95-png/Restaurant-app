@@ -9,6 +9,9 @@ export const TEXT = {
     deliveryRule: (day, from, to, cutDay, cut) => `Giao hàng: chỉ sáng ${day} (${from}–${to}), đặt trước ${cut} ${cutDay}`,
     deliveryDay: 'Ngày giao',
     deliveryWindow: (from, to) => `Giao trong khoảng ${from}–${to}`,
+    deliveryTimeNote:
+      'Giờ giao chỉ là dự kiến: tuỳ số đơn và đường đi trong ngày, đơn có thể đến sớm hoặc muộn hơn một chút. Cần gấp hoặc cần giao đúng giờ, bạn nhắn tin trực tiếp cho quán nhé.',
+    deliveryTimeMsg: 'Nhắn tin cho quán',
     weekdays: ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'],
     menu: 'Thực đơn',
     soldOut: 'Hết món',
@@ -102,6 +105,9 @@ export const TEXT = {
       `Delivery: ${day} mornings only (${from}–${to}). Order by ${cut} ${cutDay}.`,
     deliveryDay: 'Delivery day',
     deliveryWindow: (from, to) => `Delivered between ${from} and ${to}`,
+    deliveryTimeNote:
+      'Delivery times are an estimate: depending on the number of orders and the route that day, your order may arrive a little earlier or later. If you need it urgently or at an exact time, please message us directly.',
+    deliveryTimeMsg: 'Message us',
     weekdays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
     menu: 'Menu',
     soldOut: 'Sold out',
