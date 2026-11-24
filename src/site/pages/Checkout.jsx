@@ -240,7 +240,8 @@ export default function Checkout() {
 
   const errors = {};
   if (!form.name.trim()) errors.name = t.errName;
-  if (form.phone.replace(/\D/g, '').length < 8) errors.phone = t.errPhone;
+  if (!form.phone.trim()) errors.phone = t.errPhoneEmpty ?? t.errPhone;
+  else if (form.phone.replace(/\D/g, '').length < 8) errors.phone = t.errPhone;
   if (form.email.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim())) errors.email = t.errEmail;
   if (isDelivery && !form.houseNo.trim()) errors.houseNo = t.errHouseNo;
   if (isDelivery && form.street.trim().length < 2) errors.street = t.errStreet;
