@@ -89,12 +89,28 @@ const inRange = (range) => (o) => {
 // thực đơn web/app ghi kèm định lượng ("Giò lụa 500g", "Bánh cuốn 1kg"), sổ giấy và
 // đơn nhập tay thì không ("Giò Lụa", "Bánh cuốn"). Chỉ bỏ token trọng lượng cuối tên
 // (500g, 1kg, 1 kg...) — các phân biệt thật như "nhỏ", "mặn", "ngọt", "chuối" giữ nguyên.
-const dishKey = (name) =>
-  normalizeText(name)
+// Bí danh theo thực đơn trong Cài đặt app — nguồn sự thật cho danh tính món (Paul chốt
+// 24/11: "cùng món nhưng giá mới" thì vẫn là một món). Sổ giấy ghi tên khác thực đơn
+// hiện tại: thiếu chữ "Bánh", ghi thêm "mặn" cho món mặn mặc định, hoặc tên cũ trước
+// khi quán đổi tên. Các biến thể "ngọt" là món khác hẳn nên KHÔNG có bí danh.
+const DISH_ALIASES = {
+  'banh chung man': 'banh chung',
+  'banh tet man': 'banh tet',
+  'tet chuoi': 'banh tet chuoi',
+  'tau hu': 'tau hu singapore',
+};
+
+const dishKey = (name) => {
+  const base = normalizeText(name)
     .replace(/\s+\d+(?:[.,]\d+)?\s*(kg|g)$/, '')
     .trim();
+  return DISH_ALIASES[base] ?? base;
+};
 
-function dishTotals(orders) {
+function dishTotals(orders, menu = []) {
+  // Tên chuẩn lấy từ thực đơn Cài đặt app: nhóm nào khớp một món trong thực đơn
+  // thì hiển thị đúng tên thực đơn (VD nhóm "Tàu Hũ" hiện là "Tàu Hũ Singapore").
+  const menuNames = new Map(menu.map((m) => [dishKey(m.name ?? ''), m.name]));
   const map = new Map();
   for (const o of orders) {
     for (const { name, qty, price } of o.items) {
@@ -109,8 +125,14 @@ function dishTotals(orders) {
       map.set(key, row);
     }
   }
-  // Tên hiển thị: biến thể bán nhiều nhất trong nhóm (ổn định, không phụ thuộc thứ tự đơn).
-  for (const row of map.values()) {
+  // Tên hiển thị: ưu tiên tên thực đơn; không có trong thực đơn thì lấy biến thể
+  // bán nhiều nhất trong nhóm (ổn định, không phụ thuộc thứ tự đơn).
+  for (const [key, row] of map.entries()) {
+    if (menuNames.has(key)) {
+      row.name = menuNames.get(key);
+      delete row.variants;
+      continue;
+    }
     let best = row.name;
     let bestQty = -1;
     for (const [variant, vQty] of row.variants) {
@@ -144,8 +166,8 @@ export function buildReport(allOrders, kind, anchor, menu = [], now = new Date()
   const totalQty = sum(orders, (o) => sum(o.items, (i) => i.qty));
 
   // Món: số lượng, doanh thu, tỉ trọng, giá TB, so với kỳ trước
-  const dishes = dishTotals(orders);
-  const prevDishes = dishTotals(prevOrders);
+  const dishes = dishTotals(orders, menu);
+  const prevDishes = dishTotals(prevOrders, menu);
   const dishRows = [...dishes.entries()]
     .map(([key, d]) => ({
       ...d,
