@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -42,100 +42,90 @@ function Card({ title, right, children }) {
 const fmtShortMoney = (v) => (v >= 1000 ? `$${(v / 1000).toFixed(1).replace('.', ',')}k` : formatMoney(v));
 
 
-// Màu cho 5 món trong chart xếp chồng theo tuần (món 1 = cam chính của quán).
-const DISH_COLORS = ['var(--chart-series)', '#0f766e', '#d97706', '#2563eb', '#7c3aed'];
-const OTHER_COLOR = '#cbd5e1';
-
-// DEMO v2: chart xếp chồng theo tuần — mỗi cột là 1 tuần, các màu là top 5 món của kỳ
-// đang xem (xám = các món còn lại). Trả lời câu hỏi "tuần nào như nào": tuần nào doanh
-// thu cao/thấp và món nào kéo tuần đó. Tính bằng chính buildReport theo từng tuần.
-function WeeklyDishChart({ orders, menu, anchor, topNames }) {
-  const weeks = useMemo(() => {
-    const list = [];
+// DEMO v4 (Paul chọn 24/11): BẢN ĐỒ NHIỆT món × tuần — hàng là top 8 món của kỳ đang
+// xem, cột là 8 tuần gần nhất, ô càng đậm thì món đó tuần đó bán càng mạnh (doanh thu).
+// Một hình trả lời cả hai câu "tuần nào như nào" và "món nào đang lên/xuống": hàng đậm
+// đều = món gánh quán, hàng nhạt dần = món đang đuối, cột đậm = tuần nóng.
+// Thay cho chart xếp chồng ở v2/v3 (Paul nhận xét chỉ "tạm được").
+const HEAT_STEPS = ['#f8fafc', '#ffedd5', '#fed7aa', '#fdba74', '#fb923c', '#f97316', '#ea580c'];
+function DishHeatmap({ orders, menu, anchor, dishNames }) {
+  const data = useMemo(() => {
+    const weeks = [];
     for (let i = 7; i >= 0; i--) {
       const r = buildReport(orders, 'week', shiftPeriod('week', anchor, -i), menu);
       const byName = new Map(r.dishes.map((d) => [d.name, d.revenue]));
-      const total = r.dishes.reduce((sum, d) => sum + d.revenue, 0);
-      const parts = topNames.map((name) => byName.get(name) ?? 0);
-      list.push({ start: r.range.start, total, parts, other: Math.max(total - parts.reduce((a, b) => a + b, 0), 0) });
+      weeks.push({ start: r.range.start, total: r.dishes.reduce((sum, d) => sum + d.revenue, 0), byName });
     }
-    return list;
-  }, [orders, menu, anchor, topNames]);
+    const matrix = dishNames.map((name) => weeks.map((w) => w.byName.get(name) ?? 0));
+    const max = Math.max(...matrix.flat(), 0);
+    const hottest = weeks.reduce((best, w, i) => (w.total > (weeks[best]?.total ?? -1) ? i : best), 0);
+    return { weeks, matrix, max, hottest };
+  }, [orders, menu, anchor, dishNames]);
 
-  const W = 760;
-  const H = 318;
-  const M = { top: 26, right: 8, bottom: 30, left: 8 };
-  const plotW = W - M.left - M.right;
-  const plotH = H - M.top - M.bottom;
-  const maxTotal = Math.max(...weeks.map((w) => w.total), 0);
-  const slot = plotW / Math.max(weeks.length, 1);
-  const barW = Math.min(slot * 0.6, 56);
   const fmtDay = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const cellStyle = (v) => {
+    if (!v || !data.max) return { background: HEAT_STEPS[0], color: '#cbd5e1' };
+    const idx = Math.min(1 + Math.floor((v / data.max) * (HEAT_STEPS.length - 1)), HEAT_STEPS.length - 1);
+    return { background: HEAT_STEPS[idx], color: idx >= 5 ? '#fff' : '#334155' };
+  };
 
   return (
-    <div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" role="img" aria-label="Doanh thu theo tuần, xếp chồng theo món">
-        {[0.25, 0.5, 0.75, 1].map((f) => (
-          <line key={f} x1={M.left} x2={W - M.right} y1={M.top + plotH - f * plotH} y2={M.top + plotH - f * plotH} stroke="#e2e8f0" strokeDasharray="3 4" />
-        ))}
-        <line x1={M.left} x2={W - M.right} y1={M.top + plotH} y2={M.top + plotH} stroke="#e2e8f0" />
-        {weeks.map((w, i) => {
-          const x = M.left + slot * i + (slot - barW) / 2;
-          const cx = M.left + slot * i + slot / 2;
-          let acc = 0;
-          const segs = [...w.parts, w.other].map((v, j) => {
-            const h = maxTotal ? (v / maxTotal) * plotH : 0;
-            const y = M.top + plotH - acc - h;
-            acc += h;
-            return { v, h, y, color: j < DISH_COLORS.length ? DISH_COLORS[j] : OTHER_COLOR };
-          });
-          return (
-            <g key={i}>
-              {segs.map((sg, j) => sg.h > 0 && (
-                <rect key={j} x={x} y={sg.y} width={barW} height={sg.h} fill={sg.color} />
+    <div className="mt-3">
+      <div className="overflow-x-auto">
+        <div className="grid min-w-[560px] gap-1" style={{ gridTemplateColumns: 'minmax(92px,1.15fr) repeat(8, minmax(0,1fr))' }}>
+          <div />
+          {data.weeks.map((w, i) => (
+            <div key={i} className={`pb-0.5 text-center text-[11px] font-semibold ${i === data.hottest ? 'text-orange-600' : 'text-slate-500'}`}>
+              {fmtDay(w.start)}
+            </div>
+          ))}
+          {dishNames.map((name, r) => (
+            <Fragment key={name}>
+              <div className="flex items-center truncate pr-1 text-xs font-medium text-slate-700" title={name}>{name}</div>
+              {data.matrix[r].map((v, c) => (
+                <div key={`${name}-${c}`} className="flex h-9 items-center justify-center rounded-md text-[11px] font-semibold" style={cellStyle(v)}>
+                  {v ? fmtShortMoney(v) : '—'}
+                </div>
               ))}
-              {w.total > 0 && (
-                <text x={cx} y={M.top + plotH - acc - 7} textAnchor="middle" fontSize="11.5" fontWeight="600" fill="#334155">{fmtShortMoney(w.total)}</text>
-              )}
-              <text x={cx} y={M.top + plotH + 20} textAnchor="middle" fontSize="11.5" fill="#64748b">{fmtDay(w.start)}</text>
-            </g>
-          );
-        })}
-      </svg>
-      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-        {topNames.map((name, i) => (
-          <span key={name} className="flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: DISH_COLORS[i] }} /> {name}
-          </span>
-        ))}
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: OTHER_COLOR }} /> Món khác
-        </span>
+            </Fragment>
+          ))}
+          <div className="pt-1 text-xs font-semibold text-slate-500">Tổng tuần</div>
+          {data.weeks.map((w, i) => (
+            <div key={i} className={`pt-1 text-center text-[11px] font-bold ${i === data.hottest ? 'text-orange-600' : 'text-slate-700'}`}>
+              {fmtShortMoney(w.total)}
+            </div>
+          ))}
+        </div>
       </div>
-      <p className="mt-3 text-xs text-slate-400">
-        Mỗi cột là 1 tuần (ngày dưới cột là thứ Hai đầu tuần), số trên đầu cột là tổng doanh thu tuần. Màu theo top 5
-        món của kỳ đang xem ở trên.
+      <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+        <span>Ít</span>
+        <span className="h-2.5 flex-1 rounded-full" style={{ background: `linear-gradient(to right, ${HEAT_STEPS.join(',')})` }} />
+        <span>Nhiều</span>
+      </div>
+      <p className="mt-2 text-xs text-slate-400">
+        Ô càng đậm = món đó tuần đó doanh thu càng cao. Tuần bán mạnh nhất trong 8 tuần: bắt đầu {fmtDay(data.weeks[data.hottest].start)} ({formatMoney(data.weeks[data.hottest].total)}).
       </p>
     </div>
   );
 }
+
 
 // DEMO v3 (Paul gợi ý 24/11): gộp mọi thứ về tuần vào MỘT thẻ "Nhịp tuần" với 2 chế độ
 // xem — "Theo tuần": 8 tuần gần nhất xếp chồng theo món; "Trong tháng": nhịp tuần 1–5
 // trong tháng (chart của WeekRhythmCard cũ). Gộp kiểu chuyển chế độ thì không rối vì
 // mỗi chế độ chỉ hiện một ý; card món trở về Pareto thuần như v1.
 function WeekSection({ report, orders, menu, anchor }) {
-  const [mode, setMode] = useState('theo-tuan');
+  const [mode, setMode] = useState('mon-tuan');
   const rhythm = useMemo(() => weekOfMonthRhythm(orders, new Date()), [orders]);
   const topNames = useMemo(
-    () => [...report.dishes].sort((a, b) => b.revenue - a.revenue).slice(0, 5).map((d) => d.name),
+    () => [...report.dishes].sort((a, b) => b.revenue - a.revenue).slice(0, 8).map((d) => d.name),
     [report.dishes],
   );
   return (
     <div className="px-5 pb-4">
       <div className="mt-3 flex items-center gap-2">
         {[
-          ['theo-tuan', 'Theo tuần'],
+          ['mon-tuan', 'Món × tuần'],
           ['trong-thang', 'Trong tháng'],
         ].map(([key, label]) => (
           <button
@@ -151,8 +141,8 @@ function WeekSection({ report, orders, menu, anchor }) {
           <span className="ml-auto text-sm text-slate-500">{rhythm.weeksConsidered} tuần đã qua</span>
         )}
       </div>
-      {mode === 'theo-tuan' ? (
-        <WeeklyDishChart orders={orders} menu={menu} anchor={anchor} topNames={topNames} />
+      {mode === 'mon-tuan' ? (
+        <DishHeatmap orders={orders} menu={menu} anchor={anchor} dishNames={topNames} />
       ) : (
         <WeekRhythmBars rhythm={rhythm} />
       )}
