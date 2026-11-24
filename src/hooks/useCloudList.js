@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cacheLoadList, cacheSaveList } from '../lib/listCache';
 import { supabase } from '../lib/supabase';
+import { registerResync } from '../lib/resync';
 import { enqueue, hasPending, onDrained, syncReady } from '../lib/sync';
 
 const PAGE = 1000; // máy chủ trả tối đa 1000 dòng mỗi lần: đọc nối tiếp cho đủ
@@ -122,6 +123,10 @@ export default function useCloudList(table, { fromRow, sort = (list) => list, wr
 
   useEffect(() => {
     alive.current = true;
+    // Nút "Đồng bộ lại" trên TopBar: tải lại TOÀN BỘ bảng này từ máy chủ (kể cả các dòng
+    // đã bị xoá ở máy khác). refetch tự bỏ qua nếu bảng đang có thay đổi chưa gửi được,
+    // và hàng đợi gửi xong sẽ tự gọi refetch lại (onDrained bên dưới) nên không mất dữ liệu.
+    const offResync = registerResync(() => refetch({ full: true }));
     // Hiện bản lưu tạm trước (nếu máy chủ chưa kịp trả), rồi hỏi máy chủ
     cacheLoadList(table).then((cached) => {
       if (alive.current && cached?.items && !meta.current.fromServer && !hasPending(table)) {
@@ -195,6 +200,7 @@ export default function useCloudList(table, { fromRow, sort = (list) => list, wr
     document.addEventListener('visibilitychange', onVisible);
     const offDrained = onDrained(refetch);
     return () => {
+      offResync();
       alive.current = false;
       supabase.removeChannel(channel);
       document.removeEventListener('visibilitychange', onVisible);

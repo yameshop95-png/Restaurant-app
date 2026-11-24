@@ -1,5 +1,7 @@
-import { Bell, CloudOff, Loader2, Menu, TriangleAlert, X } from 'lucide-react';
+import { Bell, Check, CloudOff, Loader2, Menu, RefreshCw, TriangleAlert, X } from 'lucide-react';
+import { useState } from 'react';
 import useSyncStatus from '../hooks/useSyncStatus';
+import { requestResync } from '../lib/resync';
 import { clearError, retrySync } from '../lib/sync';
 import { NAV_ITEMS } from './navigation';
 
@@ -38,6 +40,42 @@ function SyncBadge() {
   return null;
 }
 
+// Nút đồng bộ tay (ý Paul 25/11): lúc app mở chậm hoặc số liệu chưa cập nhật, bấm để
+// đẩy nốt thay đổi chưa gửi lên máy chủ rồi tải lại toàn bộ dữ liệu mới nhất xuống.
+// Đang chạy thì icon quay; xong thì hiện dấu tick xanh 2 giây.
+function ResyncButton() {
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const onClick = async () => {
+    if (busy) return;
+    setBusy(true);
+    setDone(false);
+    try {
+      retrySync();
+      await requestResync();
+    } finally {
+      setBusy(false);
+      setDone(true);
+      setTimeout(() => setDone(false), 2000);
+    }
+  };
+  return (
+    <button
+      onClick={onClick}
+      disabled={busy}
+      className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100 disabled:opacity-70"
+      aria-label="Đồng bộ lại dữ liệu"
+      title="Đồng bộ lại dữ liệu"
+    >
+      {done && !busy ? (
+        <Check size={22} className="text-emerald-500" />
+      ) : (
+        <RefreshCw size={22} className={busy ? 'animate-spin' : ''} />
+      )}
+    </button>
+  );
+}
+
 // Header cố định phía trên vùng nội dung: tiêu đề tab + chuông thông báo.
 export default function TopBar({ activeTab, pendingTotal, onMenuClick, onBellClick }) {
   const current = NAV_ITEMS.find((item) => item.id === activeTab);
@@ -57,6 +95,8 @@ export default function TopBar({ activeTab, pendingTotal, onMenuClick, onBellCli
       <div className="ml-auto">
         <SyncBadge />
       </div>
+
+      <ResyncButton />
 
       <button
         onClick={onBellClick}
