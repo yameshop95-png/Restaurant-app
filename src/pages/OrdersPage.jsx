@@ -886,6 +886,7 @@ export default function OrdersPage({
 
   return (
     <div className="staff-stagger mx-auto max-w-2xl pb-24 md:max-w-5xl xl:max-w-7xl">
+      <div className="sticky top-16 z-10 bg-page pb-2 pt-2">
       {!fixedType && !fixedFilter && (
         <div className="mb-3 grid grid-cols-2 gap-2">
           {Object.entries(ORDER_TYPES).map(([id, info]) => {
@@ -935,15 +936,7 @@ export default function OrdersPage({
         </div>
       )}
 
-      {routeAllowed && view === 'route' ? (
-        <RoutePlanner
-          orders={ofType}
-          now={now}
-          settings={settings}
-          onSetStatus={onSetStatus}
-          onStoreGeo={onPatchOrder ? (id, geo) => onPatchOrder(id, { geo }) : undefined}
-        />
-      ) : (
+      {!(routeAllowed && view === 'route') && (
         <>
           <div className="mb-3 flex gap-2">
             <div className="relative min-w-0 flex-1">
@@ -1004,6 +997,19 @@ export default function OrdersPage({
           </div>
           )}
 
+        </>
+      )}
+      </div>
+
+      {routeAllowed && view === 'route' ? (
+        <RoutePlanner
+          orders={ofType}
+          now={now}
+          settings={settings}
+          onSetStatus={onSetStatus}
+          onStoreGeo={onPatchOrder ? (id, geo) => onPatchOrder(id, { geo }) : undefined}
+        />
+      ) : (
           <div className="overflow-x-clip">
             <div
               {...(searching || fixedFilter ? {} : swipe)}
@@ -1166,7 +1172,6 @@ export default function OrdersPage({
               )}
             </div>
           </div>
-        </>
       )}
 
       <button
