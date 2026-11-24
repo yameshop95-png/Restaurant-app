@@ -84,19 +84,43 @@ const inRange = (range) => (o) => {
   return o.status !== 'cancelled' && t >= range.start && t < range.end;
 };
 
+// Khoá gộp món cho báo cáo: tên đã chuẩn hoá, bỏ hậu tố TRỌNG LƯỢNG ở cuối tên.
+// Cùng một món bị tách thành nhiều dòng chỉ vì cách ghi tên khác nhau giữa các nguồn:
+// thực đơn web/app ghi kèm định lượng ("Giò lụa 500g", "Bánh cuốn 1kg"), sổ giấy và
+// đơn nhập tay thì không ("Giò Lụa", "Bánh cuốn"). Chỉ bỏ token trọng lượng cuối tên
+// (500g, 1kg, 1 kg...) — các phân biệt thật như "nhỏ", "mặn", "ngọt", "chuối" giữ nguyên.
+const dishKey = (name) =>
+  normalizeText(name)
+    .replace(/\s+\d+(?:[.,]\d+)?\s*(kg|g)$/, '')
+    .trim();
+
 function dishTotals(orders) {
   const map = new Map();
   for (const o of orders) {
     for (const { name, qty, price } of o.items) {
-      const key = normalizeText(name);
-      const row = map.get(key) ?? { name, qty: 0, revenue: 0, orders: 0, minPrice: price, maxPrice: price };
+      const key = dishKey(name);
+      const row = map.get(key) ?? { name, qty: 0, revenue: 0, orders: 0, minPrice: price, maxPrice: price, variants: new Map() };
       row.qty += qty;
       row.revenue += qty * price;
       row.orders += 1;
       row.minPrice = Math.min(row.minPrice, price);
       row.maxPrice = Math.max(row.maxPrice, price);
+      row.variants.set(name, (row.variants.get(name) ?? 0) + qty);
       map.set(key, row);
     }
+  }
+  // Tên hiển thị: biến thể bán nhiều nhất trong nhóm (ổn định, không phụ thuộc thứ tự đơn).
+  for (const row of map.values()) {
+    let best = row.name;
+    let bestQty = -1;
+    for (const [variant, vQty] of row.variants) {
+      if (vQty > bestQty) {
+        best = variant;
+        bestQty = vQty;
+      }
+    }
+    row.name = best;
+    delete row.variants;
   }
   return map;
 }
