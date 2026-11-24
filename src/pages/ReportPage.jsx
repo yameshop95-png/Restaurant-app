@@ -41,6 +41,158 @@ function Card({ title, right, children }) {
 // Tiền rút gọn cho nhãn trên đầu cột (VD $5,7k) — nhãn đầy đủ vẫn ở bảng chú thích dưới chart.
 const fmtShortMoney = (v) => (v >= 1000 ? `$${(v / 1000).toFixed(1).replace('.', ',')}k` : formatMoney(v));
 
+
+// Màu cho 5 món trong chart xếp chồng theo tuần (món 1 = cam chính của quán).
+const DISH_COLORS = ['var(--chart-series)', '#0f766e', '#d97706', '#2563eb', '#7c3aed'];
+const OTHER_COLOR = '#cbd5e1';
+
+// DEMO v2: chart xếp chồng theo tuần — mỗi cột là 1 tuần, các màu là top 5 món của kỳ
+// đang xem (xám = các món còn lại). Trả lời câu hỏi "tuần nào như nào": tuần nào doanh
+// thu cao/thấp và món nào kéo tuần đó. Tính bằng chính buildReport theo từng tuần.
+function WeeklyDishChart({ orders, menu, anchor, topNames }) {
+  const weeks = useMemo(() => {
+    const list = [];
+    for (let i = 7; i >= 0; i--) {
+      const r = buildReport(orders, 'week', shiftPeriod('week', anchor, -i), menu);
+      const byName = new Map(r.dishes.map((d) => [d.name, d.revenue]));
+      const total = r.dishes.reduce((sum, d) => sum + d.revenue, 0);
+      const parts = topNames.map((name) => byName.get(name) ?? 0);
+      list.push({ start: r.range.start, total, parts, other: Math.max(total - parts.reduce((a, b) => a + b, 0), 0) });
+    }
+    return list;
+  }, [orders, menu, anchor, topNames]);
+
+  const W = 760;
+  const H = 318;
+  const M = { top: 26, right: 8, bottom: 30, left: 8 };
+  const plotW = W - M.left - M.right;
+  const plotH = H - M.top - M.bottom;
+  const maxTotal = Math.max(...weeks.map((w) => w.total), 0);
+  const slot = plotW / Math.max(weeks.length, 1);
+  const barW = Math.min(slot * 0.6, 56);
+  const fmtDay = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+  return (
+    <div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" role="img" aria-label="Doanh thu theo tuần, xếp chồng theo món">
+        {[0.25, 0.5, 0.75, 1].map((f) => (
+          <line key={f} x1={M.left} x2={W - M.right} y1={M.top + plotH - f * plotH} y2={M.top + plotH - f * plotH} stroke="#e2e8f0" strokeDasharray="3 4" />
+        ))}
+        <line x1={M.left} x2={W - M.right} y1={M.top + plotH} y2={M.top + plotH} stroke="#e2e8f0" />
+        {weeks.map((w, i) => {
+          const x = M.left + slot * i + (slot - barW) / 2;
+          const cx = M.left + slot * i + slot / 2;
+          let acc = 0;
+          const segs = [...w.parts, w.other].map((v, j) => {
+            const h = maxTotal ? (v / maxTotal) * plotH : 0;
+            const y = M.top + plotH - acc - h;
+            acc += h;
+            return { v, h, y, color: j < DISH_COLORS.length ? DISH_COLORS[j] : OTHER_COLOR };
+          });
+          return (
+            <g key={i}>
+              {segs.map((sg, j) => sg.h > 0 && (
+                <rect key={j} x={x} y={sg.y} width={barW} height={sg.h} fill={sg.color} />
+              ))}
+              {w.total > 0 && (
+                <text x={cx} y={M.top + plotH - acc - 7} textAnchor="middle" fontSize="11.5" fontWeight="600" fill="#334155">{fmtShortMoney(w.total)}</text>
+              )}
+              <text x={cx} y={M.top + plotH + 20} textAnchor="middle" fontSize="11.5" fill="#64748b">{fmtDay(w.start)}</text>
+            </g>
+          );
+        })}
+      </svg>
+      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+        {topNames.map((name, i) => (
+          <span key={name} className="flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: DISH_COLORS[i] }} /> {name}
+          </span>
+        ))}
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: OTHER_COLOR }} /> Món khác
+        </span>
+      </div>
+      <p className="mt-3 text-xs text-slate-400">
+        Mỗi cột là 1 tuần (ngày dưới cột là thứ Hai đầu tuần), số trên đầu cột là tổng doanh thu tuần. Màu theo top 5
+        món của kỳ đang xem ở trên.
+      </p>
+    </div>
+  );
+}
+
+// DEMO v2: card món có 2 chế độ — "Cơ cấu" (Pareto như v1) và "Theo tuần" (xếp chồng).
+function DishSection({ report, orders, menu, anchor }) {
+  const [mode, setMode] = useState('co-cau');
+  const topNames = useMemo(
+    () => [...report.dishes].sort((a, b) => b.revenue - a.revenue).slice(0, 5).map((d) => d.name),
+    [report.dishes],
+  );
+  return (
+    <div className="px-5 pb-4">
+      <div className="mt-3 flex gap-2">
+        {[
+          ['co-cau', 'Cơ cấu'],
+          ['theo-tuan', 'Theo tuần'],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setMode(key)}
+            className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${mode === key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {mode === 'co-cau' ? (
+        <DishSection report={report} orders={orders} menu={menu} anchor={anchor} />
+      ) : (
+        <WeeklyDishChart orders={orders} menu={menu} anchor={anchor} topNames={topNames} />
+      )}
+    </div>
+  );
+}
+
+
+// DEMO v2: card "Thời điểm" thành chart cột — cột = doanh thu từng đoạn (đầu/giữa/cuối
+// tháng, hoặc ngày trong tuần, hoặc quý), nhãn trên cột là tiền + số đơn, dưới cột giữ
+// dòng món bán chạy của đoạn đó như bản chữ cũ.
+function SegmentBars({ segments }) {
+  const maxRevenue = Math.max(...segments.map((s) => s.revenue), 0);
+  return (
+    <div className="px-5 pb-4">
+      <div className="mt-4 flex items-end gap-3">
+        {segments.map((s) => (
+          <div key={s.label} className="flex h-40 min-w-0 flex-1 flex-col items-center justify-end gap-1.5">
+            <div className="text-center leading-tight">
+              <div className="text-sm font-bold text-slate-900">{formatMoney(s.revenue)}</div>
+              <div className="text-xs text-slate-500">{s.orders} đơn</div>
+            </div>
+            <div
+              className="w-full max-w-16 rounded-t-lg"
+              style={{
+                height: `${maxRevenue ? Math.max((s.revenue / maxRevenue) * 100, s.revenue > 0 ? 3 : 0) : 0}%`,
+                background: 'var(--chart-series)',
+                opacity: s.revenue === maxRevenue && maxRevenue > 0 ? 1 : 0.5,
+              }}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="mt-2 flex gap-3 border-t border-slate-100 pt-2">
+        {segments.map((s) => (
+          <div key={s.label} className="min-w-0 flex-1 text-center">
+            <div className="text-sm font-semibold leading-snug text-slate-900">{s.label}</div>
+            <div className="mt-0.5 text-xs leading-snug text-slate-500">
+              {s.top.length ? s.top.map((t) => `${t.name} (${t.qty})`).join(' · ') : '—'}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // DEMO (Paul xem thử 24/11): combo chart Pareto cho top 10 món theo doanh thu —
 // cột = doanh thu từng món, đường = % doanh thu cộng dồn (trục phải). Dưới chart là
 // chú thích 1 dòng/món cho đúng 10 món đó. Món ngoài top 10 chỉ tính vào dòng tổng kết.
@@ -74,7 +226,7 @@ function DishComboChart({ dishes }) {
   const linePts = bars.map((b) => `${b.cx},${M.top + plotH - b.cumShare * plotH}`).join(' ');
 
   return (
-    <div className="px-5 pb-4">
+    <div>
       <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" role="img" aria-label="Biểu đồ doanh thu top 10 món">
         {[0, 0.25, 0.5, 0.75, 1].map((f) => (
           <g key={f}>
@@ -468,7 +620,7 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
         {report.dishes.length === 0 ? (
           <p className="px-5 py-8 text-center text-slate-400">Chưa có đơn trong kỳ này</p>
         ) : (
-          <DishComboChart dishes={report.dishes} />
+          <DishSection report={report} orders={orders} menu={menu} anchor={anchor} />
         )}
       </Card>
 
@@ -480,21 +632,7 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
 
       {/* Thời điểm */}
       <Card title={kind === 'week' ? 'Theo ngày trong tuần' : kind === 'month' ? 'Thời điểm trong tháng' : 'Theo quý'}>
-        <ul className="mt-3 divide-y divide-slate-100 border-t border-slate-100">
-          {report.segments.map((s) => (
-            <li key={s.label} className="px-5 py-3">
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="font-semibold text-slate-900">{s.label}</span>
-                <span className="shrink-0 text-sm text-slate-500">
-                  {s.orders} đơn · <b className="text-slate-900">{formatMoney(s.revenue)}</b>
-                </span>
-              </div>
-              <p className="mt-0.5 text-sm text-slate-600">
-                {s.top.length ? s.top.map((t) => `${t.name} (${t.qty})`).join(' · ') : <span className="text-slate-400">—</span>}
-              </p>
-            </li>
-          ))}
-        </ul>
+        <SegmentBars segments={report.segments} />
       </Card>
 
       {/* Nhận xét tự động */}

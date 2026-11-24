@@ -30,35 +30,50 @@ export default function WeekRhythmCard({ orders }) {
         </div>
       ) : (
         <>
-          <ul className="mt-3 divide-y divide-slate-100 border-t border-slate-100">
-            {rhythm.positions.map((p) => {
-              const isBusiest = rhythm.busiest?.position === p.position;
-              const isQuietest = rhythm.quietest?.position === p.position && rhythm.busiest?.position !== p.position;
-              return (
-                <li key={p.position} className="flex items-baseline justify-between gap-3 px-5 py-3">
-                  <span className="font-semibold text-slate-900">
-                    Tuần {p.position}
-                    {isBusiest && <span className="ml-2 text-xs font-semibold text-emerald-600">đông nhất</span>}
-                    {isQuietest && <span className="ml-2 text-xs font-semibold text-red-600">vắng nhất</span>}
-                  </span>
-                  {p.occurrences === 0 ? (
-                    <span className="shrink-0 text-sm text-slate-400">chưa xuất hiện trong 6 tháng qua</span>
-                  ) : (
-                    <span className="shrink-0 text-sm text-slate-500">
-                      TB <b className="text-slate-900">{fmtAvg(p.avgOrders)} đơn</b> · xuất hiện {p.occurrences} lần ·{' '}
-                      <span
-                        className={`font-semibold ${
-                          p.diff == null ? 'text-slate-400' : p.diff >= 0 ? 'text-emerald-600' : 'text-red-600'
-                        }`}
-                      >
-                        {fmtDiff(p.diff)}
-                      </span>
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          <div className="px-5">
+            <div className="mt-4 flex items-end gap-3">
+              {rhythm.positions.map((p) => {
+                const isBusiest = rhythm.busiest?.position === p.position;
+                const isQuietest = rhythm.quietest?.position === p.position && rhythm.busiest?.position !== p.position;
+                const maxAvg = Math.max(...rhythm.positions.map((x) => x.avgOrders ?? 0), 0);
+                const color = isBusiest ? '#10b981' : isQuietest ? '#f43f5e' : 'var(--chart-series)';
+                return (
+                  <div key={p.position} className="flex h-40 min-w-0 flex-1 flex-col items-center justify-end gap-1.5">
+                    <div className="text-center leading-tight">
+                      <div className="text-sm font-bold text-slate-900">{p.occurrences === 0 ? '—' : `${fmtAvg(p.avgOrders)} đơn`}</div>
+                      <div className={`text-xs font-semibold ${p.diff == null ? 'text-slate-400' : p.diff >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {p.occurrences === 0 ? '' : fmtDiff(p.diff)}
+                      </div>
+                    </div>
+                    <div
+                      className="w-full max-w-16 rounded-t-lg"
+                      style={{
+                        height: `${maxAvg && p.avgOrders ? Math.max((p.avgOrders / maxAvg) * 100, 3) : 0}%`,
+                        background: color,
+                        opacity: isBusiest || isQuietest ? 1 : 0.55,
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-2 flex gap-3 border-t border-slate-100 pt-2">
+              {rhythm.positions.map((p) => {
+                const isBusiest = rhythm.busiest?.position === p.position;
+                const isQuietest = rhythm.quietest?.position === p.position && rhythm.busiest?.position !== p.position;
+                return (
+                  <div key={p.position} className="min-w-0 flex-1 text-center">
+                    <div className="text-sm font-semibold text-slate-900">Tuần {p.position}</div>
+                    {isBusiest && <div className="text-xs font-semibold text-emerald-600">đông nhất</div>}
+                    {isQuietest && <div className="text-xs font-semibold text-red-600">vắng nhất</div>}
+                    <div className="mt-0.5 text-xs text-slate-500">
+                      {p.occurrences === 0 ? 'chưa xuất hiện' : `xuất hiện ${p.occurrences} lần`}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
           <div className="space-y-1.5 px-5 pb-4 pt-3">
             {rhythm.busiest && rhythm.quietest && rhythm.busiest.position !== rhythm.quietest.position && (
               <p className="text-sm leading-relaxed text-slate-700">
