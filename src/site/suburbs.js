@@ -14,6 +14,8 @@ const KNOWN = {
   thurgoona: ['NSW', '2640'],
   lavington: ['NSW', '2641'],
   'springdale heights': ['NSW', '2641'],
+  leneva: ['VIC', '3690'],
+  baranduda: ['VIC', '3691'],
   'hamilton valley': ['NSW', '2641'],
 };
 
@@ -24,14 +26,27 @@ export function suburbOptions(zones) {
   const seen = new Set();
   for (const z of zones) {
     for (const place of z.places ?? []) {
-      const name = String(place).trim();
+      const rawName = String(place).trim();
+      const rawKey = rawName.toLowerCase();
+      if (!rawName || /^\d+$/.test(rawName)) continue;
+      // matchLabel = nhan theo dung cach cu (ten goc + bang/postcode neu co san):
+      // chuoi nay gui kem dia chi de may chu khop vung, PHAI giu nguyen 100%
+      // vi cac mau nhu "2640 - Baranduda VIC 3691" khop theo cum chinh xac.
+      const matchLabel = [rawName, ...(KNOWN[rawKey] ?? [])].filter(Boolean).join(' ');
+      // Ten HIEN cho khach chon phai sach: ten trong Cai dat co the lan
+      // postcode/bang ("3690 Leneva") vi do la mau khop dia chi, khong phai ten dep.
+      const name = rawName
+        .replace(/\b\d{4}\b/g, ' ')
+        .replace(/\b(vic|nsw|act|qld|sa|wa|tas|nt)\b/gi, ' ')
+        .replace(/[\u2013\u2014|/-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
       const key = name.toLowerCase();
-      if (!name || /^\d+$/.test(name) || seen.has(key)) continue;
+      if (!name || seen.has(key)) continue;
       seen.add(key);
-      const [state, postcode] = KNOWN[key] ?? [];
-      const label = [name, state, postcode].filter(Boolean).join(' ');
-      // Vùng tính đúng như máy chủ sẽ tính cho chuỗi địa chỉ này
-      out.push({ key, label, zone: matchZone(label, zones) ?? z });
+      const label = [name, ...(KNOWN[key] ?? [])].filter(Boolean).join(' ');
+      // Vung tinh tu matchLabel — dung chuoi may chu se nhan, nhu cach cu
+      out.push({ key, rawKey, label, matchLabel, zone: matchZone(matchLabel, zones) ?? z });
     }
   }
   return out;
@@ -39,7 +54,8 @@ export function suburbOptions(zones) {
 
 // Ghép 3 ô thành địa chỉ gửi máy chủ: "12 Kiewa St, South Albury NSW 2640"
 export function joinAddress({ houseNo, street, suburb }, options) {
-  const sub = options.find((o) => o.key === suburb)?.label ?? '';
+  const opt = options.find((o) => o.key === suburb || o.rawKey === suburb);
+  const sub = opt?.matchLabel ?? opt?.label ?? '';
   const line = [houseNo.trim(), street.trim()].filter(Boolean).join(' ');
   return [line, sub].filter(Boolean).join(', ');
 }
