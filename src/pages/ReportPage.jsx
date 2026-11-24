@@ -48,7 +48,7 @@ const fmtShortMoney = (v) => (v >= 1000 ? `$${(v / 1000).toFixed(1).replace('.',
 // đều = món gánh quán, hàng nhạt dần = món đang đuối, cột đậm = tuần nóng.
 // Thay cho chart xếp chồng ở v2/v3 (Paul nhận xét chỉ "tạm được").
 const HEAT_STEPS = ['#f8fafc', '#ffedd5', '#fed7aa', '#fdba74', '#fb923c', '#f97316', '#ea580c'];
-function DishHeatmap({ orders, menu, anchor, dishNames }) {
+function DishHeatmap({ orders, menu, anchor }) {
   const data = useMemo(() => {
     const weeks = [];
     for (let i = 7; i >= 0; i--) {
@@ -56,11 +56,17 @@ function DishHeatmap({ orders, menu, anchor, dishNames }) {
       const byName = new Map(r.dishes.map((d) => [d.name, d.revenue]));
       weeks.push({ start: r.range.start, total: r.dishes.reduce((sum, d) => sum + d.revenue, 0), byName });
     }
+    // Hàng của bản đồ nhiệt = top 8 theo TỔNG doanh thu của đúng 8 tuần đang hiện,
+    // tự xếp lại mỗi khi có dữ liệu mới: món ngoài top tăng mạnh sẽ tự vào, món trong
+    // top đuối dần sẽ tự rớt — không phải danh sách cố định (Paul hỏi 24/11).
+    const totals = new Map();
+    for (const w of weeks) for (const [name, rev] of w.byName) totals.set(name, (totals.get(name) ?? 0) + rev);
+    const dishNames = [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name]) => name);
     const matrix = dishNames.map((name) => weeks.map((w) => w.byName.get(name) ?? 0));
     const max = Math.max(...matrix.flat(), 0);
     const hottest = weeks.reduce((best, w, i) => (w.total > (weeks[best]?.total ?? -1) ? i : best), 0);
-    return { weeks, matrix, max, hottest };
-  }, [orders, menu, anchor, dishNames]);
+    return { weeks, matrix, max, hottest, dishNames };
+  }, [orders, menu, anchor]);
 
   const fmtDay = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
   const cellStyle = (v) => {
@@ -79,7 +85,7 @@ function DishHeatmap({ orders, menu, anchor, dishNames }) {
               {fmtDay(w.start)}
             </div>
           ))}
-          {dishNames.map((name, r) => (
+          {data.dishNames.map((name, r) => (
             <Fragment key={name}>
               <div className="flex items-center truncate pr-1 text-xs font-medium text-slate-700" title={name}>{name}</div>
               {data.matrix[r].map((v, c) => (
@@ -103,7 +109,7 @@ function DishHeatmap({ orders, menu, anchor, dishNames }) {
         <span>Nhiều</span>
       </div>
       <p className="mt-2 text-xs text-slate-400">
-        Ô càng đậm = món đó tuần đó doanh thu càng cao. Tuần bán mạnh nhất trong 8 tuần: bắt đầu {fmtDay(data.weeks[data.hottest].start)} ({formatMoney(data.weeks[data.hottest].total)}).
+        Ô càng đậm = món đó tuần đó doanh thu càng cao. Tuần bán mạnh nhất trong 8 tuần: bắt đầu {fmtDay(data.weeks[data.hottest].start)} ({formatMoney(data.weeks[data.hottest].total)}). 8 hàng là 8 món doanh thu cao nhất của đúng 8 tuần này — tự cập nhật khi có đơn mới, món tăng mạnh tự vào, món đuối tự rớt.
       </p>
     </div>
   );
@@ -117,10 +123,6 @@ function DishHeatmap({ orders, menu, anchor, dishNames }) {
 function WeekSection({ report, orders, menu, anchor }) {
   const [mode, setMode] = useState('mon-tuan');
   const rhythm = useMemo(() => weekOfMonthRhythm(orders, new Date()), [orders]);
-  const topNames = useMemo(
-    () => [...report.dishes].sort((a, b) => b.revenue - a.revenue).slice(0, 8).map((d) => d.name),
-    [report.dishes],
-  );
   return (
     <div className="px-5 pb-4">
       <div className="mt-3 flex items-center gap-2">
@@ -142,7 +144,7 @@ function WeekSection({ report, orders, menu, anchor }) {
         )}
       </div>
       {mode === 'mon-tuan' ? (
-        <DishHeatmap orders={orders} menu={menu} anchor={anchor} dishNames={topNames} />
+        <DishHeatmap orders={orders} menu={menu} anchor={anchor} />
       ) : (
         <WeekRhythmBars rhythm={rhythm} />
       )}
