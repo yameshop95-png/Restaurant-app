@@ -37,6 +37,96 @@ function Card({ title, right, children }) {
   );
 }
 
+
+// Tiền rút gọn cho nhãn trên đầu cột (VD $5,7k) — nhãn đầy đủ vẫn ở bảng chú thích dưới chart.
+const fmtShortMoney = (v) => (v >= 1000 ? `$${(v / 1000).toFixed(1).replace('.', ',')}k` : formatMoney(v));
+
+// DEMO (Paul xem thử 24/11): combo chart Pareto cho top 10 món theo doanh thu —
+// cột = doanh thu từng món, đường = % doanh thu cộng dồn (trục phải). Dưới chart là
+// chú thích 1 dòng/món cho đúng 10 món đó. Món ngoài top 10 chỉ tính vào dòng tổng kết.
+function DishComboChart({ dishes }) {
+  const top = [...dishes].sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+  const totalRevenue = dishes.reduce((sum, d) => sum + d.revenue, 0);
+  const topRevenue = top.reduce((sum, d) => sum + d.revenue, 0);
+  const restCount = dishes.length - top.length;
+
+  const W = 760;
+  const H = 350;
+  const M = { top: 26, right: 46, bottom: 96, left: 10 };
+  const plotW = W - M.left - M.right;
+  const plotH = H - M.top - M.bottom;
+  const maxRevenue = Math.max(...top.map((d) => d.revenue), 0);
+  const slot = plotW / Math.max(top.length, 1);
+  const barW = Math.min(slot * 0.62, 52);
+  let running = 0;
+  const bars = top.map((d, i) => {
+    running += d.revenue;
+    const h = maxRevenue ? (d.revenue / maxRevenue) * plotH : 0;
+    return {
+      ...d,
+      x: M.left + slot * i + (slot - barW) / 2,
+      cx: M.left + slot * i + slot / 2,
+      y: M.top + plotH - h,
+      h,
+      cumShare: totalRevenue ? running / totalRevenue : 0,
+    };
+  });
+  const linePts = bars.map((b) => `${b.cx},${M.top + plotH - b.cumShare * plotH}`).join(' ');
+
+  return (
+    <div className="px-5 pb-4">
+      <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" role="img" aria-label="Biểu đồ doanh thu top 10 món">
+        {[0, 0.25, 0.5, 0.75, 1].map((f) => (
+          <g key={f}>
+            <line x1={M.left} x2={W - M.right} y1={M.top + plotH - f * plotH} y2={M.top + plotH - f * plotH} stroke="#e2e8f0" strokeDasharray={f === 0 ? '' : '3 4'} />
+            <text x={W - M.right + 8} y={M.top + plotH - f * plotH + 4} fontSize="11" fill="#64748b">{Math.round(f * 100)}%</text>
+          </g>
+        ))}
+        {bars.map((b) => (
+          <g key={b.name}>
+            <rect x={b.x} y={b.y} width={barW} height={b.h} rx="5" style={{ fill: 'var(--chart-series)' }} />
+            <text x={b.cx} y={b.y - 7} textAnchor="middle" fontSize="11.5" fontWeight="600" fill="#334155">{fmtShortMoney(b.revenue)}</text>
+            <text x={b.cx} y={M.top + plotH + 14} fontSize="11.5" fill="#334155" textAnchor="end" transform={`rotate(-28 ${b.cx} ${M.top + plotH + 14})`}>{b.name}</text>
+          </g>
+        ))}
+        <polyline points={linePts} fill="none" stroke="#0f766e" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+        {bars.map((b) => (
+          <circle key={b.name} cx={b.cx} cy={M.top + plotH - b.cumShare * plotH} r="3.5" fill="#0f766e" stroke="#fff" strokeWidth="1.5" />
+        ))}
+        {bars.length > 0 && (
+          <text x={bars[bars.length - 1].cx} y={M.top + plotH - bars[bars.length - 1].cumShare * plotH - 10} textAnchor="middle" fontSize="12" fontWeight="700" fill="#0f766e">
+            {Math.round(bars[bars.length - 1].cumShare * 100)}%
+          </text>
+        )}
+      </svg>
+      <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-500">
+        <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: 'var(--chart-series)' }} /> Cột: doanh thu</span>
+        <span className="flex items-center gap-1.5"><span className="inline-block h-0.5 w-5 bg-teal-700" /> Đường: % doanh thu cộng dồn</span>
+      </div>
+      <ul className="mt-3 divide-y divide-slate-100 border-t border-slate-100">
+        {top.map((d, i) => {
+          const change = d.prevQty ? (d.qty - d.prevQty) / d.prevQty : null;
+          return (
+            <li key={d.name} className="flex items-baseline gap-3 py-1.5 text-sm">
+              <span className="w-5 shrink-0 text-right font-semibold text-slate-400">{i + 1}</span>
+              <span className="min-w-0 flex-1 truncate font-medium text-slate-800">{d.name}</span>
+              <span className="shrink-0 text-slate-500">{d.qty} phần</span>
+              <span className="w-20 shrink-0 text-right font-semibold text-slate-900">{formatMoney(d.revenue)}</span>
+              <span className="w-11 shrink-0 text-right text-slate-500">{Math.round(d.revenueShare * 100)}%</span>
+              <span className={`w-14 shrink-0 text-right text-xs font-semibold ${change == null ? 'text-slate-300' : change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                {change == null ? '—' : `${change >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(change * 100))}%`}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-3 text-xs text-slate-400">
+        Top {top.length} món chiếm {totalRevenue ? Math.round((topRevenue / totalRevenue) * 100) : 0}% doanh thu{restCount > 0 ? ` — còn ${restCount} món khác ngoài top 10` : ''}.
+      </p>
+    </div>
+  );
+}
+
 function Change({ now, before, toDate }) {
   if (!before) return <span className="text-sm text-slate-400">kỳ trước: chưa có</span>;
   const g = (now - before) / before;
@@ -258,7 +348,6 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
   const cancel = useMemo(() => periodInsights(orders, report.range).cancellation, [orders, report.range]);
   const atCurrent = report.range.end > new Date();
   const { forecast } = report;
-  const maxQty = report.dishes[0]?.qty ?? 0;
   const nextLabel = { week: 'tuần sau', month: 'tháng sau', year: 'năm sau' }[kind];
 
   return (
@@ -379,35 +468,7 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
         {report.dishes.length === 0 ? (
           <p className="px-5 py-8 text-center text-slate-400">Chưa có đơn trong kỳ này</p>
         ) : (
-          <ul className="mt-3 divide-y divide-slate-100 border-t border-slate-100">
-            {report.dishes.map((d) => {
-              const change = d.prevQty ? (d.qty - d.prevQty) / d.prevQty : null;
-              return (
-                <li key={d.name} className="px-5 py-3">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className="font-semibold text-slate-900">{d.name}</span>
-                    <span className="shrink-0 font-semibold text-slate-900">{formatMoney(d.revenue)}</span>
-                  </div>
-                  <div className="mt-1.5 flex items-center gap-3">
-                    <div className="h-1.5 flex-1 rounded-full bg-slate-200">
-                      <div className="h-full rounded-full" style={{ width: `${(d.qty / maxQty) * 100}%`, background: SERIES }} />
-                    </div>
-                    <span className="w-16 shrink-0 text-right text-sm font-semibold text-slate-700">{d.qty} phần</span>
-                  </div>
-                  <p className="mt-1 flex flex-wrap gap-x-3 text-xs text-slate-500">
-                    <span>{Math.round(d.revenueShare * 100)}% doanh thu</span>
-                    <span>giá TB {formatMoney(d.avgPrice)}</span>
-                    {change != null && (
-                      <span className={change >= 0 ? 'text-emerald-600' : 'text-red-600'}>
-                        {change >= 0 ? '▲' : '▼'} {Math.abs(Math.round(change * 100))}% (kỳ trước {d.prevQty})
-                      </span>
-                    )}
-                    {false}
-                  </p>
-                </li>
-              );
-            })}
-          </ul>
+          <DishComboChart dishes={report.dishes} />
         )}
       </Card>
 
