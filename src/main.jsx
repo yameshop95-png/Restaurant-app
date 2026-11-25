@@ -10,8 +10,25 @@ import { loadLocalSettings } from './hooks/useSettings';
 // Áp giao diện đã chọn trên máy này trước khi vẽ app, để không nháy nền tối rồi mới sáng
 applyTheme(loadLocalSettings().theme);
 
-// Sau khi cập nhật app, trang đang mở có thể xin một tệp cũ đã bị thay: tải lại trang để lấy bản mới
-window.addEventListener('vite:preloadError', () => window.location.reload());
+// Sau khi cập nhật app, trang đang mở có thể xin một tệp cũ đã bị thay: tải lại trang để lấy bản mới.
+// Nếu vừa tải lại trong 30 giây mà vẫn lỗi thì không tải lại nữa (tránh vòng lặp khi mất mạng):
+// khung đỡ lỗi của trang sẽ hiện nút tải lại thủ công. Tab đang xem được giữ nhờ lib/resumeTab.
+window.addEventListener('vite:preloadError', () => {
+  const KEY = 'restaurant-app.preloadReloadAt';
+  let last = 0;
+  try {
+    last = Number(sessionStorage.getItem(KEY)) || 0;
+  } catch {
+    last = 0;
+  }
+  if (Date.now() - last < 30000) return;
+  try {
+    sessionStorage.setItem(KEY, String(Date.now()));
+  } catch {
+    // bỏ qua
+  }
+  window.location.reload();
+});
 
 // iOS chỉ hiện :active trên phần tử không phải nút sau khi đã có một listener chạm.
 window.addEventListener('touchstart', () => {}, { passive: true });
