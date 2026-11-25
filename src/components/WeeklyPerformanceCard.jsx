@@ -17,8 +17,7 @@ import { periodRange, shiftPeriod } from '../lib/report';
 //   Tầng 2 "Số lượng Order": hai đường cong mượt — Tổng Order (hồng magenta) và Order Cao Giá (tím violet).
 //   Tầng 3 "Tổng Tiền": vùng doanh thu phủ gradient cam ấm.
 // Mọi số liệu lấy từ profitReport (lib/inventory) chạy trên các mốc tuần periodRange('week', …)
-// (Thứ Hai 00:00 → Thứ Hai tuần sau) — cùng nguồn và cùng quy ước với biểu đồ "Lợi nhuận theo tuần"
-// ở Màn hình chính, không tự tính lại theo cách khác.
+// (Thứ Hai 00:00 → Thứ Hai tuần sau), không tự tính lại theo cách khác.
 // Lãi theo kênh là LÃI GỘP (doanh thu kênh − giá vốn kênh): giá vốn tính được cho từng đơn nên
 // tách được thật; chi phí khác là chi phí chung của cả tuần, không gán cho kênh nào — lãi ròng
 // của tuần (= lãi gộp − chi phí chung) hiện trong tooltip của tầng 1.
@@ -45,13 +44,12 @@ const ORD_HIGH = 'var(--chart-ord-high)';
 const REV_LINE = 'var(--chart-rev-2)';
 
 const ddmm = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
-const dm = (d) => `${d.getDate()}/${d.getMonth() + 1}`; // nhãn ngắn dưới cột, giống WeeklyProfitChart
+const dm = (d) => `${d.getDate()}/${d.getMonth() + 1}`; // nhãn ngắn dưới cột
 // Làm tròn lên 1 chữ số có nghĩa (500, 2000…) cho đỉnh thang đo, giống biểu đồ doanh thu của tab Báo cáo
 const niceCeil = (x) => (x <= 0 ? 0 : Math.ceil(x / 10 ** Math.floor(Math.log10(x))) * 10 ** Math.floor(Math.log10(x)));
 const tickMoney = (v) => (Math.abs(v) >= 1000 ? `$${Math.round(v / 100) / 10}k` : `$${Math.round(v)}`);
 
-// Bo cong Catmull-Rom → Bézier bậc 3 (cùng kỹ thuật với biểu đồ Lợi nhuận theo tuần ở Màn hình
-// chính): đường đi qua đúng từng điểm tuần nhưng không gãy góc. Điểm điều khiển được kẹp trong
+// Bo cong Catmull-Rom → Bézier bậc 3: đường đi qua đúng từng điểm tuần nhưng không gãy góc. Điểm điều khiển được kẹp trong
 // [minY, maxY] nên khi số liệu nhảy mạnh giữa hai tuần kề nhau, cong không vọt khỏi vùng vẽ
 // (chống overshoot). points: [{x, y}] trong hệ toạ độ của viewBox SVG.
 function smoothPath(points, minY, maxY) {
