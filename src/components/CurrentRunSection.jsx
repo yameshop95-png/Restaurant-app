@@ -22,6 +22,10 @@ import { formatMoney } from '../lib/stats';
 const NO_WEATHER = {};
 const fmtDay = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
 
+const FULL_DAY = { T2: 'Thứ 2', T3: 'Thứ 3', T4: 'Thứ 4', T5: 'Thứ 5', T6: 'Thứ 6', T7: 'Thứ 7', CN: 'Chủ nhật' };
+// Màn hình cảm ứng: chạm mới hiện tooltip (hover không có trên điện thoại — B1, issue #89)
+const COARSE = typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+
 // Tooltip của biểu đồ tích luỹ: "Thứ 5 · Đợt này 18 đơn · TB 4 tuần trước 15 đơn"
 function PaceTip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -30,7 +34,7 @@ function PaceTip({ active, payload, label }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-card px-3 py-2 text-xs shadow-md">
       <p className="font-semibold text-slate-900">
-        {label} · Đợt này {cur} đơn
+        {FULL_DAY[label] ?? label} · Đợt này {cur} đơn
         {avg != null && <> · TB 4 tuần trước {Math.round(avg)} đơn</>}
       </p>
     </div>
@@ -46,7 +50,7 @@ const PROGRESS_CELLS = [
   ['failed', 'Giao không được', 'delivery'],
 ];
 
-export default function CurrentRunSection({ orders, settings, onNavigate }) {
+export default function CurrentRunSection({ orders, menu, settings, onNavigate }) {
   const now = useNow(30000);
   const weatherLog = settings?.weatherLog ?? NO_WEATHER;
   const homeSide = sideOf(settings?.shopAddress) ?? 'vic';
@@ -56,8 +60,8 @@ export default function CurrentRunSection({ orders, settings, onNavigate }) {
     [orders, now, weatherLog],
   );
   const data = useMemo(
-    () => currentRun(orders, now, { forecast, homeSide }),
-    [orders, now, forecast, homeSide],
+    () => currentRun(orders, now, { forecast, homeSide, menu }),
+    [orders, now, forecast, homeSide, menu],
   );
   const { pace } = data;
   const maxMix = Math.max(data.mix.pickup, data.mix.delivery, 1);
@@ -89,13 +93,13 @@ export default function CurrentRunSection({ orders, settings, onNavigate }) {
           )}
         </div>
 
-        <div className="px-2 pb-1 pt-3" style={{ height: 170 }}>
+        <div className="px-2 pb-1 pt-3" style={{ height: 170 }} data-no-swipe>
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data.cumulative} margin={{ top: 6, right: 12, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 4" stroke="#e2e8f0" vertical={false} />
               <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
               <YAxis width={28} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip content={<PaceTip />} cursor={{ fill: '#f1f5f9' }} />
+              <Tooltip content={<PaceTip />} cursor={{ fill: '#f1f5f9' }} trigger={COARSE ? 'click' : 'hover'} />
               <Bar dataKey="current" fill="#f97316" radius={[5, 5, 0, 0]} maxBarSize={38} />
               <Line type="monotone" dataKey="avg" stroke="#64748b" strokeWidth={2} strokeDasharray="6 4" dot={false} />
             </ComposedChart>
@@ -176,7 +180,9 @@ export default function CurrentRunSection({ orders, settings, onNavigate }) {
               ))}
             </ul>
             <p className="mt-2 text-xs text-slate-400">
-              Chưa đủ dữ liệu các tuần trước để dự báo — khi có thêm vài tuần bán, thẻ này sẽ hiện thêm cột dự báo và phần còn dự kiến.
+              {data.forecastPending
+                ? 'Dự báo đợt mới có từ Thứ Hai.'
+                : 'Chưa đủ dữ liệu các tuần trước để dự báo — khi có thêm vài tuần bán, thẻ này sẽ hiện thêm cột dự báo và phần còn dự kiến.'}
             </p>
           </div>
         ) : (
@@ -187,14 +193,12 @@ export default function CurrentRunSection({ orders, settings, onNavigate }) {
               const near = ratio != null && ratio >= 0.9 && ratio <= 1;
               return (
                 <li key={d.key} className={`py-2 ${over ? '-mx-2 rounded-lg bg-red-50 px-2' : near ? '-mx-2 rounded-lg bg-amber-50 px-2' : ''}`}>
-                  <div className="flex items-baseline justify-between gap-3 text-sm">
-                    <span className="min-w-0 font-medium text-slate-800">{d.name}</span>
-                    <span className="shrink-0 text-slate-600">
-                      Đã đặt <b className="text-slate-900">{d.ordered}</b>
-                      {' · '}Dự báo <b className="text-slate-900">{d.forecast ?? '—'}</b>
-                      {' · '}Còn <b className="text-slate-900">{d.remaining ?? '—'}</b>
-                    </span>
-                  </div>
+                  <p className="text-sm font-medium text-slate-800">{d.name}</p>
+                  <p className="mt-0.5 text-right text-xs text-slate-500">
+                    Đã đặt <b className="text-slate-900">{d.ordered}</b>
+                    {' · '}Dự báo <b className="text-slate-900">{d.forecast ?? '—'}</b>
+                    {' · '}Còn <b className="text-slate-900">{d.remaining ?? '—'}</b>
+                  </p>
                   {(over || near) && (
                     <p className={`mt-0.5 text-xs font-semibold ${over ? 'text-red-600' : 'text-amber-600'}`}>
                       {over ? 'Vượt dự báo' : 'Sắp vượt dự báo'}

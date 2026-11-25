@@ -18,16 +18,18 @@ function WeekTip({ active, payload }) {
   );
 }
 
+const COARSE = typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+
 export default function WeeklyRevenueChart({ orders, anchor }) {
   const data = useMemo(() => weeklyRevenue(orders, anchor, new Date()), [orders, anchor]);
   return (
     <div className="px-2 pb-3 pt-2">
-      <div style={{ height: 180 }}>
+      <div style={{ height: 180 }} data-no-swipe>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 6, right: 12, bottom: 0, left: 0 }}>
             <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
             <YAxis hide />
-            <Tooltip content={<WeekTip />} cursor={{ fill: '#f1f5f9' }} />
+            <Tooltip content={<WeekTip />} cursor={{ fill: '#f1f5f9' }} trigger={COARSE ? 'click' : 'hover'} />
             <Bar dataKey="revenue" radius={[5, 5, 0, 0]} maxBarSize={44}>
               {data.map((d) => (
                 <Cell key={d.label} fill={d.isCurrent ? '#ea580c' : '#fb923c'} />

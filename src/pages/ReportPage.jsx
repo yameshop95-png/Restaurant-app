@@ -18,6 +18,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import AnalyticsExportCard from '../components/AnalyticsExportCard';
+import { DebtCard, DeliveryOpsCard, RegionCard, WebOpsCard } from '../components/OpsCards';
 import CustomerStatsCard from '../components/CustomerStatsCard';
 import LanguageCard from '../components/LanguageCard';
 import PairsCard from '../components/PairsCard';
@@ -521,7 +522,7 @@ const INSIGHT_ICON = {
   neutral: <Lightbulb size={16} className="mt-0.5 shrink-0 text-amber-600" />,
 };
 
-export default function ReportPage({ orders, menu, settings, onUpdateSettings, onNavigate, initialTab = 'dot-nay' }) {
+export default function ReportPage({ orders, menu, settings, onUpdateSettings, onNavigate, onSetPaid, initialTab = 'dot-nay' }) {
   const [kind, setKind] = useState('month');
   const [anchor, setAnchor] = useState(() => new Date());
   // Mặc định mở Đợt này (đổi ở PR #82; PR #81 mặc định Theo kỳ). Không nhớ tab.
@@ -557,7 +558,7 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings, o
 
       {tab === 'dot-nay' && (
         <Suspense fallback={CHART_FALLBACK}>
-          <CurrentRunSection orders={orders} settings={settings} onNavigate={onNavigate} />
+          <CurrentRunSection orders={orders} menu={menu} settings={settings} onNavigate={onNavigate} />
         </Suspense>
       )}
 
@@ -655,6 +656,18 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings, o
         </Card>
       ) : null}
 
+      {/* Món */}
+      <Card title="Tổng món đã bán" right={<span className="text-sm text-slate-500">{report.dishes.length} món</span>}>
+        {report.dishes.length === 0 ? (
+          <p className="px-5 py-8 text-center text-slate-400">Chưa có đơn trong kỳ này</p>
+        ) : (
+          <DishComboChart dishes={report.dishes} />
+        )}
+      </Card>
+
+      {/* Đơn theo vùng (PR #83) */}
+      <RegionCard orders={orders} range={report.range} settings={settings} />
+
       {/* Dự báo */}
       <Card title="Dự báo doanh thu">
         <div className="grid grid-cols-2 gap-3 px-5 pb-4 pt-2">
@@ -684,14 +697,10 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings, o
         </p>
       </Card>
 
-      {/* Món */}
-      <Card title="Tổng món đã bán" right={<span className="text-sm text-slate-500">{report.dishes.length} món</span>}>
-        {report.dishes.length === 0 ? (
-          <p className="px-5 py-8 text-center text-slate-400">Chưa có đơn trong kỳ này</p>
-        ) : (
-          <DishComboChart dishes={report.dishes} />
-        )}
-      </Card>
+      {/* Giao hàng · Công nợ · Xử lý đơn web (PR #83) */}
+      <DeliveryOpsCard orders={orders} range={report.range} settings={settings} />
+      <DebtCard orders={orders} onSetPaid={onSetPaid} />
+      <WebOpsCard orders={orders} range={report.range} />
 
       {/* DEMO v3: thẻ gộp "Nhịp tuần" — theo tuần (xếp chồng theo món) + nhịp trong tháng */}
       <Card title="Nhịp tuần">
