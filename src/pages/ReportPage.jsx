@@ -1,4 +1,14 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, Suspense, lazy, useMemo, useState } from 'react';
+
+// Tab Đợt này và biểu đồ tuần giao dùng Recharts — nạp lười (lazy) để thư viện
+// biểu đồ chỉ tải khi mở Báo cáo, không vào chunk chính và không vào trang chủ.
+const CurrentRunSection = lazy(() => import('../components/CurrentRunSection'));
+const WeeklyRevenueChart = lazy(() => import('../components/WeeklyRevenueChart'));
+const CHART_FALLBACK = (
+  <div className="flex h-40 items-center justify-center gap-2 text-sm text-slate-400">
+    <Loader2 size={17} className="animate-spin" /> Đang tải biểu đồ…
+  </div>
+);
 import {
   ChevronLeft,
   ChevronRight,
@@ -511,10 +521,10 @@ const INSIGHT_ICON = {
   neutral: <Lightbulb size={16} className="mt-0.5 shrink-0 text-amber-600" />,
 };
 
-export default function ReportPage({ orders, menu, settings, onUpdateSettings, initialTab = 'theo-ky' }) {
+export default function ReportPage({ orders, menu, settings, onUpdateSettings, onNavigate, initialTab = 'dot-nay' }) {
   const [kind, setKind] = useState('month');
   const [anchor, setAnchor] = useState(() => new Date());
-  // Mặc định mở Theo kỳ (PR #81); PR #82 sẽ đổi mặc định sang Đợt này. Không nhớ tab.
+  // Mặc định mở Đợt này (đổi ở PR #82; PR #81 mặc định Theo kỳ). Không nhớ tab.
   // initialTab chỉ để test SSR mở từng tab — app không truyền prop này.
   const [tab, setTab] = useState(initialTab);
   const report = useMemo(() => buildReport(orders, kind, anchor, menu), [orders, kind, anchor, menu]);
@@ -546,9 +556,9 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings, i
       </div>
 
       {tab === 'dot-nay' && (
-        <Card title="Đợt thứ Bảy này">
-          <p className="px-5 pb-5 pt-2 text-[15px] text-slate-500">Số liệu đợt thứ Bảy — đang làm.</p>
-        </Card>
+        <Suspense fallback={CHART_FALLBACK}>
+          <CurrentRunSection orders={orders} menu={menu} settings={settings} onNavigate={onNavigate} />
+        </Suspense>
       )}
 
       {tab === 'theo-ky' && (
@@ -631,9 +641,19 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings, i
       {/* Hiệu suất theo tuần: lãi theo kênh, số đơn và doanh thu trên cùng trục tuần */}
       <WeeklyPerformanceCard orders={orders} menu={menu} />
 
-      <Card title={kind === 'year' ? 'Doanh thu theo tháng' : 'Doanh thu theo ngày'}>
-        <RevenueChart buckets={report.buckets} kind={kind} />
-      </Card>
+      {/* Kỳ Tuần ẩn thẻ doanh thu này; kỳ Tháng dùng cột theo tuần giao (quán chỉ
+          bán thứ Bảy); kỳ Năm giữ cột theo tháng như cũ (PR #82) */}
+      {kind === 'year' ? (
+        <Card title="Doanh thu theo tháng">
+          <RevenueChart buckets={report.buckets} kind={kind} />
+        </Card>
+      ) : kind === 'month' ? (
+        <Card title="Doanh thu theo tuần giao">
+          <Suspense fallback={CHART_FALLBACK}>
+            <WeeklyRevenueChart orders={orders} anchor={anchor} />
+          </Suspense>
+        </Card>
+      ) : null}
 
       {/* Dự báo */}
       <Card title="Dự báo doanh thu">
