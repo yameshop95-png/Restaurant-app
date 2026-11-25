@@ -200,6 +200,20 @@ function ShopInfo({ settings, onUpdateSettings }) {
             className={inputClass}
           />
         </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-semibold text-slate-700">Chi phí xăng xe ($/km)</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="0.05"
+            value={settings.fuelCostPerKm ?? ''}
+            onChange={(e) => onUpdateSettings({ fuelCostPerKm: e.target.value === '' ? null : Number(e.target.value) })}
+            placeholder="0.25"
+            className={inputClass}
+          />
+          <span className="mt-1 block text-xs text-slate-400">Dùng để ước tính chi phí xăng ở thẻ Giao hàng trong Báo cáo. Để trống thì tính theo mặc định $0,25/km.</span>
+        </label>
         <p className="text-xs text-slate-400">Tự lưu khi gõ, mọi máy trong quán đều thấy. Tên quán hiện ở menu và trong tin nhắn gửi shipper.</p>
       </div>
     </section>

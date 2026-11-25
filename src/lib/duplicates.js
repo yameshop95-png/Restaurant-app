@@ -1,8 +1,9 @@
 // Cảnh báo đơn trùng: hai nhân viên cùng nhập một đơn, hoặc khách vừa đặt web vừa gọi điện.
 import { normalizeText } from './text.js';
 
-// Khách: SĐT (≥ 8 chữ số) nếu có, không thì tên đã bỏ dấu
-const customerKey = (o) => {
+// Khách: SĐT (≥ 8 chữ số) nếu có, không thì tên đã bỏ dấu.
+// Export để thẻ Công nợ (lib/opsReport) gộp nợ theo đúng cùng một khoá khách.
+export const customerKey = (o) => {
   const digits = (o.customer?.phone ?? '').replace(/\D/g, '');
   if (digits.length >= 8) return `p${digits}`;
   const name = normalizeText(o.customer?.name ?? '').trim();
