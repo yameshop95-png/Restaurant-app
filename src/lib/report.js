@@ -1,7 +1,9 @@
 // Tính báo cáo theo tuần / tháng / năm từ danh sách đơn. Đơn đã huỷ không tính.
-// Thời điểm bán = lúc tạo đơn (giống Màn hình chính).
-import { normalizeText } from '../hooks/useCustomers';
+// Thời điểm bán = NGÀY GIAO (saleDate, quy ước PR #80): đơn tạo thứ Hai hay tối thứ
+// Sáu mà giao thứ Bảy thì đều thuộc tuần giao đó — giống Màn hình chính (summarize).
 import { formatMoney, orderTotal, startOfWeek } from './stats';
+import { dishKey } from './dishKey';
+import { saleDate } from './saleDate';
 
 export const PERIODS = { week: 'Tuần', month: 'Tháng', year: 'Năm' };
 const WEEKDAYS = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ nhật'];
@@ -80,31 +82,8 @@ function segmentsFor(range) {
 }
 
 const inRange = (range) => (o) => {
-  const t = new Date(o.createdAt);
+  const t = saleDate(o);
   return o.status !== 'cancelled' && t >= range.start && t < range.end;
-};
-
-// Khoá gộp món cho báo cáo: tên đã chuẩn hoá, bỏ hậu tố TRỌNG LƯỢNG ở cuối tên.
-// Cùng một món bị tách thành nhiều dòng chỉ vì cách ghi tên khác nhau giữa các nguồn:
-// thực đơn web/app ghi kèm định lượng ("Giò lụa 500g", "Bánh cuốn 1kg"), sổ giấy và
-// đơn nhập tay thì không ("Giò Lụa", "Bánh cuốn"). Chỉ bỏ token trọng lượng cuối tên
-// (500g, 1kg, 1 kg...) — các phân biệt thật như "nhỏ", "mặn", "ngọt", "chuối" giữ nguyên.
-// Bí danh theo thực đơn trong Cài đặt app — nguồn sự thật cho danh tính món (Paul chốt
-// 24/11: "cùng món nhưng giá mới" thì vẫn là một món). Sổ giấy ghi tên khác thực đơn
-// hiện tại: thiếu chữ "Bánh", ghi thêm "mặn" cho món mặn mặc định, hoặc tên cũ trước
-// khi quán đổi tên. Các biến thể "ngọt" là món khác hẳn nên KHÔNG có bí danh.
-const DISH_ALIASES = {
-  'banh chung man': 'banh chung',
-  'banh tet man': 'banh tet',
-  'tet chuoi': 'banh tet chuoi',
-  'tau hu': 'tau hu singapore',
-};
-
-const dishKey = (name) => {
-  const base = normalizeText(name)
-    .replace(/\s+\d+(?:[.,]\d+)?\s*(kg|g)$/, '')
-    .trim();
-  return DISH_ALIASES[base] ?? base;
 };
 
 function dishTotals(orders, menu = []) {
@@ -181,7 +160,7 @@ export function buildReport(allOrders, kind, anchor, menu = [], now = new Date()
   // Biểu đồ doanh thu theo ngày / tháng
   const buckets = bucketsFor(range).map((b) => ({ ...b, revenue: 0, orders: 0 }));
   for (const o of orders) {
-    const b = buckets[bucketKey(range, new Date(o.createdAt))];
+    const b = buckets[bucketKey(range, saleDate(o))];
     if (b) {
       b.revenue += orderTotal(o);
       b.orders += 1;
@@ -190,14 +169,14 @@ export function buildReport(allOrders, kind, anchor, menu = [], now = new Date()
 
   // Thời điểm: doanh thu + top món theo từng phân đoạn
   const segments = segmentsFor(range).map((s) => {
-    const list = orders.filter((o) => s.match(new Date(o.createdAt)));
+    const list = orders.filter((o) => s.match(saleDate(o)));
     const top = [...dishTotals(list).values()].sort((a, b) => b.qty - a.qty).slice(0, 3);
     return { label: s.label, revenue: sum(list, orderTotal), orders: list.length, top };
   });
 
   // Thứ trong tuần mạnh nhất (cho tháng / năm)
   const weekdays = WEEKDAYS.map((label, i) => {
-    const list = orders.filter((o) => weekdayIndex(new Date(o.createdAt)) === i);
+    const list = orders.filter((o) => weekdayIndex(saleDate(o)) === i);
     return { label, revenue: sum(list, orderTotal), orders: list.length };
   });
 
@@ -250,7 +229,7 @@ export function buildReport(allOrders, kind, anchor, menu = [], now = new Date()
     segments,
     weekdays,
     forecast,
-    unsold: menu.filter((m) => m.available !== false && !dishes.has(normalizeText(m.name))).map((m) => m.name),
+    unsold: menu.filter((m) => m.available !== false && !dishes.has(dishKey(m.name))).map((m) => m.name),
     menuAvgPrice: menu.length ? sum(menu, (m) => m.price) / menu.length : 0,
   };
   report.insights = buildInsights(report);

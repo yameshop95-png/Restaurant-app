@@ -7,8 +7,9 @@
 // 3. Số bán có dao động: dùng phân phối nhị thức âm (số đếm, dao động lớn hơn Poisson) để ra khoảng 80%
 //    và số nên làm = mức mà xác suất đủ hàng bằng mức chủ quán chọn (bài toán người bán báo:
 //    mức nên chọn = lãi mỗi phần ÷ (lãi mỗi phần + tiền mất khi phải bỏ phần dư)).
-import { normalizeText } from './text';
 import { weekKey } from './forecast';
+import { dishKey } from './dishKey';
+import { saleDate } from './saleDate';
 
 const WEEK = 7 * 86400000;
 const CURVE_WEEKS = 8;
@@ -79,12 +80,21 @@ export function nowcast({ forecast, orders, now, level = 0.75 }) {
   const f = curve.f;
   const thisStart = keyDate(weekKey(now));
 
-  // Món có trong dự báo, cộng món tuần này đã có đơn (khi chưa đủ tuần để dự báo theo mô hình)
+  // Món có trong dự báo, cộng món của ĐỢT GIAO này đã có đơn (khi chưa đủ tuần để dự
+  // báo theo mô hình). "Đã đặt của đợt" tính theo tuần giao (saleDate) và khoá món
+  // dishKey — phải khớp hệt khoá của weeklySeries/weeklyForecast (PR #80), nếu không
+  // cùng một món sẽ thành hai dòng và số đã đặt bị tính thiếu biến thể có đuôi trọng lượng.
+  const thisEnd = new Date(thisStart.getTime() + WEEK);
+  const inRun = (o) => {
+    if (o.status === 'cancelled' || !o.createdAt || new Date(o.createdAt) > now) return false;
+    const d = saleDate(o);
+    return d >= thisStart && d < thisEnd;
+  };
   const items = new Map((forecast.items ?? []).map((it) => [it.key, { ...it }]));
   for (const o of orders) {
-    if (o.status === 'cancelled' || !o.createdAt || new Date(o.createdAt) < thisStart || new Date(o.createdAt) > now) continue;
+    if (!inRun(o)) continue;
     for (const i of o.items ?? []) {
-      const k = normalizeText(i.name ?? '');
+      const k = dishKey(i.name ?? '');
       if (!k || items.has(k)) continue;
       items.set(k, { key: k, name: i.name, expected: null, low: null, high: null, soldSoFar: 0, reasons: [] });
     }
@@ -92,9 +102,9 @@ export function nowcast({ forecast, orders, now, level = 0.75 }) {
   if (!forecast.ready) {
     for (const it of items.values()) {
       it.soldSoFar = orders
-        .filter((o) => o.status !== 'cancelled' && o.createdAt && new Date(o.createdAt) >= thisStart && new Date(o.createdAt) <= now)
+        .filter(inRun)
         .flatMap((o) => o.items ?? [])
-        .filter((i) => normalizeText(i.name ?? '') === it.key)
+        .filter((i) => dishKey(i.name ?? '') === it.key)
         .reduce((s, i) => s + (Number(i.qty) || 0), 0);
     }
   }

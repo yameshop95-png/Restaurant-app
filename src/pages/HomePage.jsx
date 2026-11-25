@@ -373,8 +373,10 @@ function DashTiles({ orders, counts, customers, menu, settings, now, isOwner, we
 
 // Nhân viên không thấy doanh thu: chỉ số đơn và số phần từng món. Quản lý thấy tiền tuần này, không thấy tổng cộng dồn / lợi nhuận
 export default function HomePage({ orders, now, settings, isOwner, isManager, onBackupNow, counts, customers, menu, onNavigate, onUpdateSettings }) {
-  const stats = useMemo(() => summarize(orders, now), [orders, now]);
-  const maxQty = stats.weekItems[0]?.qty ?? 0;
+  const stats = useMemo(() => summarize(orders, now, menu), [orders, now, menu]);
+  // weekItems sắp theo DOANH THU (PR #84) nên món đầu không còn là món nhiều phần
+  // nhất — thanh tỉ lệ phải chia cho số phần lớn nhất thật, kẻo dài quá 100% (A1, issue #89)
+  const maxQty = Math.max(0, ...stats.weekItems.map((i) => i.qty));
   // Quản lý xem được tiền tuần này, không xem tổng cộng dồn và lợi nhuận
   const seeWeekMoney = isOwner || isManager;
 
