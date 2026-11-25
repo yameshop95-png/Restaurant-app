@@ -39,6 +39,8 @@ const base = { orders: ORDERS, menu: MENU, settings: {}, onUpdateSettings: () =>
 
 // --- Theo kỳ (từ PR #82 mặc định là Đợt này nên truyền initialTab tường minh) ---
 const ky = render({ ...base, initialTab: 'theo-ky' });
+// Thanh tab con dính dưới TopBar khi cuộn (Paul báo tab trôi mất khi scroll, 25/11/2026)
+check('Thanh tab con dính khi cuộn (sticky top-16, nền bg-page)', ky.includes('sticky top-16') && ky.includes('bg-page'));
 for (const label of ['Đợt này', 'Theo kỳ', 'Khách & món']) {
   check(`Thanh tab có "${label}"`, ky.includes(label));
 }

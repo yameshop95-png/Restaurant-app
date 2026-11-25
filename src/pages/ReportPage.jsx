@@ -542,18 +542,23 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings, o
 
   return (
     <div className="report-page staff-stagger mx-auto max-w-2xl space-y-5 pb-8" {...swipe}>
-      {/* Thanh 3 tab con — cùng kiểu nút chuyển chế độ của RoutePlanner */}
-      <div className="flex rounded-2xl bg-slate-100 p-1 text-sm font-semibold">
-        {REPORT_TABS.map(([k, label]) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setTab(k)}
-            className={`flex-1 rounded-xl py-2 ${tab === k ? 'bg-card text-slate-900 shadow-sm' : 'text-slate-500'}`}
-          >
-            {label}
-          </button>
-        ))}
+      {/* Thanh 3 tab con — cùng kiểu nút chuyển chế độ của RoutePlanner.
+          Dính ngay dưới TopBar khi cuộn (giống cụm điều khiển ở trang Đơn hàng,
+          PR #74): trang Theo kỳ rất dài, để thanh tab trôi đi thì muốn đổi tab
+          phải cuộn lên đầu trang (Paul báo 25/11/2026). */}
+      <div className="sticky top-16 z-10 -my-2 bg-page py-2">
+        <div className="flex rounded-2xl bg-slate-100 p-1 text-sm font-semibold shadow-sm">
+          {REPORT_TABS.map(([k, label]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setTab(k)}
+              className={`flex-1 rounded-xl py-2 ${tab === k ? 'bg-card text-slate-900 shadow-sm' : 'text-slate-500'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {tab === 'dot-nay' && (
