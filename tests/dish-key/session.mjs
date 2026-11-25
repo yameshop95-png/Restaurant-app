@@ -64,6 +64,21 @@ check('summarize: Bánh chưng ngọt tách riêng, 2 phần', sQty['Bánh chưn
 check('summarize: xếp theo doanh thu (Giò Lụa $91 đứng đầu)', s.weekItems[0].name === 'Giò Lụa' && s.weekItems[0].revenue === 91);
 check('summarize: đơn huỷ + đơn đợt sau không lọt', s.weekItems.every((i) => i.name !== 'Bánh Cuốn') && sQty['Giò Lụa'] === 6);
 
+// --- A1 (issue #89): món doanh thu cao nhất KHÔNG phải món nhiều phần nhất ---
+// Thanh "Món bán trong tuần" ở Home chia theo số phần lớn nhất thật; bản cũ lấy
+// weekItems[0].qty (món doanh thu cao nhất) làm mẫu số → thanh dài quá 100%.
+import { readFileSync } from 'node:fs';
+const a1Orders = [
+  mk('G', at(24, 9), at(28, 9), 'done', [{ name: 'Lạp Xưởng', qty: 4, price: 20 }]), // $80 · 4 phần
+  mk('H', at(24, 10), at(28, 9), 'done', [{ name: 'Bánh Giò', qty: 10, price: 6 }]), // $60 · 10 phần
+];
+const sA1 = summarize(a1Orders, now, menu);
+const maxQtyA1 = Math.max(0, ...sA1.weekItems.map((i) => i.qty));
+check('A1: món đầu bảng là Lạp Xưởng (doanh thu) nhưng chỉ 4 phần', sA1.weekItems[0].name === 'Lạp Xưởng' && sA1.weekItems[0].qty === 4);
+check('A1: maxQty thật = 10 và mọi tỉ lệ qty/maxQty ≤ 1', maxQtyA1 === 10 && sA1.weekItems.every((i) => i.qty / maxQtyA1 <= 1));
+check('A1: HomePage tính maxQty bằng Math.max trên weekItems',
+  readFileSync('src/pages/HomePage.jsx', 'utf8').includes('Math.max(0, ...stats.weekItems.map((i) => i.qty))'));
+
 const r = buildReport(orders, 'week', now, menu);
 const rQty = Object.fromEntries(r.dishes.map((d) => [d.name, d.qty]));
 check('buildReport: doanh thu tuần $136, 4 đơn', r.revenue === 136 && r.orderCount === 4);
