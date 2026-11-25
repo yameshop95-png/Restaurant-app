@@ -1,11 +1,13 @@
 // Số liệu phụ cho tab Báo cáo, tính trên đúng kỳ đang chọn (range của buildReport):
 // tỉ lệ đơn huỷ và khách mới / khách quay lại — cộng thêm nhịp tuần trong tháng.
 // Quy ước chung của tab Báo cáo: đơn huỷ (status 'cancelled', xem lib/orderStatus)
-// không tính là lần mua; thời điểm của đơn = lúc tạo đơn (createdAt).
+// không tính là lần mua; thời điểm của đơn = NGÀY BÁN = ngày giao (saleDate, PR #80),
+// khớp với buildReport để mọi thẻ trong kỳ nói cùng một kỳ.
 import { customerKey } from '../hooks/useCustomers';
 import { normalizeText } from './text';
 import { weekOfMonth } from './forecast';
 import { startOfWeek } from './stats';
+import { saleDate } from './saleDate';
 
 // Khoá định danh khách của một đơn: dùng đúng customerKey mà danh bạ khách dùng
 // (theo SĐT — chỉ lấy chữ số; không có SĐT thì theo tên đã chuẩn hoá). Đơn không có
@@ -30,7 +32,7 @@ export function periodInsights(orders, range) {
   const startMs = range.start.getTime();
   const endMs = range.end.getTime();
   const inPeriod = (o) => {
-    const t = new Date(o.createdAt).getTime();
+    const t = saleDate(o).getTime();
     return t >= startMs && t < endMs;
   };
 
@@ -43,7 +45,7 @@ export function periodInsights(orders, range) {
   for (const o of active) {
     const key = orderCustomerKey(o);
     if (!key) continue;
-    const t = new Date(o.createdAt).getTime();
+    const t = saleDate(o).getTime();
     if (!firstAt.has(key) || t < firstAt.get(key)) firstAt.set(key, t);
   }
   const inPeriodKeys = new Set();
@@ -97,11 +99,11 @@ export function weekOfMonthRhythm(orders, now = new Date(), lookbackMonths = 6) 
   windowDate.setMonth(windowDate.getMonth() - lookbackMonths);
   const windowStart = startOfWeek(windowDate);
 
-  const active = orders.filter((o) => o.status !== 'cancelled' && o.createdAt);
+  const active = orders.filter((o) => o.status !== 'cancelled' && (o.createdAt || o.deliverAt));
   let firstOrderStart = null;
   const byWeek = new Map(); // mốc Thứ Hai (ms) → số đơn trong tuần đó
   for (const o of active) {
-    const ws = startOfWeek(new Date(o.createdAt)).getTime();
+    const ws = startOfWeek(saleDate(o)).getTime();
     if (firstOrderStart == null || ws < firstOrderStart) firstOrderStart = ws;
     if (ws >= windowStart.getTime() && ws < currentStart.getTime()) {
       byWeek.set(ws, (byWeek.get(ws) ?? 0) + 1);

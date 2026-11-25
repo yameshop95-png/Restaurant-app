@@ -10,8 +10,9 @@
 //    Hệ số = bán TB trong các tuần cùng điều kiện ÷ bán TB mọi tuần, co rút về 1: (n·hệ số + K) ÷ (n + K).
 // 3. Tự chọn hệ số: thử dự báo lại các tuần đã qua (chỉ dùng dữ liệu trước tuần đó), đo sai số
 //    WAPE = Σ|thực − dự báo| ÷ Σ thực, và chỉ giữ nhóm hệ số nào làm WAPE giảm rõ.
-import { normalizeText } from './text';
 import { periodRange } from './report';
+import { dishKey } from './dishKey';
+import { saleDate } from './saleDate';
 import { lunarEventsOfYear, moonDays } from './lunar';
 
 export const WEATHER = [
@@ -184,13 +185,16 @@ export function weeklySeries(orders, now, weatherLog = {}) {
   const byWeek = new Map();
   const names = new Map();
   for (const o of orders) {
-    if (o.status === 'cancelled' || !o.createdAt) continue;
-    const created = new Date(o.createdAt);
-    if (created > now) continue;
-    const wk = weekKey(created);
+    if (o.status === 'cancelled' || (!o.createdAt && !o.deliverAt)) continue;
+    // Tuần của đơn = TUẦN GIAO (saleDate, quy ước PR #80) và khoá món = dishKey dùng
+    // chung — trước đây weeklySeries gộp theo normalizeText và tuần tạo đơn, là cách
+    // gộp thứ ba lệch với cả stats.js lẫn report.js.
+    const sold = saleDate(o);
+    if (sold > now) continue;
+    const wk = weekKey(sold);
     const row = byWeek.get(wk) ?? new Map();
     for (const it of o.items ?? []) {
-      const k = normalizeText(it.name ?? '');
+      const k = dishKey(it.name ?? '');
       if (!k) continue;
       row.set(k, (row.get(k) ?? 0) + (Number(it.qty) || 0));
       names.set(k, it.name);

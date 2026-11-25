@@ -1,7 +1,8 @@
 // Báo cáo khách theo ngôn ngữ: đơn đặt trên website ghi ngôn ngữ khách dùng (order.lang = 'vi' | 'en').
 // Đơn tạo trong app (nhân viên nhập) không có ngôn ngữ. Không suy đoán dân tộc từ tên khách.
-import { normalizeText } from './text';
 import { orderTotal } from './stats';
+import { dishKey } from './dishKey';
+import { saleDate } from './saleDate';
 
 export const LANG_GROUPS = [
   { id: 'vi', label: 'Website · tiếng Việt' },
@@ -17,14 +18,14 @@ const emptyGroup = () => ({ orders: 0, revenue: 0, dishes: new Map() });
 export function languageByMonth(orders) {
   const months = new Map();
   for (const o of orders) {
-    if (o.status === 'cancelled' || !o.createdAt) continue;
-    const mk = monthKey(new Date(o.createdAt));
+    if (o.status === 'cancelled' || (!o.createdAt && !o.deliverAt)) continue;
+    const mk = monthKey(saleDate(o));
     const m = months.get(mk) ?? { month: mk, groups: { vi: emptyGroup(), en: emptyGroup(), app: emptyGroup() } };
     const g = m.groups[groupOf(o)];
     g.orders += 1;
     g.revenue += orderTotal(o);
     for (const it of o.items ?? []) {
-      const k = normalizeText(it.name ?? '');
+      const k = dishKey(it.name ?? '');
       if (!k) continue;
       const row = g.dishes.get(k) ?? { name: it.name, qty: 0 };
       row.qty += Number(it.qty) || 0;
@@ -39,14 +40,14 @@ export function languageByMonth(orders) {
 export function languageSummary(orders, range) {
   const groups = { vi: emptyGroup(), en: emptyGroup(), app: emptyGroup() };
   for (const o of orders) {
-    if (o.status === 'cancelled' || !o.createdAt) continue;
-    const d = new Date(o.createdAt);
+    if (o.status === 'cancelled' || (!o.createdAt && !o.deliverAt)) continue;
+    const d = saleDate(o);
     if (d < range.start || d >= range.end) continue;
     const g = groups[groupOf(o)];
     g.orders += 1;
     g.revenue += orderTotal(o);
     for (const it of o.items ?? []) {
-      const k = normalizeText(it.name ?? '');
+      const k = dishKey(it.name ?? '');
       if (!k) continue;
       const row = g.dishes.get(k) ?? { name: it.name, qty: 0 };
       row.qty += Number(it.qty) || 0;
