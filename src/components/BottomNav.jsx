@@ -6,7 +6,7 @@ const TABS = [
   { id: 'home', label: 'Tổng quan', icon: LayoutDashboard },
   { id: 'orders', label: 'Đơn hàng', icon: ClipboardList, badgeKey: 'inboxAll' },
   { id: 'cooking', label: 'Chờ nấu', icon: CookingPot, badgeKey: 'cookingCount' },
-  { id: 'delivery', label: 'Đơn ship', icon: Bike, badgeKey: 'pendingDelivery' },
+  { id: 'delivery', label: 'Đơn ship', icon: Bike, badgeKey: 'deliveryAction' },
   { id: 'menu', label: 'Món ăn', icon: UtensilsCrossed },
 ];
 

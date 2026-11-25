@@ -8,6 +8,7 @@
     "build": "vite build && vite build --ssr src/site/entry-server.jsx --outDir dist-ssr && node scripts/prerender.mjs",
     "preview": "vite preview",
     "test:sync": "node tests/sync-queue/run.mjs",
+    "test:shippage": "node tests/ship-page/run.mjs",
     "test:cache": "node tests/list-cache/run.mjs",
     "test:performance": "node tests/performance/run.mjs",
     "test:dishprofit": "node tests/dish-profit/run.mjs",

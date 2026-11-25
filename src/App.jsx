@@ -256,8 +256,10 @@ function Shop({ account, onLogout }) {
   const counts = useMemo(() => {
     const pending = orders.filter((o) => o.status === 'pending');
     const pendingDelivery = pending.filter((o) => o.type === 'delivery').length;
-    // Badge tab Đơn ship: cả đơn giao đang chờ lẫn đơn đang đi giao đều cần để mắt tới
-    // Đơn giao không được cũng cần xử lý (giao lại / huỷ) nên tính vào badge Đơn ship
+    // Badge tab Đơn ship = đúng số đơn shipper cần xử lý ngay trên trang Đơn ship:
+    // đơn đã nấu xong chờ mang đi (done) + đơn đang đi giao (delivering) + đơn giao
+    // không được cần xử lý (failed). Đơn giao còn Chờ xử lý / Chờ nấu KHÔNG hiện trên
+    // trang Đơn ship nữa (issue #69) nên không đếm vào badge này (issue #79).
     const deliveringDelivery = orders.filter((o) => (o.status === 'delivering' || o.status === 'failed') && o.type === 'delivery').length;
     // Đơn giao đã nấu xong (done) cũng cần để mắt: chờ bấm "Đã mang đi" ngay trong trang Đơn ship (issue #69)
     const doneDelivery = orders.filter((o) => o.status === 'done' && o.type === 'delivery').length;
@@ -269,7 +271,7 @@ function Shop({ account, onLogout }) {
       pendingPickup: pending.filter((o) => o.type !== 'delivery').length,
       pendingDelivery,
       pendingAll: pending.length,
-      deliveryAction: pendingDelivery + deliveringDelivery + doneDelivery,
+      deliveryAction: deliveringDelivery + doneDelivery,
       inboxPickup: inbox.filter((o) => o.type !== 'delivery').length,
       inboxDelivery: inbox.filter((o) => o.type === 'delivery').length,
       inboxAll: inbox.length,
