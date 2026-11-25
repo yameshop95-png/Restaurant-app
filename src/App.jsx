@@ -8,6 +8,7 @@ import PinLogin from './components/PinLogin';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import UndoToast from './components/UndoToast';
+import PageErrorBoundary from './components/PageErrorBoundary';
 import { NAV_ITEMS } from './components/navigation';
 import useAlwaysOn from './hooks/useAlwaysOn';
 import useAuth from './hooks/useAuth';
@@ -17,6 +18,7 @@ import useNow from './hooks/useNow';
 import useOrders from './hooks/useOrders';
 import useSettings from './hooks/useSettings';
 import { exportAll } from './lib/backup';
+import { loadResumeTab, saveResumeTab } from './lib/resumeTab';
 import { alertBeep, dueInfo, unlockAudio, upcomingOrders } from './lib/due';
 import { sendToShopPrinter } from './lib/printQueue';
 import { paymentLabel, statusLabel } from './lib/orderStatus';
@@ -92,7 +94,9 @@ function Shop({ account, onLogout }) {
   const isOwner = account.role === 'owner';
   // Quản lý: như nhân viên, thêm xem tiền tuần này và quản lý tài khoản nhân viên
   const isManager = account.role === 'manager';
-  const [activeTab, setActiveTab] = useState('home');
+  // Mở lại đúng mục đang xem nếu app vừa tự tải lại (cập nhật bản mới);
+  // lần mở mới tinh vẫn vào màn hình chính như cũ
+  const [activeTab, setActiveTab] = useState(() => loadResumeTab(Object.keys(PAGES)) ?? 'home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const viewDir = useRef('forward');
   const {
@@ -298,6 +302,7 @@ function Shop({ account, onLogout }) {
     const from = Math.max(0, NAV_ITEMS.findIndex((item) => item.id === activeTab));
     const to = Math.max(0, NAV_ITEMS.findIndex((item) => item.id === tab));
     viewDir.current = to >= from ? 'forward' : 'back';
+    saveResumeTab(tab);
     setActiveTab(tab);
     setSidebarOpen(false);
   };
@@ -340,6 +345,7 @@ function Shop({ account, onLogout }) {
             </p>
           )}
           <div key={activeTab} className="staff-view" data-dir={viewDir.current}>
+          <PageErrorBoundary>
           <Suspense fallback={<p className="py-16 text-center text-slate-500">Đang mở…</p>}>
             <ActivePage
               account={account}
@@ -375,6 +381,7 @@ function Shop({ account, onLogout }) {
               onNavigate={handleTabChange}
             />
           </Suspense>
+          </PageErrorBoundary>
           </div>
         </main>
         <BottomNav

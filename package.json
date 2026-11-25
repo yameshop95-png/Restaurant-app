@@ -23,7 +23,8 @@
     "test:reporttabs": "node tests/report-tabs/run.mjs",
     "test:currentrun": "node tests/current-run/run.mjs",
     "test:opsreport": "node tests/ops-report/run.mjs",
-    "test:sitelink": "node tests/site-link/run.mjs"
+    "test:sitelink": "node tests/site-link/run.mjs",
+    "test:resumetab": "node tests/resume-tab/run.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
