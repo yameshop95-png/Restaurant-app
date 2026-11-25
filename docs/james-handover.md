@@ -254,3 +254,8 @@ Paul báo: 7 điểm mà chạy 48 km / gần 2 tiếng, vì lộ trình cũ x�
 - Báo cáo đầy đủ: `docs/audit/2026-11-25-bao-cao.md`, ảnh trong `docs/audit/2026-11-25/`. **Danh sách sửa: issue #89** (A1–A7 phải sửa, B1–B6 nên sửa). Chưa gộp PR nào trong gói.
 - **Ghi nhớ — giá dầu:** xe giao hàng chạy diesel, 55 L / 800 km = 6,9 L/100 km. Hiện chủ quán nhập tay giá dầu $/lít trong Cài đặt (A7 ở #89). Paul sẽ báo khi có **API giá dầu**; lúc đó mới làm issue riêng để tự cập nhật giá, ô nhập tay giữ làm dự phòng. Đến lúc đó, đừng tự thêm nguồn giá dầu nào.
 - `inventory.js profitReport` chưa chuyển sang tuần giao, để issue riêng sau khi gói này gộp xong.
+
+## 25/11 — Backtest tổng gói Báo cáo: ĐẠT, gộp được (Claude)
+- Claude đã sửa C1 (#87 lẫn code #88, build hỏng khi đứng riêng), C2 ("xăng" → "dầu") và A6 (xung đột `package.json` của #85). Chi tiết và kết quả: `docs/audit/2026-11-25-backtest-tong.md`.
+- Gộp theo thứ tự **#84 → #85 → #86 → #87 → #88**: đã mô phỏng, 0 conflict, 15/15 test, build PASS, render 4 cỡ đạt.
+- Bài học: khi sửa một PR trong chuỗi PR chồng nhau, phải build và test **từng nhánh riêng**, không chỉ cây ghép.
