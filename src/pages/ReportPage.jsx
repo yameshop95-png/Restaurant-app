@@ -522,7 +522,7 @@ const INSIGHT_ICON = {
   neutral: <Lightbulb size={16} className="mt-0.5 shrink-0 text-amber-600" />,
 };
 
-export default function ReportPage({ orders, menu, settings, onUpdateSettings, onNavigate, onSetPaid, initialTab = 'dot-nay' }) {
+export default function ReportPage({ orders, menu, settings, onUpdateSettings, onNavigate, onSetPaid, onSetPaidMany, initialTab = 'dot-nay' }) {
   const [kind, setKind] = useState('month');
   const [anchor, setAnchor] = useState(() => new Date());
   // Mặc định mở Đợt này (đổi ở PR #82; PR #81 mặc định Theo kỳ). Không nhớ tab.
@@ -558,7 +558,7 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings, o
 
       {tab === 'dot-nay' && (
         <Suspense fallback={CHART_FALLBACK}>
-          <CurrentRunSection orders={orders} settings={settings} onNavigate={onNavigate} />
+          <CurrentRunSection orders={orders} menu={menu} settings={settings} onNavigate={onNavigate} />
         </Suspense>
       )}
 
@@ -699,7 +699,7 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings, o
 
       {/* Giao hàng · Công nợ · Xử lý đơn web (PR #83) */}
       <DeliveryOpsCard orders={orders} range={report.range} settings={settings} />
-      <DebtCard orders={orders} onSetPaid={onSetPaid} />
+      <DebtCard orders={orders} onSetPaid={onSetPaid} onSetPaidMany={onSetPaidMany} />
       <WebOpsCard orders={orders} range={report.range} />
 
       {/* DEMO v3: thẻ gộp "Nhịp tuần" — theo tuần (xếp chồng theo món) + nhịp trong tháng */}

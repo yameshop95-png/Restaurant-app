@@ -1,11 +1,12 @@
 // Bốn thẻ vận hành ở tab Theo kỳ của Báo cáo (PR #83): Đơn theo vùng, Giao hàng,
 // Công nợ, Xử lý đơn web. Số liệu từ lib/opsReport (thuần, có test riêng); các thẻ
 // này chỉ hiển thị + lo tương tác (gọi điện, đánh dấu đã thu).
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Phone } from 'lucide-react';
 import { cachedGeocode } from '../lib/geo';
 import { storedGeoOf } from '../lib/orderGeo';
-import { debtReport, deliveryReport, regionReport, webReport } from '../lib/opsReport';
+import { FUEL_DEFAULTS, debtReport, deliveryReport, fuelCostPerKmOf, regionReport, webReport } from '../lib/opsReport';
+import { PAYMENT_METHODS } from '../lib/orderStatus';
 import { formatMinutes, sideOf } from '../lib/route';
 import { DEFAULT_ZONES } from '../lib/shippingZones';
 import { formatMoney } from '../lib/stats';
@@ -80,7 +81,10 @@ export function RegionCard({ orders, range, settings }) {
 // --- Thẻ C: Giao hàng ---
 export function DeliveryOpsCard({ orders, range, settings }) {
   const zones = settings?.shippingZones ?? DEFAULT_ZONES;
-  const fuelPerKm = Number(settings?.fuelCostPerKm) > 0 ? Number(settings.fuelCostPerKm) : 0.25;
+  const costPerKm = fuelCostPerKmOf(settings);
+  const litres = Number(settings?.fuelLitresPer100km) > 0 ? Number(settings.fuelLitresPer100km) : FUEL_DEFAULTS.litresPer100km;
+  const price = Number(settings?.fuelPricePerLitre) > 0 ? Number(settings.fuelPricePerLitre) : FUEL_DEFAULTS.pricePerLitre;
+  const legacyOnly = settings?.fuelLitresPer100km == null && settings?.fuelPricePerLitre == null && Number(settings?.fuelCostPerKm) > 0;
   const data = useMemo(() => {
     // Toạ độ chỉ từ dữ liệu đã có: lưu trên đơn trước, cache của máy sau — không tra mạng
     const geo = new Map();
@@ -90,8 +94,8 @@ export function DeliveryOpsCard({ orders, range, settings }) {
     }
     const start = settings?.shopAddress ? cachedGeocode(settings.shopAddress) : null;
     const homeSide = sideOf(settings?.shopAddress) ?? 'vic';
-    return deliveryReport(orders, range, { geo, start, homeSide, fuelPerKm, zones });
-  }, [orders, range, settings, zones, fuelPerKm]);
+    return deliveryReport(orders, range, { geo, start, homeSide, costPerKm, zones });
+  }, [orders, range, settings, zones, costPerKm]);
 
   return (
     <Section title="Giao hàng">
@@ -107,13 +111,16 @@ export function DeliveryOpsCard({ orders, range, settings }) {
               </div>
               <div className="rounded-2xl bg-slate-50 py-2.5">
                 <p className="text-lg font-bold text-slate-900">{data.km.toFixed(1)} km</p>
-                <p className="text-[11px] text-slate-500">ước tính đường chim bay × 1,4</p>
+                <p className="text-[11px] text-slate-500">km đường thật ước tính (chim bay × 1,4)</p>
               </div>
               <div className="rounded-2xl bg-slate-50 py-2.5">
                 <p className="text-lg font-bold text-slate-900">{formatMinutes(data.minutes)}</p>
                 <p className="text-[11px] text-slate-500">thời gian chạy xe + dừng</p>
               </div>
             </div>
+            <p className={`mt-2 text-xs ${data.geoCoverage.low ? 'font-semibold text-amber-600' : 'text-slate-400'}`}>
+              Tính trên {data.geoCoverage.withGeo}/{data.geoCoverage.total} đơn giao có toạ độ
+            </p>
             <ul className="mt-3 space-y-1.5 text-sm text-slate-600">
               <li className="flex justify-between">
                 <span>Giao đúng giờ (trễ tối đa 30 phút)</span>
@@ -128,14 +135,14 @@ export function DeliveryOpsCard({ orders, range, settings }) {
                 <b className="text-slate-900">{formatMoney(data.shippingCollected)}</b>
               </li>
               <li className="flex justify-between">
-                <span>Chi phí xăng ước tính ({formatMoney(fuelPerKm)}/km)</span>
+                <span>{legacyOnly ? `Chi phí dầu ước tính (${formatMoney(costPerKm)}/km — cài đặt cũ)` : `Chi phí dầu ước tính (${String(litres).replace('.', ',')} L/100 km × ${formatMoney(price)}/L)`}</span>
                 <b className="text-slate-900">{formatMoney(data.fuelCost)}</b>
               </li>
             </ul>
             <p className="mt-1 text-xs text-slate-400">Đơn giao không được chỉ đếm đơn đang ở trạng thái này.</p>
             {data.byZone.length > 0 && (
               <div className="mt-3 border-t border-slate-100 pt-3">
-                <p className="text-xs font-semibold text-slate-500">Theo vùng phí — đối chiếu phí thu với xăng xe</p>
+                <p className="text-xs font-semibold text-slate-500">Theo vùng phí — đối chiếu phí thu với tiền dầu</p>
                 <ul className="mt-1.5 space-y-1 text-sm text-slate-600">
                   {data.byZone.map((z) => (
                     <li key={z.zone} className="flex justify-between gap-2">
@@ -156,8 +163,15 @@ export function DeliveryOpsCard({ orders, range, settings }) {
 }
 
 // --- Thẻ D: Công nợ ---
-export function DebtCard({ orders, onSetPaid }) {
+export function DebtCard({ orders, onSetPaid, onSetPaidMany }) {
   const data = useMemo(() => debtReport(orders, new Date()), [orders]);
+  const [choosing, setChoosing] = useState(null); // key của khách đang chọn cách thanh toán
+  const markPaid = (g, method) => {
+    if (!window.confirm(`Đã thu ${formatMoney(g.total)} của ${g.name || 'khách này'} (${g.count} đơn) bằng ${PAYMENT_METHODS.find((m) => m.id === method)?.label}?`)) return;
+    if (onSetPaidMany) onSetPaidMany(g.orderIds, method, `Đã thu ${g.count} đơn của ${g.name || 'khách'}`);
+    else for (const id of g.orderIds) onSetPaid?.(id, true, method);
+    setChoosing(null);
+  };
   return (
     <Section title="Công nợ">
       <div className="px-5 pb-5 pt-1">
@@ -175,7 +189,7 @@ export function DebtCard({ orders, onSetPaid }) {
                 <p className="mt-0.5 text-xs text-slate-500">
                   {g.count} đơn · đơn cũ nhất {g.ageDays} ngày{g.phone ? ` · ${g.phone}` : ''}
                 </p>
-                <div className="mt-1.5 flex gap-2">
+                <div className="mt-1.5 flex flex-wrap gap-2">
                   {g.phone && (
                     <a
                       href={`tel:${g.phone.replace(/\s/g, '')}`}
@@ -184,17 +198,35 @@ export function DebtCard({ orders, onSetPaid }) {
                       <Phone size={13} /> Gọi
                     </a>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (window.confirm(`Đã thu đủ ${formatMoney(g.total)} của ${g.name || 'khách này'} (${g.count} đơn)?`)) {
-                        for (const id of g.orderIds) onSetPaid?.(id, true);
-                      }
-                    }}
-                    className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700 active:bg-emerald-200"
-                  >
-                    Đã thu
-                  </button>
+                  {choosing === g.key ? (
+                    <>
+                      {PAYMENT_METHODS.map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => markPaid(g, m.id)}
+                          className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white active:bg-emerald-700"
+                        >
+                          {m.label}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setChoosing(null)}
+                        className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 active:bg-slate-200"
+                      >
+                        Huỷ
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setChoosing(g.key)}
+                      className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700 active:bg-emerald-200"
+                    >
+                      Đã thu
+                    </button>
+                  )}
                 </div>
               </li>
             ))}
@@ -242,6 +274,7 @@ export function WebOpsCard({ orders, range }) {
                 Xác nhận chậm hơn 2 giờ: {data.slow.map((s) => `đơn #${s.number} (${fmtHours(s.hours * 3600000)})`).join(' · ')}
               </p>
             )}
+            <p className="mt-2 text-xs text-slate-400">Thời gian chờ không tính giờ đêm 22:00–7:00.</p>
           </>
         )}
       </div>

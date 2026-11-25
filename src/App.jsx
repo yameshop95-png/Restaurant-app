@@ -135,6 +135,21 @@ function Shop({ account, onLogout }) {
     const what = paid ? `Đã thanh toán${method ? ` · ${paymentLabel(method)}` : ''}` : 'Chưa thanh toán';
     setToast({ label: `Đơn #${order.number}: ${what}`, undo: () => setPaid(id, wasPaid, paymentMethod, paidAt) });
   };
+  // Đánh dấu đã thu cho NHIỀU đơn cùng lúc (thẻ Công nợ ở Báo cáo): một toast
+  // chung, Hoàn tác trả lại trạng thái thu của TẤT CẢ các đơn vừa đánh dấu.
+  // Hàm cộng thêm — không đổi API của onSetPaid hiện có (B3, issue #89).
+  const changePaidMany = (ids, method, label) => {
+    const targets = ids.map((id) => orders.find((o) => o.id === id)).filter(Boolean);
+    if (!targets.length) return;
+    const before = targets.map((o) => ({ id: o.id, paid: o.paid, paymentMethod: o.paymentMethod, paidAt: o.paidAt }));
+    for (const o of targets) setPaid(o.id, true, method);
+    setToast({
+      label: label ?? `Đã thu ${targets.length} đơn${method ? ` · ${paymentLabel(method)}` : ''}`,
+      undo: () => {
+        for (const b of before) setPaid(b.id, b.paid, b.paymentMethod, b.paidAt);
+      },
+    });
+  };
   const { settings, updateSettings } = useSettings();
   useAlwaysOn(settings.keepAwake);
   useEffect(() => applyTheme(settings.theme), [settings.theme]);
@@ -256,8 +271,10 @@ function Shop({ account, onLogout }) {
   const counts = useMemo(() => {
     const pending = orders.filter((o) => o.status === 'pending');
     const pendingDelivery = pending.filter((o) => o.type === 'delivery').length;
-    // Badge tab Đơn ship: cả đơn giao đang chờ lẫn đơn đang đi giao đều cần để mắt tới
-    // Đơn giao không được cũng cần xử lý (giao lại / huỷ) nên tính vào badge Đơn ship
+    // Badge tab Đơn ship = đúng số đơn shipper cần xử lý ngay trên trang Đơn ship:
+    // đơn đã nấu xong chờ mang đi (done) + đơn đang đi giao (delivering) + đơn giao
+    // không được cần xử lý (failed). Đơn giao còn Chờ xử lý / Chờ nấu KHÔNG hiện trên
+    // trang Đơn ship nữa (issue #69) nên không đếm vào badge này (issue #79).
     const deliveringDelivery = orders.filter((o) => (o.status === 'delivering' || o.status === 'failed') && o.type === 'delivery').length;
     // Đơn giao đã nấu xong (done) cũng cần để mắt: chờ bấm "Đã mang đi" ngay trong trang Đơn ship (issue #69)
     const doneDelivery = orders.filter((o) => o.status === 'done' && o.type === 'delivery').length;
@@ -269,7 +286,7 @@ function Shop({ account, onLogout }) {
       pendingPickup: pending.filter((o) => o.type !== 'delivery').length,
       pendingDelivery,
       pendingAll: pending.length,
-      deliveryAction: pendingDelivery + deliveringDelivery + doneDelivery,
+      deliveryAction: deliveringDelivery + doneDelivery,
       inboxPickup: inbox.filter((o) => o.type !== 'delivery').length,
       inboxDelivery: inbox.filter((o) => o.type === 'delivery').length,
       inboxAll: inbox.length,
@@ -354,6 +371,7 @@ function Shop({ account, onLogout }) {
               onMarkStep={markStep}
               onPatchOrder={markOrder}
               onSetPaid={changePaid}
+              onSetPaidMany={changePaidMany}
               onNavigate={handleTabChange}
             />
           </Suspense>
