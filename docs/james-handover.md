@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: 25/11/2026 (sau PR #91).
+> Cập nhật lần cuối: 25/11/2026 (sau PR #92).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James đi qua PR nháp (build + test đạt), **báo Paul trước; Paul OK mới merge** — Paul đã
 > chốt lại quy ước này tối 21/11 (câu "tự merge luôn" cùng tối đã được anh rút lại, đừng dùng).
@@ -42,6 +42,7 @@
 | #88 | **Gói Báo cáo PR 4 (issue #83)**: `src/lib/opsReport.js` + 4 thẻ Đơn theo vùng / Giao hàng / Công nợ / Xử lý đơn web + ô giá dầu trong Cài đặt; đã gồm sửa A3/A4/A7/B2/B3/B5/B6 của issue #89 (km đường thật ×1,4, tiền dầu theo xe diesel 6,9 L/100 km × giá $/lít nhập tay, Đã thu chọn cách thanh toán + toast gộp `changePaidMany`) | `42d0c02` |
 | #90 | **Link gửi cho khách luôn là wodovn.xyz** (Paul báo link cũ trong Cài đặt): lib mới `src/lib/siteLink.js` (`CUSTOMER_ORDER_LINK = https://www.wodovn.xyz/order`); `WebOrderingSettings.jsx` bỏ cách dựng link bằng `window.location.origin` (app nhân viên ở vercel.app nên cho ra link cũ) cho cả ô link, nút Copy và nút "Mở website"; sửa cùng lỗi ở `customerMessage.js` reminderMessage (blast radius — grep toàn repo chỉ có 2 chỗ này); test mới `test:sitelink` | `b507074` |
 | #91 | **Thanh tab con Báo cáo dính khi cuộn** (Paul báo cuộn xuống là tab trôi mất): bọc thanh 3 tab con trong `sticky top-16 z-10 bg-page py-2` ở ReportPage — cùng mẫu cụm điều khiển dính của trang Đơn hàng (PR #74); chỉ sửa khung hiển thị, swipe đổi tab và logic tab giữ nguyên; test reporttabs thêm kiểm tra cấu trúc sticky | `eb3f2b3` |
+| #92 | **Hết văng về màn hình chính khi mở trang tải lười sau cập nhật** (Paul báo bấm Báo cáo bị văng, bấm lại mới vào được — cơ chế: chunk cũ 404 → vite:preloadError → main.jsx reload → mất tab): `src/lib/resumeTab.js` nhớ tab đang xem trong sessionStorage, App khởi tạo activeTab từ đó + lưu mỗi lần chuyển tab; thêm `src/components/PageErrorBoundary.jsx` bọc khu vực trang (app trước đây không có khung đỡ lỗi nào); main.jsx chống vòng lặp tải lại 30 giây; test mới `test:resumetab` | `75330a4` |
 
 ## 2. PR đã đóng KHÔNG merge
 
