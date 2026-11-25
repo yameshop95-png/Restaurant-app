@@ -135,6 +135,21 @@ function Shop({ account, onLogout }) {
     const what = paid ? `Đã thanh toán${method ? ` · ${paymentLabel(method)}` : ''}` : 'Chưa thanh toán';
     setToast({ label: `Đơn #${order.number}: ${what}`, undo: () => setPaid(id, wasPaid, paymentMethod, paidAt) });
   };
+  // Đánh dấu đã thu cho NHIỀU đơn cùng lúc (thẻ Công nợ ở Báo cáo): một toast
+  // chung, Hoàn tác trả lại trạng thái thu của TẤT CẢ các đơn vừa đánh dấu.
+  // Hàm cộng thêm — không đổi API của onSetPaid hiện có (B3, issue #89).
+  const changePaidMany = (ids, method, label) => {
+    const targets = ids.map((id) => orders.find((o) => o.id === id)).filter(Boolean);
+    if (!targets.length) return;
+    const before = targets.map((o) => ({ id: o.id, paid: o.paid, paymentMethod: o.paymentMethod, paidAt: o.paidAt }));
+    for (const o of targets) setPaid(o.id, true, method);
+    setToast({
+      label: label ?? `Đã thu ${targets.length} đơn${method ? ` · ${paymentLabel(method)}` : ''}`,
+      undo: () => {
+        for (const b of before) setPaid(b.id, b.paid, b.paymentMethod, b.paidAt);
+      },
+    });
+  };
   const { settings, updateSettings } = useSettings();
   useAlwaysOn(settings.keepAwake);
   useEffect(() => applyTheme(settings.theme), [settings.theme]);
@@ -356,6 +371,7 @@ function Shop({ account, onLogout }) {
               onMarkStep={markStep}
               onPatchOrder={markOrder}
               onSetPaid={changePaid}
+              onSetPaidMany={changePaidMany}
               onNavigate={handleTabChange}
             />
           </Suspense>

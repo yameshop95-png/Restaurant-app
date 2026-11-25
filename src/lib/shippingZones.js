@@ -9,8 +9,9 @@ export const DEFAULT_ZONES = [
   { id: 'lavington', name: 'Lavington – Thurgoona', fee: 7, places: ['Lavington', 'Thurgoona', '2641'] },
 ];
 
-// Chữ chỉ loại đường: "Wodonga Pl", "Albury St" là tên đường, không phải tên khu
-const STREET = /^(st|street|rd|road|pl|place|ave|avenue|dr|drive|cres|crescent|ct|court|way|ln|lane|hwy|highway|pde|parade|cct|circuit|cl|close|tce|terrace|blvd|gr|grove)\b/;
+// Chữ chỉ loại đường: "Wodonga Pl", "Albury St" là tên đường, không phải tên khu.
+// Export để lib/opsReport dùng lại cùng quy tắc khi đọc tên khu từ địa chỉ (B2, issue #89).
+export const STREET = /^(st|street|rd|road|pl|place|ave|avenue|dr|drive|cres|crescent|ct|court|way|ln|lane|hwy|highway|pde|parade|cct|circuit|cl|close|tce|terrace|blvd|gr|grove)\b/;
 
 // Tìm vùng của địa chỉ. Tên khu dài hơn thắng ("Thurgoona, Albury" là Thurgoona; "West Wodonga" thắng "Wodonga");
 // không có tên khu nào thì mới xét postcode (Thurgoona và Albury chung postcode 2640).

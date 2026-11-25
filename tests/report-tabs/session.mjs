@@ -49,6 +49,10 @@ for (const marker of [
   'Doanh thu theo tuần giao', // PR #82: kỳ Tháng thay biểu đồ theo ngày bằng cột tuần giao
   'Dự báo doanh thu',
   'Tổng món đã bán',
+  'Đơn theo vùng', // PR #83: sau Tổng món đã bán
+  'Giao hàng',
+  'Công nợ',
+  'Xử lý đơn web',
   'Nhịp tuần',
   'Thời điểm trong tháng',
   'Nhận xét nhanh',
@@ -59,6 +63,13 @@ for (const marker of [
 check('Theo kỳ: không còn "Doanh thu theo ngày" ở kỳ Tháng', !ky.includes('Doanh thu theo ngày'));
 check('Theo kỳ: thẻ xuất dữ liệu nằm SAU Nhận xét nhanh',
   ky.indexOf('Dữ liệu phân tích theo tháng') > ky.indexOf('Nhận xét nhanh'));
+check('Theo kỳ (PR #83): thứ tự Đơn theo vùng → Dự báo doanh thu → Giao hàng → Công nợ → Xử lý đơn web → Nhịp tuần',
+  ky.indexOf('Đơn theo vùng') > ky.indexOf('Tổng món đã bán') &&
+  ky.indexOf('Dự báo doanh thu') > ky.indexOf('Đơn theo vùng') &&
+  ky.indexOf('Giao hàng') > ky.indexOf('Dự báo doanh thu') &&
+  ky.indexOf('Công nợ') > ky.indexOf('Giao hàng') &&
+  ky.indexOf('Xử lý đơn web') > ky.indexOf('Công nợ') &&
+  ky.indexOf('Nhịp tuần') > ky.indexOf('Xử lý đơn web'));
 for (const absent of ['Khách hàng trong kỳ', 'Khách theo ngôn ngữ', 'Món hay mua kèm', 'Phân tích bằng AI', 'Số liệu đợt thứ Bảy — đang làm']) {
   check(`Theo kỳ không lọt "${absent}"`, !ky.includes(absent));
 }

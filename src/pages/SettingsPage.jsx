@@ -21,6 +21,8 @@ import { exportCustomers, importCustomersFile } from '../lib/customerExcel';
 import { exportMenu, importMenuFile } from '../lib/menuExcel';
 import { alertBeep } from '../lib/due';
 import { exportOrders, importOrdersFile } from '../lib/orderExcel';
+import { fuelCostPerKmOf } from '../lib/opsReport';
+import { formatMoney } from '../lib/stats';
 import { AccountCard, MoveLocalData, StaffManager } from '../components/StaffSettings';
 import ShippingZonesSettings from '../components/ShippingZonesSettings';
 import WebOrderingSettings from '../components/WebOrderingSettings';
@@ -200,6 +202,37 @@ function ShopInfo({ settings, onUpdateSettings }) {
             className={inputClass}
           />
         </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-semibold text-slate-700">Xe tiêu thụ (lít / 100 km)</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="0.1"
+            value={settings.fuelLitresPer100km ?? ''}
+            onChange={(e) => onUpdateSettings({ fuelLitresPer100km: e.target.value === '' ? null : Number(e.target.value) })}
+            placeholder="6.9"
+            className={inputClass}
+          />
+          <span className="mt-1 block text-xs text-slate-400">Xe dầu của quán: 55 lít chạy ~800 km = 6,9 lít/100 km</span>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-semibold text-slate-700">Giá dầu ($ / lít)</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="0.01"
+            value={settings.fuelPricePerLitre ?? ''}
+            onChange={(e) => onUpdateSettings({ fuelPricePerLitre: e.target.value === '' ? null : Number(e.target.value) })}
+            placeholder="2.50"
+            className={inputClass}
+          />
+          <span className="mt-1 block text-xs text-slate-400">Sửa khi giá dầu thay đổi</span>
+        </label>
+        <p className="-mt-1 text-xs font-semibold text-slate-500">
+          ≈ {formatMoney(fuelCostPerKmOf(settings))} / km — dùng để ước tính chi phí dầu ở thẻ Giao hàng trong Báo cáo.
+        </p>
         <p className="text-xs text-slate-400">Tự lưu khi gõ, mọi máy trong quán đều thấy. Tên quán hiện ở menu và trong tin nhắn gửi shipper.</p>
       </div>
     </section>
