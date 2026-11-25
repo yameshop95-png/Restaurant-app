@@ -251,9 +251,37 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus, onSto
   // Đơn giao đã nấu xong (status done) chờ mang đi: trước đây phải qua Đơn hàng → Giao hàng
   // mới bấm được "Đã mang đi" (lý do duy nhất còn giữ chế độ Danh sách ở Đơn ship); nay khối
   // này nằm ngay đầu trang Đơn ship (issue #69), bấm là đơn tự vào lộ trình bên dưới.
-  const ready = orders
-    .filter((o) => o.type === 'delivery' && o.status === 'done')
-    .sort((a, b) => (a.deliverAt || '9999') < (b.deliverAt || '9999') ? -1 : (a.deliverAt || '9999') > (b.deliverAt || '9999') ? 1 : 0);
+  // Thứ tự trong khối = thứ tự shipper sẽ giao để còn chất xe theo thứ tự đó
+  // (issue #79): chế độ khu vực thì lấy đúng thứ tự điểm dừng của planRouteByArea
+  // (bên quán trước, qua sông sau), chế độ theo giờ giữ nguyên sắp theo giờ hẹn.
+  // Toạ độ đọc như cách khối lộ trình lấy cho đơn đang giao: storedGeoOf trước,
+  // cachedGeocode sau — không gọi geocode mạng cho các đơn này.
+  const ready = useMemo(() => {
+    const byTime = (a, b) => ((a.deliverAt || '9999') < (b.deliverAt || '9999') ? -1 : (a.deliverAt || '9999') > (b.deliverAt || '9999') ? 1 : 0);
+    const list = orders.filter((o) => o.type === 'delivery' && o.status === 'done');
+    if (mode !== 'area') return [...list].sort(byTime);
+    const geoReady = new Map();
+    for (const o of list) {
+      if (!o.customer?.address) {
+        geoReady.set(o.id, null);
+        continue;
+      }
+      const stored = storedGeoOf(o);
+      if (stored) {
+        geoReady.set(o.id, stored);
+        continue;
+      }
+      const hit = cachedGeocode(o.customer.address);
+      geoReady.set(o.id, hit && !hit.notFound ? hit : null);
+    }
+    const ordered = planRouteByArea(list, geoReady, start, now, { homeSide }).slots.flatMap((slot) =>
+      slot.stops.map((x) => x.order),
+    );
+    const seen = new Set(ordered.map((o) => o.id));
+    // Đơn nào không lọt vào slot nào (không theo logic thường của planRouteByArea)
+    // thì giữ ở cuối theo giờ hẹn để không biến mất khỏi khối.
+    return [...ordered, ...list.filter((o) => !seen.has(o.id)).sort(byTime)];
+  }, [orders, mode, start, now, homeSide, geoVersion]);
   const takeAllReady = () => {
     if (!window.confirm(`Mang đi tất cả ${ready.length} đơn?`)) return;
     for (const o of ready) onSetStatus(o.id, 'delivering');
@@ -263,9 +291,15 @@ export default function RoutePlanner({ orders, now, settings, onSetStatus, onSto
       <h3 className="flex items-center gap-2 bg-emerald-50 px-4 py-3 font-bold text-emerald-700">
         <Truck size={17} /> Nấu xong, chờ mang đi ({ready.length})
       </h3>
+      <p className="border-b border-emerald-100 bg-emerald-50/60 px-4 pb-2 text-xs text-emerald-700">
+        Xếp theo thứ tự giao — chất đơn số 1 lên xe sau cùng (lấy ra đầu tiên).
+      </p>
       <ul className="divide-y divide-emerald-100">
-        {ready.map((order) => (
+        {ready.map((order, i) => (
           <li key={order.id} className="flex items-center gap-3 px-4 py-3">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
+              {i + 1}
+            </span>
             <div className="min-w-0 flex-1">
               <p className="font-bold text-slate-900">
                 #{order.number} · {order.customer?.name || 'Khách'}

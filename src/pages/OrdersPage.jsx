@@ -1157,12 +1157,17 @@ export default function OrdersPage({
           </div>
       )}
 
-      <button
-        onClick={() => setCreating(true)}
-        className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-5 lg:bottom-6 z-20 flex items-center gap-2 rounded-full bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-black/40 active:bg-blue-600"
-      >
-        <Plus size={20} /> Tạo đơn
-      </button>
+      {/* Trang Đơn ship (routeAllowed) không hiện nút nổi này: shipper không tạo đơn
+          ở đây, và nút từng che nút "Mở lộ trình trên Apple Maps" ở 390px (issue #79).
+          Tạo đơn vẫn có ở Đơn hàng và Chờ nấu. */}
+      {!routeAllowed && (
+        <button
+          onClick={() => setCreating(true)}
+          className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-5 lg:bottom-6 z-20 flex items-center gap-2 rounded-full bg-blue-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-black/40 active:bg-blue-600"
+        >
+          <Plus size={20} /> Tạo đơn
+        </button>
+      )}
 
       {creating && (
         <NewOrderSheet
