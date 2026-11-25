@@ -148,7 +148,7 @@ export function DeliveryOpsCard({ orders, range, settings }) {
                     <li key={z.zone} className="flex justify-between gap-2">
                       <span className="min-w-0 truncate">{z.zone}</span>
                       <span className="shrink-0">
-                        thu <b className="text-slate-900">{formatMoney(z.shipping)}</b> · xăng ≈ {formatMoney(z.fuel)}
+                        thu <b className="text-slate-900">{formatMoney(z.shipping)}</b> · dầu ≈ {formatMoney(z.fuel)}
                       </span>
                     </li>
                   ))}
