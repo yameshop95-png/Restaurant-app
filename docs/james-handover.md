@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: 25/11/2026 (sau PR #77).
+> Cập nhật lần cuối: 25/11/2026 (sau khi gộp xong gói Báo cáo PR #84–#88).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James đi qua PR nháp (build + test đạt), **báo Paul trước; Paul OK mới merge** — Paul đã
 > chốt lại quy ước này tối 21/11 (câu "tự merge luôn" cùng tối đã được anh rút lại, đừng dùng).
@@ -35,6 +35,11 @@
 | #59 | **Lộ trình giao hiện mọi đơn đang giao** (Paul báo: bấm "Đã mang đi" cho đơn hẹn ngày mai — vd đơn test CN 22/11 thử tối thứ Bảy — mà Lộ trình giao trống, vì `RoutePlanner` lọc `isTodayOrEarlier`): bỏ hẳn bộ lọc ngày, `active` = mọi đơn `delivering`; thêm dòng giải thích khi chưa có đơn đang giao; `slotOf` (`lib/route.js`) ghi thêm ngày vào nhãn khung của ngày khác hôm nay (vd "08:00 – 08:30 · CN 22/11") — batches truyền now = đầu ngày giao nên nhãn đợt không đổi; test:routelinks 45/45, batches 45/45. Vòng giao của Paul: giao đơn đầu → "Đã giao xong" → đơn rời danh sách, đơn kế tự lên số 1 → bấm địa chỉ đi tiếp | `0194484` |
 | #60 | **wodovn.xyz mở thẳng web khách** (Paul gõ wodovn.xyz thấy màn hình PIN vì trang gốc `/` là app nhân viên; anh chốt cách nhẹ thay vì tách hẳn 2 địa chỉ): chỉ thêm khối `redirects` vào `vercel.json` — 2 luật có điều kiện host (www.wodovn.xyz và wodovn.xyz, path `/` → `/order`, 307 tạm thời để trình duyệt không ghi nhớ cứng); redirects của Vercel chạy trước filesystem nên thắng index.html ở `/`; địa chỉ cũ vercel.app không khớp host nên app nhân viên nguyên vẹn; không đụng code/PIN/tiền/in bill. Kiểm chứng live sau merge: www.wodovn.xyz/ → 307 → /order (200, đúng web khách), wodovn.xyz/ → 308 → www → /order, app ở vercel.app vẫn 200 không chuyển hướng. Tên miền: mua ở Namecheap 22/11/2026, hết hạn 22/11/2028, **auto-renew TẮT** (kế hoạch: chuyển đăng ký về Vercel trước hạn); DNS tại Namecheap: A `@` → 216.198.79.1, CNAME `www` → f929fa1421736112.vercel-dns-017.com; phía Vercel apex 308 → www (Production) | `64e06c4` |
 | #61 | **Sửa canonical/SEO trỏ nhầm sang vercel.app** (Paul phát hiện 23/11): `src/site/lib.js` — `SITE_URL` mặc định còn là domain vercel.app (biến `VITE_SITE_URL` không được đặt trên Vercel) nên canonical, og:url, sitemap (cả 28 URL) và JSON-LD đều khai domain cũ, Google có thể index bản vercel.app thay vì wodovn.xyz; đổi mặc định thành `https://www.wodovn.xyz` (đúng ghi chú sẵn trong code). Kiểm chứng: build PASS, 10 test suite PASS, dist không còn bất kỳ tham chiếu vercel.app nào; live sau merge: canonical + og:url của /order và /order/menu đều wodovn.xyz, sitemap toàn wodovn.xyz, app nhân viên vẫn 200 | `1be3858` |
+| #84 | **Gói Báo cáo PR 1 (issue #80)**: lib chung `src/lib/dishKey.js` + `src/lib/saleDate.js` — doanh thu/đơn/món theo **tuần giao** (deliverAt ?? createdAt); summarize/forecast weeklySeries/reportInsights/languageReport/nowcast cùng một cách gộp món; sửa A1 audit (HomePage maxQty lấy max thật trên weekItems) | `0039d6f` |
+| #85 | **Issue #79**: badge Đơn ship đếm `deliveryAction` (done + delivering + failed); khối "Nấu xong, chờ mang đi" xếp theo thứ tự planRouteByArea + số thứ tự; ẩn nút "Tạo đơn" ở trang ship; Claude dời `test:shippage` lên đầu khối scripts để tránh xung đột package.json (A6) | `543328d` |
+| #86 | **Gói Báo cáo PR 2 (issue #81)**: Báo cáo chia 3 tab con **Đợt này / Theo kỳ / Khách & món** (mặc định Theo kỳ ở PR này), đổi tên "Dự báo doanh thu", bảng Tổng món 2 hàng ở <640px, vuốt ngang đổi tab (useSwipe), dọn comment cũ ở WeeklyPerformanceCard | `087985d` |
+| #87 | **Gói Báo cáo PR 3 (issue #82)**: tab Đợt này — `src/lib/currentRun.js` (pace so 4 đợt trước, tiến độ đợt 6 ô, tiền đợt, thẻ Đặt hàng vs dự báo), Recharts 3.3.0 nạp lười chỉ ở Báo cáo, biểu đồ Doanh thu theo tuần giao cho kỳ Tháng, mặc định mở tab Đợt này; đã gồm sửa A2/A5/B1/B4 của issue #89 | `f55f3cf` |
+| #88 | **Gói Báo cáo PR 4 (issue #83)**: `src/lib/opsReport.js` + 4 thẻ Đơn theo vùng / Giao hàng / Công nợ / Xử lý đơn web + ô giá dầu trong Cài đặt; đã gồm sửa A3/A4/A7/B2/B3/B5/B6 của issue #89 (km đường thật ×1,4, tiền dầu theo xe diesel 6,9 L/100 km × giá $/lít nhập tay, Đã thu chọn cách thanh toán + toast gộp `changePaidMany`) | `42d0c02` |
 
 ## 2. PR đã đóng KHÔNG merge
 
@@ -259,3 +264,11 @@ Paul báo: 7 điểm mà chạy 48 km / gần 2 tiếng, vì lộ trình cũ x�
 - Claude đã sửa C1 (#87 lẫn code #88, build hỏng khi đứng riêng), C2 ("xăng" → "dầu") và A6 (xung đột `package.json` của #85). Chi tiết và kết quả: `docs/audit/2026-11-25-backtest-tong.md`.
 - Gộp theo thứ tự **#84 → #85 → #86 → #87 → #88**: đã mô phỏng, 0 conflict, 15/15 test, build PASS, render 4 cỡ đạt.
 - Bài học: khi sửa một PR trong chuỗi PR chồng nhau, phải build và test **từng nhánh riêng**, không chỉ cây ghép.
+
+## 25/11 — Gói Báo cáo ĐÃ GỘP XONG (James)
+
+- Paul chốt gộp 17:18 25/11. Đã gộp đúng thứ tự, merge commit: #84 `0039d6f` · #85 `543328d` · #86 `087985d` · #87 `f55f3cf` · #88 `42d0c02`. Các PR xếp chồng được retarget base về main trước khi gộp; **0 xung đột** (nhờ Claude xử lý A6/C1/C2 từ trước).
+- Kiểm chứng trên main mới (42d0c02): build PASS, **15/15 test suite PASS**, package.json còn đủ cả 15 script test. Bản live Vercel đã là bản mới: bundle chính `main-CIBTpjRp.js` trùng hash với build của main, chunk lười CurrentRunSection đã chứa nội dung sửa B4, chunk ReportPage có đủ 3 tab con + thẻ Đơn theo vùng; màn hình PIN tải bình thường.
+- Đã đóng các issue #78, #79, #80, #81, #82, #83, #89. Đã **xoá nhánh `demo/bao-cao-theo-plan`** như plan (kiểm chứng: URL nhánh trả 404).
+- Còn lại: Paul mở tab Báo cáo trên iPad thật để xác nhận lần cuối (render 4 cỡ Claude đã kiểm bằng Playwright; iPad thật chỉ Paul kiểm được).
+- Bài học (ghi lại từ C1): khi đẩy commit sửa cho một PR trong chuỗi xếp chồng, file lấy từ cây ghép có thể lẫn code của PR phía trên — phải kiểm diff của từng nhánh và build/test từng nhánh riêng, không chỉ cây ghép.
