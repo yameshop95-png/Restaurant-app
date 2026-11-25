@@ -7,7 +7,7 @@
 // chuyển sang thứ Bảy tuần sau (đợt vừa giao xong không còn là "đợt này").
 // Đơn thuộc đợt theo ngày bán (saleDate = ngày giao), nhịp nhận đơn theo createdAt.
 import { isCookingOrder, isInboxOrder } from './batches';
-import { dishKey } from './dishKey';
+import { dishKey, dishLabel } from './dishKey';
 import { saleDate } from './saleDate';
 import { orderTotal, startOfWeek } from './stats';
 import { sideOf } from './route';
@@ -34,9 +34,11 @@ const inWeekOf = (orders, saturday) => {
   });
 };
 
-export function currentRun(orders, now = new Date(), { forecast = null, homeSide = 'vic' } = {}) {
+export function currentRun(orders, now = new Date(), { forecast = null, homeSide = 'vic', menu = [] } = {}) {
   const saturday = runSaturdayOf(now);
   const runOrders = inWeekOf(orders, saturday);
+  const forecastPending = now.getDay() === 0;
+  if (forecastPending) forecast = null;
   const received = runOrders.length;
 
   // --- Nhịp nhận đơn: so với 4 đợt trước ở CÙNG khoảng cách tới ngày giao ---
@@ -137,10 +139,12 @@ export function currentRun(orders, now = new Date(), { forecast = null, homeSide
   const dishRows = [...keys].map((key) => {
     const f = forecastByKey.get(key);
     const ordered = orderedByKey.get(key) ?? 0;
-    const expectedQty = f ? f.expected : null;
+    // Dự báo của weeklyForecast là số thực (VD 16,41) — làm tròn ngay ở dữ liệu,
+    // không chỉ lúc hiển thị, kẻo vỡ chữ và "còn dự kiến" ra số lẻ (A2, issue #89)
+    const expectedQty = f ? Math.round(f.expected) : null;
     return {
       key,
-      name: f?.name ?? rawNames.get(key) ?? key,
+      name: dishLabel(key, menu, f?.name ?? rawNames.get(key) ?? key),
       ordered,
       forecast: expectedQty,
       remaining: expectedQty == null ? null : Math.max(0, expectedQty - ordered),
@@ -158,6 +162,7 @@ export function currentRun(orders, now = new Date(), { forecast = null, homeSide
     money,
     mix,
     forecastReady: !!forecast?.ready,
+    forecastPending,
     dishRows,
   };
 }

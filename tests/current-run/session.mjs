@@ -64,15 +64,17 @@ prevRun(10, 31, 13, 0, () => [10, 28, 10]); // 13 tạo T4 28/10
 
 const orders = [...cur, ...prev];
 const now = new Date(2026, 10, 26, 20, 0);
+const MENU = [{ name: 'Giò Lụa' }, { name: 'Bánh cuốn' }, { name: 'Chả Bì' }, { name: 'Bánh Giò' }, { name: 'Giò Thủ' }];
 const forecast = {
   ready: true,
   items: [
-    { key: 'gio lua', name: 'Giò Lụa', expected: 10 },
+    { key: 'gio lua', name: 'Giò Lụa', expected: 10.4 },
     { key: 'banh cuon', name: 'Bánh cuốn', expected: 3 },
     { key: 'banh gio', name: 'Bánh Giò', expected: 5 },
+    { key: 'gio thu', name: 'Giò thủ 500g', expected: 5.6 },
   ],
 };
-const r = currentRun(orders, now, { forecast, homeSide: 'vic' });
+const r = currentRun(orders, now, { forecast, homeSide: 'vic', menu: MENU });
 
 check('Đợt là thứ Bảy 28/11', r.saturday.getDate() === 28 && r.saturday.getMonth() === 10);
 check('received = 10 (loại huỷ + đợt sau)', r.received === 10);
@@ -103,22 +105,33 @@ check('Thẻ B: Bánh cuốn đặt 4 > dự báo 3 → còn dự kiến 0 (khô
   rows['banh cuon'].ordered === 4 && rows['banh cuon'].remaining === 0);
 check('Thẻ B: Chả Bì có đơn nhưng chưa có dự báo → forecast null, xếp cuối',
   rows['cha bi'].forecast === null && r.dishRows[r.dishRows.length - 1].key === 'cha bi');
-check('Thẻ B: sắp theo dự báo giảm dần', r.dishRows[0].key === 'gio lua' && r.dishRows[1].key === 'banh gio');
+check('Thẻ B: sắp theo dự báo giảm dần', r.dishRows[0].key === 'gio lua' && r.dishRows[1].key === 'gio thu' && r.dishRows[2].key === 'banh gio');
+// A2 (issue #89): dự báo làm tròn ngay ở dữ liệu; tên món lấy từ thực đơn
+check('A2: dự báo 10,4 làm tròn thành 10, còn dự kiến vẫn 3', rows['gio lua'].forecast === 10 && rows['gio lua'].remaining === 3);
+check('A2: mọi forecast/remaining đều là số nguyên hoặc null',
+  r.dishRows.every((d) => d.forecast === null || Number.isInteger(d.forecast)) &&
+  r.dishRows.every((d) => d.remaining === null || Number.isInteger(d.remaining)));
+check('A2: tên món lấy từ thực đơn ("Giò thủ 500g" → "Giò Thủ"), dự báo 5,6 → 6',
+  rows['gio thu'].name === 'Giò Thủ' && rows['gio thu'].forecast === 6 && rows['gio thu'].remaining === 6);
 
 // Kịch bản 2: thêm 5 đơn → received 15, chênh +3,5 → hiện %
 const extra = Array.from({ length: 5 }, () => mk(at(11, 26, 15), at(11, 28), { status: 'pending' }));
-const r2 = currentRun([...orders, ...extra], now, { forecast, homeSide: 'vic' });
+const r2 = currentRun([...orders, ...extra], now, { forecast, homeSide: 'vic', menu: MENU });
 check('pace kịch bản 2: received 15 → % hiện ≈ +30,4%', r2.pace && near(r2.pace.pct, 3.5 / 11.5));
 
 // Ít hơn 2 đợt trước → không so sánh
-const r3 = currentRun(cur, now, { forecast, homeSide: 'vic' });
+const r3 = currentRun(cur, now, { forecast, homeSide: 'vic', menu: MENU });
 check('Không có đợt trước nào → pace null', r3.pace === null);
 
 // Quy tắc Chủ nhật: 29/11 là Chủ nhật → đợt là thứ Bảy 5/12
 const sun = new Date(2026, 10, 29, 10, 0);
 check('Chủ nhật 29/11 → đợt thứ Bảy 5/12', runSaturdayOf(sun).getDate() === 5 && runSaturdayOf(sun).getMonth() === 11);
-const rSun = currentRun(orders, sun, { forecast: null, homeSide: 'vic' });
+const rSun = currentRun(orders, sun, { forecast: null, homeSide: 'vic', menu: MENU });
 check('Sáng Chủ nhật: đợt mới chỉ có đơn giao 5/12 (1 đơn)', rSun.received === 1);
+// B4 (issue #89): Chủ nhật — dự báo chưa có cho đợt mới
+const rSunFc = currentRun(orders, sun, { forecast, homeSide: 'vic', menu: MENU });
+check('B4: Chủ nhật → forecastPending, ẩn cột dự báo',
+  rSunFc.forecastPending === true && rSunFc.forecastReady === false && rSunFc.dishRows.every((d) => d.forecast === null));
 
 // weeklyRevenue: 8 cột kết thúc ở thứ Bảy 28/11 (thứ Bảy cuối của tháng 11)
 const wr = weeklyRevenue(orders, new Date(2026, 10, 26), now);
