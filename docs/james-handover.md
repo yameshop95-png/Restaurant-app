@@ -248,3 +248,9 @@ Paul báo: 7 điểm mà chạy 48 km / gần 2 tiếng, vì lộ trình cũ x�
 - `RoutePlanner.jsx`: thêm nút chọn **Theo khu vực** (mặc định) / **Theo giờ hẹn** (kiểu cũ, còn chọn khung giờ 15/30/60). Lựa chọn lưu trong `localStorage.routeMode`. Đầu mỗi phần dùng icon MapPin.
 - `planRoute` cũ không đổi. **Đợt nấu (`batches.js`) vẫn xếp theo giờ**, cố ý giữ như vậy để bếp nấu theo giờ hẹn.
 - Test: `npm run test:routelinks` có thêm 15 ca (tổng 60). Trên mẫu 7 điểm xen kẽ hai bên: 54,5 km theo kiểu cũ, 25,3 km theo khu vực (đều là km đường chim bay).
+
+## 25/11 — Audit gói Báo cáo PR #84–#88 (Claude)
+
+- Báo cáo đầy đủ: `docs/audit/2026-11-25-bao-cao.md`, ảnh trong `docs/audit/2026-11-25/`. **Danh sách sửa: issue #89** (A1–A7 phải sửa, B1–B6 nên sửa). Chưa gộp PR nào trong gói.
+- **Ghi nhớ — giá dầu:** xe giao hàng chạy diesel, 55 L / 800 km = 6,9 L/100 km. Hiện chủ quán nhập tay giá dầu $/lít trong Cài đặt (A7 ở #89). Paul sẽ báo khi có **API giá dầu**; lúc đó mới làm issue riêng để tự cập nhật giá, ô nhập tay giữ làm dự phòng. Đến lúc đó, đừng tự thêm nguồn giá dầu nào.
+- `inventory.js profitReport` chưa chuyển sang tuần giao, để issue riêng sau khi gói này gộp xong.
