@@ -17,6 +17,15 @@ import { buildReport, PERIODS, reportForAI, shiftPeriod } from '../lib/report';
 import { periodInsights, weekOfMonthRhythm } from '../lib/reportInsights';
 import CountUp, { formatCount } from '../components/CountUp';
 import { formatMoney } from '../lib/stats';
+import useSwipe from '../hooks/useSwipe';
+
+// 3 tab con của Báo cáo (PR #81 theo docs/bao-cao-plan.md): realtime đợt này,
+// số liệu theo kỳ, và khách & món. Tab không mở thì không render thẻ của tab đó.
+const REPORT_TABS = [
+  ['dot-nay', 'Đợt này'],
+  ['theo-ky', 'Theo kỳ'],
+  ['khach-mon', 'Khách & món'],
+];
 
 const ACCESS_CODE_KEY = 'restaurant-app.ai-code';
 // Tỉ lệ 0–1 → % với tối đa 1 chữ số thập phân, dấu phẩy kiểu Việt (VD 0,222 → "22,2%")
@@ -77,7 +86,7 @@ function DishHeatmap({ orders, menu, anchor }) {
 
   return (
     <div className="mt-3">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" data-no-swipe>
         <div className="grid min-w-[560px] gap-1" style={{ gridTemplateColumns: 'minmax(92px,1.15fr) repeat(8, minmax(0,1fr))' }}>
           <div className="sticky left-0 z-10 bg-card" />
           {data.weeks.map((w, i) => (
@@ -256,15 +265,28 @@ function DishComboChart({ dishes }) {
         {top.map((d, i) => {
           const change = d.prevQty ? (d.qty - d.prevQty) / d.prevQty : null;
           return (
-            <li key={d.name} className="flex items-baseline gap-3 py-1.5 text-sm">
-              <span className="w-5 shrink-0 text-right font-semibold text-slate-400">{i + 1}</span>
-              <span className="min-w-0 flex-1 truncate font-medium text-slate-800">{d.name}</span>
-              <span className="shrink-0 text-slate-500">{d.qty} phần</span>
-              <span className="w-20 shrink-0 text-right font-semibold text-slate-900">{formatMoney(d.revenue)}</span>
-              <span className="w-11 shrink-0 text-right text-slate-500">{Math.round(d.revenueShare * 100)}%</span>
-              <span className={`w-14 shrink-0 text-right text-xs font-semibold ${change == null ? 'text-slate-300' : change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                {change == null ? '—' : `${change >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(change * 100))}%`}
-              </span>
+            <li key={d.name} className="py-1.5 text-sm">
+              {/* Hàng chính: từ sm trở lên là 1 hàng như cũ; dưới sm chỉ còn hạng + tên
+                  món (không cắt chữ, cho xuống dòng) — bản cũ ép tên món còn ~2px ở 390px */}
+              <div className="flex items-baseline gap-3">
+                <span className="w-5 shrink-0 text-right font-semibold text-slate-400">{i + 1}</span>
+                <span className="min-w-0 flex-1 font-medium text-slate-800 sm:truncate">{d.name}</span>
+                <span className="hidden shrink-0 text-slate-500 sm:block">{d.qty} phần</span>
+                <span className="hidden w-20 shrink-0 text-right font-semibold text-slate-900 sm:block">{formatMoney(d.revenue)}</span>
+                <span className="hidden w-11 shrink-0 text-right text-slate-500 sm:block">{Math.round(d.revenueShare * 100)}%</span>
+                <span className={`hidden w-14 shrink-0 text-right text-xs font-semibold sm:block ${change == null ? 'text-slate-300' : change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {change == null ? '—' : `${change >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(change * 100))}%`}
+                </span>
+              </div>
+              {/* Hàng phụ chỉ ở dưới sm: phần · tiền · % · thay đổi, căn phải, chữ nhỏ */}
+              <div className="mt-0.5 flex items-baseline justify-end gap-3 text-xs text-slate-500 sm:hidden">
+                <span>{d.qty} phần</span>
+                <span className="font-semibold text-slate-900">{formatMoney(d.revenue)}</span>
+                <span>{Math.round(d.revenueShare * 100)}%</span>
+                <span className={`font-semibold ${change == null ? 'text-slate-300' : change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {change == null ? '—' : `${change >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(change * 100))}%`}
+                </span>
+              </div>
             </li>
           );
         })}
@@ -489,18 +511,48 @@ const INSIGHT_ICON = {
   neutral: <Lightbulb size={16} className="mt-0.5 shrink-0 text-amber-600" />,
 };
 
-export default function ReportPage({ orders, menu, settings, onUpdateSettings }) {
+export default function ReportPage({ orders, menu, settings, onUpdateSettings, initialTab = 'theo-ky' }) {
   const [kind, setKind] = useState('month');
   const [anchor, setAnchor] = useState(() => new Date());
+  // Mặc định mở Theo kỳ (PR #81); PR #82 sẽ đổi mặc định sang Đợt này. Không nhớ tab.
+  // initialTab chỉ để test SSR mở từng tab — app không truyền prop này.
+  const [tab, setTab] = useState(initialTab);
   const report = useMemo(() => buildReport(orders, kind, anchor, menu), [orders, kind, anchor, menu]);
   // Tỉ lệ đơn huỷ của đúng kỳ đang chọn (định nghĩa ở lib/reportInsights)
   const cancel = useMemo(() => periodInsights(orders, report.range).cancellation, [orders, report.range]);
   const atCurrent = report.range.end > new Date();
   const { forecast } = report;
   const nextLabel = { week: 'tuần sau', month: 'tháng sau', year: 'năm sau' }[kind];
+  const tabIndex = REPORT_TABS.findIndex(([k]) => k === tab);
+  const swipe = useSwipe({
+    onNext: () => setTab(REPORT_TABS[Math.min(tabIndex + 1, REPORT_TABS.length - 1)][0]),
+    onPrev: () => setTab(REPORT_TABS[Math.max(tabIndex - 1, 0)][0]),
+  });
 
   return (
-    <div className="report-page staff-stagger mx-auto max-w-2xl space-y-5 pb-8">
+    <div className="report-page staff-stagger mx-auto max-w-2xl space-y-5 pb-8" {...swipe}>
+      {/* Thanh 3 tab con — cùng kiểu nút chuyển chế độ của RoutePlanner */}
+      <div className="flex rounded-2xl bg-slate-100 p-1 text-sm font-semibold">
+        {REPORT_TABS.map(([k, label]) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setTab(k)}
+            className={`flex-1 rounded-xl py-2 ${tab === k ? 'bg-card text-slate-900 shadow-sm' : 'text-slate-500'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'dot-nay' && (
+        <Card title="Đợt thứ Bảy này">
+          <p className="px-5 pb-5 pt-2 text-[15px] text-slate-500">Số liệu đợt thứ Bảy — đang làm.</p>
+        </Card>
+      )}
+
+      {tab === 'theo-ky' && (
+        <>
       {/* Chọn kỳ */}
       <div className="flex rounded-2xl bg-card p-1 shadow-sm">
         {Object.entries(PERIODS).map(([k, label]) => (
@@ -584,7 +636,7 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
       </Card>
 
       {/* Dự báo */}
-      <Card title="Dự báo">
+      <Card title="Dự báo doanh thu">
         <div className="grid grid-cols-2 gap-3 px-5 pb-4 pt-2">
           {forecast.isCurrent && (
             <div className="rounded-2xl bg-blue-50 p-3">
@@ -621,9 +673,6 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
         )}
       </Card>
 
-      {/* Khách mới / khách quay lại trong đúng kỳ đang chọn */}
-      <CustomerStatsCard orders={orders} range={report.range} />
-
       {/* DEMO v3: thẻ gộp "Nhịp tuần" — theo tuần (xếp chồng theo món) + nhịp trong tháng */}
       <Card title="Nhịp tuần">
         <WeekSection report={report} orders={orders} menu={menu} anchor={anchor} />
@@ -645,12 +694,20 @@ export default function ReportPage({ orders, menu, settings, onUpdateSettings })
         </ul>
       </Card>
 
-      <LanguageCard orders={orders} range={report.range} />
-      <PairsCard orders={orders} menu={menu} settings={settings ?? {}} onUpdateSettings={onUpdateSettings} />
-
-      <AIAnalysis report={report} />
-
+      {/* Xuất dữ liệu: cuối tab Theo kỳ */}
       <AnalyticsExportCard orders={orders} menu={menu} settings={settings ?? {}} />
+        </>
+      )}
+
+      {tab === 'khach-mon' && (
+        <>
+          <p className="text-xs font-medium text-slate-400">Kỳ: {report.range.label}</p>
+      <CustomerStatsCard orders={orders} range={report.range} />
+          <LanguageCard orders={orders} range={report.range} />
+          <PairsCard orders={orders} menu={menu} settings={settings ?? {}} onUpdateSettings={onUpdateSettings} />
+          <AIAnalysis report={report} />
+        </>
+      )}
     </div>
   );
 }
