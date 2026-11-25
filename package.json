@@ -8,6 +8,7 @@
     "build": "vite build && vite build --ssr src/site/entry-server.jsx --outDir dist-ssr && node scripts/prerender.mjs",
     "preview": "vite preview",
     "test:sync": "node tests/sync-queue/run.mjs",
+    "test:shippage": "node tests/ship-page/run.mjs",
     "test:cache": "node tests/list-cache/run.mjs",
     "test:performance": "node tests/performance/run.mjs",
     "test:dishprofit": "node tests/dish-profit/run.mjs",
@@ -17,7 +18,6 @@
     "test:batches": "node tests/batches/run.mjs",
     "test:routelinks": "node tests/route-links/run.mjs",
     "test:ordergeo": "node tests/order-geo/run.mjs",
-    "test:shippage": "node tests/ship-page/run.mjs",
     "build:bridge": "esbuild print-bridge/src/backup-entry.js --bundle --platform=node --format=esm --target=node18 --outfile=print-bridge/backup-lib.mjs --banner:js=\"// TỰ SINH từ print-bridge/src/backup-entry.js (npm run build:bridge). Đừng sửa tay.\""
   },
   "dependencies": {
