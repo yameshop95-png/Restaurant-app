@@ -1,6 +1,7 @@
 // Tin nhắn cho khách (nút "Nhắn khách" trên thẻ đơn): soạn sẵn, nhân viên gửi bằng app Tin nhắn của điện thoại quán.
 // Ngôn ngữ: đơn đặt trên website nhớ ngôn ngữ khách dùng (order.lang); đơn tạo trong app mặc định tiếng Việt.
 import { formatMoney, orderTotal } from './stats';
+import { CUSTOMER_ORDER_LINK } from './siteLink';
 
 const DEFAULT_SHOP = 'Bánh Cuốn & Giò Chả';
 
@@ -93,7 +94,7 @@ export function reminderMessage(customer, profile, lang, shopName) {
   const shop = shopName?.trim() || DEFAULT_SHOP;
   const name = customer.name?.trim() || '';
   const fav = profile?.dishes?.[0]?.name;
-  const link = typeof window !== 'undefined' ? `${window.location.origin}/order` : '';
+  const link = CUSTOMER_ORDER_LINK; // domain chính thức, không theo origin của app (lib/siteLink)
   if (lang === 'en') {
     return [
       `${shop}: Hi ${name}, it's been a while!`,

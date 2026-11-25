@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CUSTOMER_ORDER_LINK } from '../lib/siteLink';
 import { Copy, ExternalLink, Globe } from 'lucide-react';
 
 const LEAD_OPTIONS = [15, 30, 45, 60, 90, 120, 180];
@@ -20,7 +21,7 @@ export default function WebOrderingSettings({ settings, onUpdateSettings }) {
   const closedDates = [...(Array.isArray(web.closedDates) ? web.closedDates : [])].sort();
   const [newClosed, setNewClosed] = useState('');
   const today = new Date().toISOString().slice(0, 10);
-  const link = `${window.location.origin}/order`;
+  const link = CUSTOMER_ORDER_LINK; // link khách luôn là wodovn.xyz, không theo origin của app (lib/siteLink)
   const [copied, setCopied] = useState(null);
   const save = (patch) => onUpdateSettings({ webOrdering: { ...web, ...patch } });
 
@@ -186,7 +187,7 @@ export default function WebOrderingSettings({ settings, onUpdateSettings }) {
               <Copy size={16} /> Copy link
             </button>
             <a
-              href="/order"
+              href={CUSTOMER_ORDER_LINK}
               target="_blank"
               rel="noreferrer"
               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-300 py-2.5 text-sm font-semibold text-slate-800 active:bg-slate-100"
