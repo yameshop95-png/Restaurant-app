@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Puzzle image manifest",
+  "description": "One manifest.json per puzzle image. Business rules (public-domain dates, CC0 evidence, exceptions, map checks) are enforced in validate_manifest.py, not here.",
+  "type": "object",
+  "required": [
+    "image_id", "theme", "level", "title", "creator", "creation_year",
+    "source", "rights", "image", "text", "reviewed_by", "reviewed_on"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "image_id": { "type": "string", "pattern": "^[a-z]+-[0-9]{3}$" },
+    "theme": { "enum": ["animals", "landscapes", "space", "maps", "landmarks"] },
+    "level": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "title": { "type": "string", "minLength": 1 },
+    "creator": {
+      "type": "object",
+      "required": ["name", "anonymous"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "anonymous": { "type": "boolean" },
+        "death_year": { "type": ["integer", "null"] }
+      }
+    },
+    "creation_year": { "type": "integer" },
+    "publication_year": { "type": ["integer", "null"] },
+    "source": {
+      "type": "object",
+      "required": ["institution", "object_url", "record_id", "license_text", "license_evidence_url", "retrieved_on"],
+      "additionalProperties": false,
+      "properties": {
+        "institution": { "type": "string" },
+        "object_url": { "type": "string", "format": "uri" },
+        "record_id": { "type": "string" },
+        "license_text": { "type": "string" },
+        "license_evidence_url": { "type": "string", "format": "uri" },
+        "retrieved_on": { "type": "string", "format": "date" }
+      }
+    },
+    "rights": {
+      "type": "object",
+      "required": ["status", "contains_identifiable_person", "trademark_or_logo"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "enum": ["cc0", "public_domain_exception"] },
+        "contains_identifiable_person": { "type": "boolean" },
+        "trademark_or_logo": { "type": "boolean" }
+      }
+    },
+    "exception": {
+      "type": "object",
+      "required": ["basis", "approver", "reviewed_on"],
+      "additionalProperties": false,
+      "properties": {
+        "basis": { "type": "string", "minLength": 1 },
+        "approver": { "type": "string", "minLength": 1 },
+        "reviewed_on": { "type": "string", "format": "date" }
+      }
+    },
+    "image": {
+      "type": "object",
+      "required": ["file", "sha256", "short_side_px", "phash"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "short_side_px": { "type": "integer" },
+        "phash": { "type": "string", "pattern": "^[a-f0-9]{16}$" },
+        "flat_color_ratio": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "map": {
+      "type": "object",
+      "required": ["sovereignty_checked"],
+      "additionalProperties": false,
+      "properties": {
+        "sovereignty_checked": { "type": "boolean" }
+      }
+    },
+    "text": {
+      "type": "object",
+      "required": ["en"],
+      "additionalProperties": false,
+      "properties": {
+        "en": { "type": "string", "minLength": 1 }
+      }
+    },
+    "reviewed_by": { "type": "string", "minLength": 1 },
+    "reviewed_on": { "type": "string", "format": "date" }
+  },
+  "if": { "properties": { "theme": { "const": "maps" } }, "required": ["theme"] },
+  "then": { "required": ["map"] }
+}
