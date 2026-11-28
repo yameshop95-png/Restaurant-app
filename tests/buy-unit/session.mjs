@@ -5,7 +5,7 @@
 // $17,24/gam và mẻ Bánh cuốn 15 phần bị tính ~$3.490 (~$233/phần, bán $16).
 import fs from 'node:fs';
 import path from 'node:path';
-import { buyToBase, buyUnitOf, batchCost, dateKey, ingredientCosts } from '../../src/lib/inventory.js';
+import { buyBreakdown, buyToBase, buyUnitOf, batchCost, dateKey, ingredientCosts } from '../../src/lib/inventory.js';
 
 let passed = 0;
 let failed = 0;
@@ -24,6 +24,19 @@ check('Đặt đủ → {unit, size}', thung?.unit === 'thùng' && thung?.size =
 check('7 thùng bột gạo × 6 kg = 42 kg', buyToBase(7, 6) === 42);
 check('3 chai mắm × 700 ml = 2100 ml', buyToBase(3, 700) === 2100);
 check('1 gói nấm mèo × 1000 g = 1000 g', buyToBase(1, 1000) === 1000);
+
+// --- buyBreakdown: khai quy cách như trên bao bì, app tự nhân ra tổng ---
+const bdThung = buyBreakdown({ name: 'Bột gạo', unit: 'kg', buyUnit: 'thùng', buyPacks: 12, buyPackUnit: 'gói', buyPackSize: 500, buyPackMeasure: 'g' });
+check('1 thùng = 12 gói × 500 g → tổng 6 kg', bdThung?.size === 6 && bdThung?.packs === 12 && bdThung?.packUnit === 'gói');
+check('buyUnitOf đọc qua quy cách chi tiết', buyUnitOf({ unit: 'kg', buyUnit: 'thùng', buyPacks: 12, buyPackSize: 500, buyPackMeasure: 'g' })?.size === 6);
+const bdChai = buyBreakdown({ name: 'Nước mắm', unit: 'ml', buyUnit: 'chai', buyPacks: 1, buyPackUnit: 'chai', buyPackSize: 700, buyPackMeasure: 'ml' });
+check('1 chai = 1 × 700 ml → tổng 700 ml', bdChai?.size === 700);
+const bdGoi = buyBreakdown({ name: 'Hạt nêm', unit: 'g', buyUnit: 'gói', buyPacks: 1, buyPackSize: 800, buyPackMeasure: 'g' });
+check('1 gói hạt nêm = 800 g', bdGoi?.size === 800);
+check('Kiểu cũ chỉ có buySize vẫn chạy (dự phòng)', buyBreakdown({ unit: 'kg', buyUnit: 'thùng', buySize: 6 })?.size === 6);
+check('Đơn vị con không quy đổi được (gói → kg) và không có buySize → null',
+  buyBreakdown({ unit: 'kg', buyUnit: 'thùng', buyPacks: 12, buyPackSize: 500, buyPackMeasure: 'gói' }) === null);
+check('Giá 1 thùng $17 → giá mỗi gram bột gạo = 17/6000 ≈ $0,0028', near(17 / (bdThung.size * 1000), 0.002833, 0.0001));
 
 // --- Đầu-cuối với số thật của Paul sau khi sửa dữ liệu (28/11/2026) ---
 const today = dateKey();
@@ -68,11 +81,11 @@ check('Dữ liệu cũ cho mẻ > $3.000 (đúng lỗi Paul gặp)', batchCost(b
 
 // --- Khoá nguồn: hai form dùng đúng cơ chế ---
 const purSrc = fs.readFileSync(path.join(process.cwd(), 'src/components/inventory/PurchasesTab.jsx'), 'utf8');
-check('Form nhập hàng có chế độ theo đơn vị mua', purSrc.includes('buyUnitOf') && purSrc.includes('Theo {buy.unit}'));
+check('Form nhập hàng có chế độ theo đơn vị mua + hiện quy cách bao bì', purSrc.includes('buyUnitOf') && purSrc.includes('Theo {buy.unit}') && purSrc.includes('buyBreakdown'));
 check('Form nhập hàng quy đổi về đơn vị dùng khi lưu + lưu cách nhập gốc', purSrc.includes('buyToBase') && purSrc.includes('buy: { count: cNum'));
 check('Lịch sử nhập hiện cách nhập gốc', purSrc.includes('p.buy'));
 const stockSrc = fs.readFileSync(path.join(process.cwd(), 'src/components/inventory/StockTab.jsx'), 'utf8');
-check('Form nguyên liệu có ô Đơn vị mua + quy đổi', stockSrc.includes('Đơn vị mua') && stockSrc.includes('buySize: buyUnitValue'));
+check('Form nguyên liệu có các mục quy cách mua', stockSrc.includes('Đơn vị mua') && stockSrc.includes('buyPackSize') && stockSrc.includes('gồm mấy đơn vị con'));
 
 console.log(`\nbuy-unit: ${passed} đạt, ${failed} trượt`);
 if (failed) { console.log('KẾT QUẢ: TEST THẤT BẠI'); process.exit(1); }

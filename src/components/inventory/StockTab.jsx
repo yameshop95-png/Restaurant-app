@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AlertTriangle, Plus } from 'lucide-react';
-import { ADJUST_REASONS, UNITS, dateKey, fmtKey } from '../../lib/inventory';
+import { ADJUST_REASONS, UNITS, compatibleUnits, convertQty, dateKey, fmtKey } from '../../lib/inventory';
 import { Card, Field, PrimaryButton, Sheet, inputClass, money, parseNum, qtyText } from './ui';
 
 function IngredientSheet({ level, ingredients, adjustments, weeks = [], onSave, onDelete, onClose }) {
@@ -10,7 +10,15 @@ function IngredientSheet({ level, ingredients, adjustments, weeks = [], onSave, 
   const [min, setMin] = useState(ing?.minStock ? String(ing.minStock) : '');
   const [standard, setStandard] = useState(ing?.standardPrice ? String(ing.standardPrice) : '');
   const [buyUnit, setBuyUnit] = useState(ing?.buyUnit ?? '');
-  const [buySize, setBuySize] = useState(ing?.buySize ? String(ing.buySize) : '');
+  const [buyPacks, setBuyPacks] = useState(ing?.buyPacks ? String(ing.buyPacks) : '');
+  const [buyPackUnit, setBuyPackUnit] = useState(ing?.buyPackUnit ?? '');
+  const [buyPackSize, setBuyPackSize] = useState(ing?.buyPackSize ? String(ing.buyPackSize) : '');
+  const [buyPackMeasure, setBuyPackMeasure] = useState(ing?.buyPackMeasure ?? '');
+  // Đơn vị của "mỗi gói": mặc định gam cho kg, ml cho lít (đúng cách ghi trên bao bì)
+  const packMeasure = buyPackMeasure || { kg: 'g', lít: 'ml' }[unit] || unit;
+  const packsNum = buyPacks.trim() ? parseNum(buyPacks) : 1;
+  const packSizeNum = buyPackSize.trim() ? parseNum(buyPackSize) : 0;
+  const buyTotal = buyUnit.trim() && packsNum > 0 && packSizeNum > 0 ? Math.round(convertQty(packsNum * packSizeNum, packMeasure, unit) * 1000) / 1000 : 0;
   const [count, setCount] = useState('');
   const [waste, setWaste] = useState('');
   const [error, setError] = useState(null);
@@ -23,18 +31,22 @@ function IngredientSheet({ level, ingredients, adjustments, weeks = [], onSave, 
     if (!Number.isFinite(minValue) || minValue < 0) return setError('Mức cảnh báo chưa đúng');
     const stdValue = standard.trim() ? parseNum(standard) : 0;
     if (!Number.isFinite(stdValue) || stdValue < 0) return setError('Giá chuẩn chưa đúng');
-    // Đơn vị mua: phải có cả tên lẫn số quy đổi, hoặc để trống cả hai
+    // Đơn vị mua: khai quy cách như trên bao bì (1 thùng = 12 gói × 500 g),
+    // app tự nhân ra tổng theo đơn vị dùng và lưu cả buySize cho các chỗ đọc cũ
     const buyUnitValue = buyUnit.trim();
-    const buySizeValue = buySize.trim() ? parseNum(buySize) : 0;
-    if ((buyUnitValue && !(buySizeValue > 0)) || (!buyUnitValue && buySize.trim()))
-      return setError('Đơn vị mua cần cả tên (VD: thùng) và số quy đổi (VD: 1 thùng = 6)');
+    if (buyUnitValue && !(packSizeNum > 0))
+      return setError('Đã đặt đơn vị mua thì cần số lượng mỗi đơn vị con (VD: mỗi gói 500 g)');
     onSave({
       name: name.trim(),
       unit,
       minStock: minValue,
       standardPrice: Math.round(stdValue * 100) / 100,
       buyUnit: buyUnitValue,
-      buySize: buyUnitValue ? buySizeValue : 0,
+      buyPacks: buyUnitValue ? packsNum : 0,
+      buyPackUnit: buyUnitValue ? buyPackUnit.trim() : '',
+      buyPackSize: buyUnitValue ? packSizeNum : 0,
+      buyPackMeasure: buyUnitValue ? packMeasure : '',
+      buySize: buyUnitValue ? buyTotal : 0,
     });
     onClose();
   };
@@ -90,14 +102,40 @@ function IngredientSheet({ level, ingredients, adjustments, weeks = [], onSave, 
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Đơn vị mua" hint="Để trống nếu mua lẻ theo đơn vị dùng">
-          <input value={buyUnit} onChange={(e) => setBuyUnit(e.target.value)} placeholder="VD: thùng, gói, chai" className={inputClass(false)} />
-        </Field>
-        <Field label={`1 ${buyUnit.trim() || 'đơn vị mua'} = ? ${unit}`} hint="VD: 1 thùng = 6 (kg), 1 chai = 700 (ml)">
-          <input inputMode="decimal" value={buySize} onChange={(e) => setBuySize(e.target.value)} placeholder="VD: 6" className={inputClass(false)} />
-        </Field>
-      </div>
+      <Field label="Đơn vị mua" hint="Để trống nếu mua lẻ theo đơn vị dùng">
+        <input value={buyUnit} onChange={(e) => setBuyUnit(e.target.value)} placeholder="VD: thùng, gói, chai" className={inputClass(false)} />
+      </Field>
+      {buyUnit.trim() && (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={`1 ${buyUnit.trim()} gồm mấy đơn vị con`} hint="Mua nguyên thùng/chai thì để 1">
+              <input inputMode="decimal" value={buyPacks} onChange={(e) => setBuyPacks(e.target.value)} placeholder="VD: 12" className={inputClass(false)} />
+            </Field>
+            <Field label="Tên đơn vị con">
+              <input value={buyPackUnit} onChange={(e) => setBuyPackUnit(e.target.value)} placeholder="VD: gói" className={inputClass(false)} />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={`Mỗi ${buyPackUnit.trim() || 'đơn vị con'} là bao nhiêu`}>
+              <input inputMode="decimal" value={buyPackSize} onChange={(e) => setBuyPackSize(e.target.value)} placeholder="VD: 500" className={inputClass(false)} />
+            </Field>
+            <Field label="Đơn vị của số đó">
+              <select value={packMeasure} onChange={(e) => setBuyPackMeasure(e.target.value)} className={inputClass(false)}>
+                {compatibleUnits(unit).map((u) => (
+                  <option key={u} value={u} className="bg-card">
+                    {u}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          {buyTotal > 0 && (
+            <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
+              = 1 {buyUnit.trim()} = {qtyText(buyTotal)} {unit}. Khi nhập hàng anh chỉ cần giá 1 {buyUnit.trim()}, app tự tính giá theo {unit}.
+            </p>
+          )}
+        </>
+      )}
 
       <Field
         label={`Giá chuẩn ($ / ${unit})`}

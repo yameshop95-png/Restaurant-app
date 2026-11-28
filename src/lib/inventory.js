@@ -45,9 +45,28 @@ export const convertQty = (qty, from, to) => (!from || from === to ? num(qty) : 
 // ing.buyUnit = tên đơn vị mua, ing.buySize = số đơn vị dùng trong 1 đơn vị
 // mua. Chưa đặt (hoặc đặt thiếu một trong hai) → null: mua lẻ theo đơn vị dùng.
 export function buyUnitOf(ing) {
+  const b = buyBreakdown(ing);
+  return b ? { unit: b.unit, size: b.size } : null;
+}
+
+// Quy cách mua chi tiết (Paul, 28/11/2026): anh muốn khai đúng như in trên
+// bao bì — 1 thùng = 12 gói, mỗi gói 500 g — app tự nhân ra tổng theo đơn vị
+// dùng (6000 g = 6 kg) thay vì bắt anh tự nhân trước. buyPacks = số đơn vị
+// con trong 1 đơn vị mua, buyPackUnit = tên đơn vị con ('gói'), buyPackSize =
+// số lượng trong 1 đơn vị con, buyPackMeasure = đơn vị của số đó ('g').
+// Nguyên liệu đặt kiểu cũ (chỉ buySize = tổng) vẫn chạy qua nhánh dự phòng.
+export function buyBreakdown(ing) {
   const unit = String(ing?.buyUnit ?? '').trim();
+  if (!unit) return null;
+  const packs = num(ing?.buyPacks);
+  const packSize = num(ing?.buyPackSize);
+  const measure = String(ing?.buyPackMeasure ?? '').trim() || ing?.unit;
+  if (packs > 0 && packSize > 0 && (measure === ing?.unit || FACTOR[`${measure}>${ing?.unit}`] != null)) {
+    const size = Math.round(convertQty(packs * packSize, measure, ing?.unit) * 1000) / 1000;
+    if (size > 0) return { unit, packs, packUnit: String(ing?.buyPackUnit ?? '').trim(), packSize, measure, size };
+  }
   const size = num(ing?.buySize);
-  return unit && size > 0 ? { unit, size } : null;
+  return size > 0 ? { unit, packs: 0, packUnit: '', packSize: 0, measure: ing?.unit, size } : null;
 }
 
 // Số lượng theo đơn vị dùng tương ứng với `count` đơn vị mua
