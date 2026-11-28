@@ -79,19 +79,19 @@ function Overview({ report, levels, products, onGo }) {
 
       <Card>
         <div className="px-5 py-4">
-          <p className="text-[15px] text-slate-500">Lãi (sau giá vốn và chi phí)</p>
-          <p data-testid="profit" className={`mt-1 text-4xl font-extrabold tabular-nums ${r.profit < 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-            {money(r.profit)}
+          <p className="text-[15px] text-slate-500">Lãi theo dòng tiền (bán thu vô − tiền ra)</p>
+          <p data-testid="profit" className={`mt-1 text-4xl font-extrabold tabular-nums ${r.cashNet < 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+            {money(r.cashNet)}
           </p>
           <p className="text-sm text-slate-500">
-            {r.margin != null ? `Biên lãi ${Math.round(r.margin * 100)}% · ` : ''}
-            {r.orders} đơn
+            {r.orders} đơn · Không cần công thức: cứ nhập hàng và ghi chi phí là app tự trừ. Tiền mua hàng tính theo
+            ngày mua — xem theo tháng/mùa sẽ chuẩn nhất.
           </p>
         </div>
         <dl className="grid grid-cols-3 gap-px border-t border-slate-200 bg-slate-200 text-center">
           {[
             ['Doanh thu', r.revenue],
-            ['Giá vốn', r.cogs],
+            ['Tiền mua hàng', r.bought],
             ['Chi phí khác', r.otherCosts],
           ].map(([label, value]) => (
             <div key={label} className="bg-card px-2 py-3">
@@ -102,12 +102,14 @@ function Overview({ report, levels, products, onGo }) {
         </dl>
       </Card>
 
-      <Card title="Dòng tiền (tiền vào − tiền ra)">
+      <Card title="Lãi theo giá vốn công thức (tham khảo)">
         <div className="px-5 pb-4 pt-2">
-          <p className={`text-2xl font-extrabold tabular-nums ${r.cashNet < 0 ? 'text-red-500' : 'text-slate-900'}`}>{money(r.cashNet)}</p>
+          <p className={`text-2xl font-extrabold tabular-nums ${r.profit < 0 ? 'text-red-500' : 'text-slate-900'}`}>{money(r.profit)}</p>
           <p className="text-sm text-slate-500">
-            Bán {money(r.cashIn)} − mua hàng {money(r.bought)} − chi phí {money(r.otherCosts)}
+            Doanh thu {money(r.revenue)} − giá vốn {money(r.cogs)} − chi phí {money(r.otherCosts)}
+            {r.margin != null ? ` · biên lãi ${Math.round(r.margin * 100)}%` : ''}
           </p>
+          <p className="text-sm text-slate-500">Chỉ đúng khi đã nhập công thức cho các món — không dùng công thức thì xem số dòng tiền ở trên.</p>
         </div>
       </Card>
 
@@ -124,6 +126,7 @@ function Overview({ report, levels, products, onGo }) {
           </button>
         </div>
       )}
+
 
       {products.some((p) => p.toMake > 0) && (
         <Card title="Cần làm thêm cho đơn đặt trước">
