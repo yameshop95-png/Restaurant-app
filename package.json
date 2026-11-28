@@ -25,7 +25,8 @@
     "test:opsreport": "node tests/ops-report/run.mjs",
     "test:sitelink": "node tests/site-link/run.mjs",
     "test:resumetab": "node tests/resume-tab/run.mjs",
-    "test:buyunit": "node tests/buy-unit/run.mjs"
+    "test:buyunit": "node tests/buy-unit/run.mjs",
+    "test:cashview": "node tests/cash-view/run.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
