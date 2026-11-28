@@ -9,6 +9,8 @@ function IngredientSheet({ level, ingredients, adjustments, weeks = [], onSave, 
   const [unit, setUnit] = useState(ing?.unit ?? 'kg');
   const [min, setMin] = useState(ing?.minStock ? String(ing.minStock) : '');
   const [standard, setStandard] = useState(ing?.standardPrice ? String(ing.standardPrice) : '');
+  const [buyUnit, setBuyUnit] = useState(ing?.buyUnit ?? '');
+  const [buySize, setBuySize] = useState(ing?.buySize ? String(ing.buySize) : '');
   const [count, setCount] = useState('');
   const [waste, setWaste] = useState('');
   const [error, setError] = useState(null);
@@ -21,7 +23,19 @@ function IngredientSheet({ level, ingredients, adjustments, weeks = [], onSave, 
     if (!Number.isFinite(minValue) || minValue < 0) return setError('Mức cảnh báo chưa đúng');
     const stdValue = standard.trim() ? parseNum(standard) : 0;
     if (!Number.isFinite(stdValue) || stdValue < 0) return setError('Giá chuẩn chưa đúng');
-    onSave({ name: name.trim(), unit, minStock: minValue, standardPrice: Math.round(stdValue * 100) / 100 });
+    // Đơn vị mua: phải có cả tên lẫn số quy đổi, hoặc để trống cả hai
+    const buyUnitValue = buyUnit.trim();
+    const buySizeValue = buySize.trim() ? parseNum(buySize) : 0;
+    if ((buyUnitValue && !(buySizeValue > 0)) || (!buyUnitValue && buySize.trim()))
+      return setError('Đơn vị mua cần cả tên (VD: thùng) và số quy đổi (VD: 1 thùng = 6)');
+    onSave({
+      name: name.trim(),
+      unit,
+      minStock: minValue,
+      standardPrice: Math.round(stdValue * 100) / 100,
+      buyUnit: buyUnitValue,
+      buySize: buyUnitValue ? buySizeValue : 0,
+    });
     onClose();
   };
 
@@ -62,7 +76,7 @@ function IngredientSheet({ level, ingredients, adjustments, weeks = [], onSave, 
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="VD: Thịt heo, Bột gạo" className={inputClass(error)} />
       </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Đơn vị" hint="Đơn vị lúc nhập hàng và đếm kho">
+        <Field label="Đơn vị" hint="Đơn vị dùng trong bếp và đếm kho">
           <select value={unit} onChange={(e) => setUnit(e.target.value)} className={inputClass(false)}>
             {UNITS.map((u) => (
               <option key={u} value={u} className="bg-card">
@@ -73,6 +87,15 @@ function IngredientSheet({ level, ingredients, adjustments, weeks = [], onSave, 
         </Field>
         <Field label="Báo khi còn ≤" hint="Để trống nếu không cần">
           <input inputMode="decimal" value={min} onChange={(e) => setMin(e.target.value)} placeholder="0" className={inputClass(false)} />
+        </Field>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Đơn vị mua" hint="Để trống nếu mua lẻ theo đơn vị dùng">
+          <input value={buyUnit} onChange={(e) => setBuyUnit(e.target.value)} placeholder="VD: thùng, gói, chai" className={inputClass(false)} />
+        </Field>
+        <Field label={`1 ${buyUnit.trim() || 'đơn vị mua'} = ? ${unit}`} hint="VD: 1 thùng = 6 (kg), 1 chai = 700 (ml)">
+          <input inputMode="decimal" value={buySize} onChange={(e) => setBuySize(e.target.value)} placeholder="VD: 6" className={inputClass(false)} />
         </Field>
       </div>
 

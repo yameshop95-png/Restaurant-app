@@ -39,6 +39,22 @@ export const compatibleUnits = (unit) => {
 // Đổi `qty` từ đơn vị `from` sang đơn vị của nguyên liệu `to`
 export const convertQty = (qty, from, to) => (!from || from === to ? num(qty) : num(qty) * (FACTOR[`${from}>${to}`] ?? 1));
 
+// Đơn vị mua của một nguyên liệu (Paul, 28/11/2026): nhiều thứ mua theo
+// thùng/gói/chai nhưng dùng trong bếp theo kg/g/ml — VD bột gạo 1 thùng
+// = 12 gói × 500g = 6 kg, nước mắm 1 chai = 700 ml, nấm mèo 1 gói = 1000 g.
+// ing.buyUnit = tên đơn vị mua, ing.buySize = số đơn vị dùng trong 1 đơn vị
+// mua. Chưa đặt (hoặc đặt thiếu một trong hai) → null: mua lẻ theo đơn vị dùng.
+export function buyUnitOf(ing) {
+  const unit = String(ing?.buyUnit ?? '').trim();
+  const size = num(ing?.buySize);
+  return unit && size > 0 ? { unit, size } : null;
+}
+
+// Số lượng theo đơn vị dùng tương ứng với `count` đơn vị mua
+export function buyToBase(count, size) {
+  return Math.round(num(count) * num(size) * 1000) / 1000;
+}
+
 // Giá nhập trung bình theo tuần (thứ Hai → Chủ nhật), tính cả lần mua sale: tổng tiền ÷ tổng số lượng nhập trong tuần.
 // Kết quả: Map nguyên liệu → [{ week: 'YYYY-MM-DD' (thứ Hai), avg, qty, total }] xếp theo tuần tăng dần.
 export function weeklyPrices(purchases) {

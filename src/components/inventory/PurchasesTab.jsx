@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-import { dateKey, fmtKey } from '../../lib/inventory';
+import { buyToBase, buyUnitOf, dateKey, fmtKey } from '../../lib/inventory';
 import { Field, PrimaryButton, Sheet, inputClass, money, parseNum, qtyText } from './ui';
 
 function PurchaseSheet({ ingredients, onSave, onClose }) {
@@ -10,19 +10,75 @@ function PurchaseSheet({ ingredients, onSave, onClose }) {
   const [total, setTotal] = useState('');
   const [supplier, setSupplier] = useState('');
   const [error, setError] = useState(null);
+  // Nhập theo đơn vị mua (thùng/gói/chai) khi nguyên liệu có đặt quy đổi
+  const [mode, setMode] = useState(null); // null = tự chọn theo nguyên liệu
+  const [bCount, setBCount] = useState('');
+  const [bPrice, setBPrice] = useState('');
+  const [bTotal, setBTotal] = useState('');
 
   const ing = ingredients.find((i) => i.id === ingredientId);
+  const buy = buyUnitOf(ing);
+  const effMode = buy ? (mode ?? 'buy') : 'base';
+
+  const pickIngredient = (id) => {
+    setIngredientId(id);
+    setMode(null);
+    setQty('');
+    setTotal('');
+    setBCount('');
+    setBPrice('');
+    setBTotal('');
+    setError(null);
+  };
+
+  // Ba ô của chế độ mua theo đơn vị mua luôn khớp nhau: sửa ô này thì ô kia tự tính
+  const editCount = (v) => {
+    setBCount(v);
+    const c = parseNum(v);
+    const pr = parseNum(bPrice);
+    if (c > 0 && pr > 0) setBTotal(String(Math.round(c * pr * 100) / 100));
+  };
+  const editPrice = (v) => {
+    setBPrice(v);
+    const c = parseNum(bCount);
+    const pr = parseNum(v);
+    if (c > 0 && pr > 0) setBTotal(String(Math.round(c * pr * 100) / 100));
+  };
+  const editTotal = (v) => {
+    setBTotal(v);
+    const c = parseNum(bCount);
+    const t = parseNum(v);
+    if (c > 0 && t >= 0 && v.trim()) setBPrice(String(Math.round((t / c) * 10000) / 10000));
+  };
+
   const q = parseNum(qty);
   const t = parseNum(total);
-  const unitPrice = q > 0 && t >= 0 && total.trim() ? t / q : null;
+  const cNum = parseNum(bCount);
+  const btNum = parseNum(bTotal);
+  const baseQty = effMode === 'buy' ? buyToBase(cNum, buy.size) : q;
+  const effTotal = effMode === 'buy' ? btNum : t;
+  const unitPrice = baseQty > 0 && effTotal >= 0 && (effMode === 'buy' ? bTotal.trim() : total.trim()) ? effTotal / baseQty : null;
   const standard = Number(ing?.standardPrice) || 0;
-  const saved = unitPrice != null && standard > 0 && unitPrice < standard ? (standard - unitPrice) * q : 0;
+  const saved = unitPrice != null && standard > 0 && unitPrice < standard ? (standard - unitPrice) * baseQty : 0;
 
   const save = () => {
     if (!ing) return setError('Chọn nguyên liệu (thêm ở mục Kho nếu chưa có)');
-    if (!qty.trim() || !Number.isFinite(q) || q <= 0) return setError('Số lượng chưa đúng');
-    if (!total.trim() || !Number.isFinite(t) || t < 0) return setError('Tổng tiền chưa đúng');
-    onSave({ date, ingredientId, qty: q, total: Math.round(t * 100) / 100, supplier: supplier.trim() });
+    if (!(baseQty > 0)) return setError(effMode === 'buy' ? `Số ${buy.unit} chưa đúng` : 'Số lượng chưa đúng');
+    if (!Number.isFinite(effTotal) || effTotal < 0 || !(effMode === 'buy' ? bTotal.trim() : total.trim())) return setError('Tổng tiền chưa đúng');
+    const totalRounded = Math.round(effTotal * 100) / 100;
+    if (effMode === 'buy') {
+      onSave({
+        date,
+        ingredientId,
+        qty: baseQty,
+        total: totalRounded,
+        supplier: supplier.trim(),
+        // Lưu lại cách nhập gốc để đối chiếu hoá đơn: 7 thùng × $17 (1 thùng = 6 kg)
+        buy: { count: cNum, unit: buy.unit, price: Math.round((effTotal / cNum) * 100) / 100, size: buy.size },
+      });
+    } else {
+      onSave({ date, ingredientId, qty: q, total: totalRounded, supplier: supplier.trim() });
+    }
     onClose();
   };
 
@@ -41,7 +97,7 @@ function PurchaseSheet({ ingredients, onSave, onClose }) {
           <input type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} className={inputClass(false)} />
         </Field>
         <Field label="Nguyên liệu">
-          <select value={ingredientId} onChange={(e) => setIngredientId(e.target.value)} className={inputClass(false)}>
+          <select value={ingredientId} onChange={(e) => pickIngredient(e.target.value)} className={inputClass(false)}>
             {ingredients.map((i) => (
               <option key={i.id} value={i.id} className="bg-card">
                 {i.name} ({i.unit})
@@ -50,14 +106,51 @@ function PurchaseSheet({ ingredients, onSave, onClose }) {
           </select>
         </Field>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label={`Số lượng${ing ? ` (${ing.unit})` : ''}`}>
-          <input inputMode="decimal" value={qty} onChange={(e) => setQty(e.target.value)} placeholder="VD: 10" className={inputClass(false)} />
-        </Field>
-        <Field label="Tổng tiền ($)" hint={unitPrice != null && ing ? `= ${money(unitPrice)} / ${ing.unit}` : undefined}>
-          <input inputMode="decimal" value={total} onChange={(e) => setTotal(e.target.value)} placeholder="VD: 120" className={inputClass(false)} />
-        </Field>
-      </div>
+      {buy && (
+        <div className="flex rounded-2xl bg-slate-100 p-1 text-sm font-semibold">
+          <button
+            type="button"
+            onClick={() => setMode('buy')}
+            className={`flex-1 rounded-xl py-2 ${effMode === 'buy' ? 'bg-card text-slate-900 shadow-sm' : 'text-slate-500'}`}
+          >
+            Theo {buy.unit}
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('base')}
+            className={`flex-1 rounded-xl py-2 ${effMode === 'base' ? 'bg-card text-slate-900 shadow-sm' : 'text-slate-500'}`}
+          >
+            Theo {ing.unit}
+          </button>
+        </div>
+      )}
+      {effMode === 'buy' ? (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={`Số lượng (${buy.unit})`}>
+              <input inputMode="decimal" value={bCount} onChange={(e) => editCount(e.target.value)} placeholder="VD: 7" className={inputClass(false)} />
+            </Field>
+            <Field label={`Giá 1 ${buy.unit} ($)`}>
+              <input inputMode="decimal" value={bPrice} onChange={(e) => editPrice(e.target.value)} placeholder="VD: 17" className={inputClass(false)} />
+            </Field>
+          </div>
+          <Field
+            label="Tổng tiền ($)"
+            hint={baseQty > 0 ? `= ${qtyText(baseQty)} ${ing.unit} · ${money(effTotal / baseQty)} / ${ing.unit} (1 ${buy.unit} = ${qtyText(buy.size)} ${ing.unit})` : `1 ${buy.unit} = ${qtyText(buy.size)} ${ing.unit}`}
+          >
+            <input inputMode="decimal" value={bTotal} onChange={(e) => editTotal(e.target.value)} placeholder="VD: 119" className={inputClass(false)} />
+          </Field>
+        </>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={`Số lượng${ing ? ` (${ing.unit})` : ''}`}>
+            <input inputMode="decimal" value={qty} onChange={(e) => setQty(e.target.value)} placeholder="VD: 10" className={inputClass(false)} />
+          </Field>
+          <Field label="Tổng tiền ($)" hint={unitPrice != null && ing ? `= ${money(unitPrice)} / ${ing.unit}` : undefined}>
+            <input inputMode="decimal" value={total} onChange={(e) => setTotal(e.target.value)} placeholder="VD: 120" className={inputClass(false)} />
+          </Field>
+        </div>
+      )}
       {saved > 0 && (
         <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
           Rẻ hơn giá chuẩn {money(standard)}/{ing.unit}: tiết kiệm {money(saved)}
@@ -112,7 +205,10 @@ export default function PurchasesTab({ inventory }) {
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-slate-900">{ing?.name ?? 'Nguyên liệu đã xoá'}</p>
                   <p className="text-xs text-slate-500">
-                    {fmtKey(p.date)} · {qtyText(Number(p.qty))} {ing?.unit ?? ''}
+                    {fmtKey(p.date)} ·{' '}
+                    {p.buy
+                      ? `${qtyText(Number(p.buy.count))} ${p.buy.unit} × ${money(Number(p.buy.price))} · = ${qtyText(Number(p.qty))} ${ing?.unit ?? ''}`
+                      : `${qtyText(Number(p.qty))} ${ing?.unit ?? ''}`}
                     {p.supplier ? ` · ${p.supplier}` : ''}
                     {savedOf(p) > 0 && <span className="font-semibold text-emerald-600"> · sale, tiết kiệm {money(savedOf(p))}</span>}
                   </p>
