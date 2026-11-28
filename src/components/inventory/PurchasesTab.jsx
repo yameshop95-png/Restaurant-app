@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-import { buyToBase, buyUnitOf, dateKey, fmtKey } from '../../lib/inventory';
+import { buyBreakdown, buyToBase, buyUnitOf, dateKey, fmtKey } from '../../lib/inventory';
 import { Field, PrimaryButton, Sheet, inputClass, money, parseNum, qtyText } from './ui';
+
+// Giá theo đơn vị nhỏ (gam/ml) rất bé: hiện 4 số lẻ thay vì làm tròn $0,01
+const fmtPrice = (v) => (v >= 0.1 ? money(v) : `$${v.toFixed(4).replace(/0+$/, '').replace(/\.$/, '')}`);
 
 function PurchaseSheet({ ingredients, onSave, onClose }) {
   const [date, setDate] = useState(dateKey());
@@ -18,6 +21,13 @@ function PurchaseSheet({ ingredients, onSave, onClose }) {
 
   const ing = ingredients.find((i) => i.id === ingredientId);
   const buy = buyUnitOf(ing);
+  const bd = buyBreakdown(ing);
+  // Chữ quy cách như trên bao bì: "1 thùng = 12 gói × 500 g = 6 kg"
+  const bdText = bd
+    ? bd.packs > 0
+      ? `1 ${bd.unit} = ${qtyText(bd.packs)} ${bd.packUnit || 'đơn vị con'} × ${qtyText(bd.packSize)} ${bd.measure} = ${qtyText(bd.size)} ${ing?.unit}`
+      : `1 ${bd.unit} = ${qtyText(bd.size)} ${ing?.unit}`
+    : '';
   const effMode = buy ? (mode ?? 'buy') : 'base';
 
   const pickIngredient = (id) => {
@@ -136,7 +146,11 @@ function PurchaseSheet({ ingredients, onSave, onClose }) {
           </div>
           <Field
             label="Tổng tiền ($)"
-            hint={baseQty > 0 ? `= ${qtyText(baseQty)} ${ing.unit} · ${money(effTotal / baseQty)} / ${ing.unit} (1 ${buy.unit} = ${qtyText(buy.size)} ${ing.unit})` : `1 ${buy.unit} = ${qtyText(buy.size)} ${ing.unit}`}
+            hint={
+              baseQty > 0
+                ? `= ${qtyText(baseQty)} ${ing.unit} · ${fmtPrice(effTotal / baseQty)} / ${ing.unit}${ing.unit === 'kg' ? ` · ${money(effTotal / baseQty / 10)} / 100 g` : ''} (${bdText})`
+                : bdText
+            }
           >
             <input inputMode="decimal" value={bTotal} onChange={(e) => editTotal(e.target.value)} placeholder="VD: 119" className={inputClass(false)} />
           </Field>

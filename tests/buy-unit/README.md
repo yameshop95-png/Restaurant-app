@@ -5,7 +5,10 @@ theo gói 1000 g, nước mắm theo chai 700 ml — app cũ chỉ cho nhập th
 vị dùng nên giá vốn sai (nấm mèo $17,24/gam) và giá mẻ đội lên ~$233/phần.
 
 Thiết kế: nguyên liệu có thêm `buyUnit` (tên đơn vị mua) + `buySize` (số
-đơn vị dùng trong 1 đơn vị mua), đặt ở mục Kho. Form nhập hàng có chế độ
+đơn vị dùng trong 1 đơn vị mua), đặt ở mục Kho. Bản nâng cấp cùng ngày theo
+ý Paul: khai quy cách như trên bao bì — `buyPacks` × `buyPackSize`
+(`buyPackMeasure`) — app tự nhân ra `buySize` (1 thùng = 12 gói × 500 g
+= 6 kg); `buyBreakdown` trong lib/inventory là nguồn tính duy nhất. Form nhập hàng có chế độ
 "Theo {đơn vị mua}": nhập số lượng + giá 1 đơn vị mua (hoặc tổng tiền, hai
 ô tự suy nhau), app quy đổi về đơn vị dùng khi lưu (`qty` luôn là đơn vị
 dùng nên máy tính giá vốn/tồn kho không đổi) và lưu cách nhập gốc trong
