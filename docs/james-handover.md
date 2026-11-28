@@ -2,7 +2,7 @@
 
 > File này do **James** (trợ lý của Paul trên Muse) duy trì trong repo để **Claude** nắm được
 > những gì James đã làm, quyết định nào đã chốt, và việc gì còn mở — tránh làm trùng hoặc mâu thuẫn nhau.
-> Cập nhật lần cuối: 25/11/2026 (sau PR #92).
+> Cập nhật lần cuối: 28/11/2026 (sau PR #94).
 > Quy ước chung: kiểm tra main mới nhất trước khi làm (hai bên làm song song);
 > thay đổi của James đi qua PR nháp (build + test đạt), **báo Paul trước; Paul OK mới merge** — Paul đã
 > chốt lại quy ước này tối 21/11 (câu "tự merge luôn" cùng tối đã được anh rút lại, đừng dùng).
@@ -43,6 +43,7 @@
 | #90 | **Link gửi cho khách luôn là wodovn.xyz** (Paul báo link cũ trong Cài đặt): lib mới `src/lib/siteLink.js` (`CUSTOMER_ORDER_LINK = https://www.wodovn.xyz/order`); `WebOrderingSettings.jsx` bỏ cách dựng link bằng `window.location.origin` (app nhân viên ở vercel.app nên cho ra link cũ) cho cả ô link, nút Copy và nút "Mở website"; sửa cùng lỗi ở `customerMessage.js` reminderMessage (blast radius — grep toàn repo chỉ có 2 chỗ này); test mới `test:sitelink` | `b507074` |
 | #91 | **Thanh tab con Báo cáo dính khi cuộn** (Paul báo cuộn xuống là tab trôi mất): bọc thanh 3 tab con trong `sticky top-16 z-10 bg-page py-2` ở ReportPage — cùng mẫu cụm điều khiển dính của trang Đơn hàng (PR #74); chỉ sửa khung hiển thị, swipe đổi tab và logic tab giữ nguyên; test reporttabs thêm kiểm tra cấu trúc sticky | `eb3f2b3` |
 | #92 | **Hết văng về màn hình chính khi mở trang tải lười sau cập nhật** (Paul báo bấm Báo cáo bị văng, bấm lại mới vào được — cơ chế: chunk cũ 404 → vite:preloadError → main.jsx reload → mất tab): `src/lib/resumeTab.js` nhớ tab đang xem trong sessionStorage, App khởi tạo activeTab từ đó + lưu mỗi lần chuyển tab; thêm `src/components/PageErrorBoundary.jsx` bọc khu vực trang (app trước đây không có khung đỡ lỗi nào); main.jsx chống vòng lặp tải lại 30 giây; test mới `test:resumetab` | `75330a4` |
+| #94 | **Nhập hàng theo đơn vị mua + quy đổi** (Paul, 28/11: mua thùng/gói/chai nhưng app bắt nhập kg/g → giá vốn nấm mèo thành $17,24/g, mẻ Bánh cuốn bị tính ~$233/phần): nguyên liệu thêm `buyUnit`/`buySize` (đặt ở mục Kho), form Nhập hàng có chế độ "Theo {đơn vị mua}" (số lượng + giá 1 đơn vị, tổng tự suy hai chiều), lưu `qty` theo đơn vị dùng qua `buyToBase` (lib/inventory) + snapshot `buy` để hiện lịch sử; dữ liệu live đã sửa theo số Paul xác nhận (nấm mèo 1→1000 g, 3→3000 g; nước mắm tổng 7,8→23,4) — sau sửa mẻ trên = $45,65 ≈ $3,04/phần; test mới `test:buyunit` | `4a89ee3` |
 
 ## 2. PR đã đóng KHÔNG merge
 
